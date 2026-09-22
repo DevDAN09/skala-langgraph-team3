@@ -7,6 +7,7 @@ from src.research.client import (
     resolve_source_id,
     summarize_snippet,
     vendor_label,
+    _clip_to_sentence,
 )
 
 # 4대 Actor(서빙 운영자 / 프레임워크 개발자 / End User / 공급자) × 기술 계열 2개 (설계 3.2·3.5, #8).
@@ -57,7 +58,7 @@ STAKEHOLDER_QUERY_PLAN = [
 TECH_ORDER = ("KIVI", "CXL-PNM")
 END_USER_GAP = "인용 가능한 지연/품질 간접 근거 미확인"
 COUNTER_NOT_FOUND = "counter-evidence not found"
-BARRIER_GAP = "근거 미확인"
+UNVERIFIED = "근거 미확인"
 # 반대 근거 snippet은 Concern·Barrier 요약 입력이라 summarize_snippet 입력 한도까지 보존한다.
 # 지지 근거 snippet(500자)은 D의 R5 Judge 입력이므로 바꾸지 않는다.
 COUNTER_SNIPPET_LIMIT = 2000
@@ -242,6 +243,20 @@ def _family_labels(state: OverallState) -> dict[str, str]:
     return {"KIVI": families.get("sw", "KV Quantization"), "CXL-PNM": families.get("hw", "CXL Memory Expansion")}
 
 
+def _one_line(text: str) -> str:
+    """줄바꿈·연속 공백을 한 칸으로 합치고 마크다운 제목 기호를 뗀다. 보고서 4.3절 목록 한 줄을 깨지 않게 한다."""
+    return " ".join(w for w in text.split() if not set(w) <= {"#"})
+
+
+def _counter_summary(snippet: str, focus: str) -> str:
+    """반대 근거 요약. summarize_snippet은 LLM이 NONE을 반환하거나 실패하면 원문 앞부분을 그대로 돌려준다(#18).
+    그 값은 요약이 아니라 페이지 제목·메뉴일 수 있으므로 근거로 쓰지 않는다."""
+    summary = summarize_snippet(snippet, focus)
+    if not summary or summary == _clip_to_sentence(snippet.strip()):
+        return UNVERIFIED
+    return _one_line(summary)
+
+
 def _detail(item: dict, claim: Claim, snippets: dict[str, str], labels: dict[str, str]) -> dict | None:
     """Actor 한 칸의 Benefit / Concern / Adoption Barrier / Evidence (설계 3.5).
     Benefit은 지지 근거 Claim statement, Concern·Barrier는 반대 근거 snippet에서만 뽑는다. 근거 없는 Claim은 None."""
@@ -250,20 +265,20 @@ def _detail(item: dict, claim: Claim, snippets: dict[str, str], labels: dict[str
     counter_id = next((e for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), None)
     if counter_id is None:
         return {
-            "benefit": claim["statement"], "concern": COUNTER_NOT_FOUND, "barrier": COUNTER_NOT_FOUND,
+            "benefit": _one_line(claim["statement"]), "concern": COUNTER_NOT_FOUND, "barrier": COUNTER_NOT_FOUND,
             "evidence_ids": [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])],
         }
     # Concern은 1건째 반대 근거, Barrier는 2건째(-C2)에서 요약한다. 2건째가 없으면 1건째를 다시 쓴다.
     barrier_id = f"{counter_id}2" if snippets.get(f"{counter_id}2") else counter_id
-    concern = summarize_snippet(snippets[counter_id], _counter_focus("concerns or risks about", item, labels))
-    barrier = summarize_snippet(snippets[barrier_id], _counter_focus("adoption barriers of", item, labels))
+    concern = _counter_summary(snippets[counter_id], _counter_focus("concerns or risks about", item, labels))
+    barrier = _counter_summary(snippets[barrier_id], _counter_focus("adoption barriers of", item, labels))
     # 같은 문장이면 반복하지 않고 근거 미확인으로 둔다 (추측으로 채우지 않음, common.md 7절 ②).
     if barrier == concern:
-        barrier = BARRIER_GAP
+        barrier = UNVERIFIED
     evidence_ids = [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])]
     if barrier_id != counter_id:
         evidence_ids.append(barrier_id)
-    return {"benefit": claim["statement"], "concern": concern, "barrier": barrier, "evidence_ids": evidence_ids}
+    return {"benefit": _one_line(claim["statement"]), "concern": concern, "barrier": barrier, "evidence_ids": evidence_ids}
 
 
 def _slot_text(slot: str, claims_by_id: dict[str, Claim], snippets: dict[str, str], family_labels: dict[str, str]) -> str:
