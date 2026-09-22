@@ -42,7 +42,10 @@ def load_index():
     from langchain_huggingface import HuggingFaceEmbeddings
 
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL,
-                                       encode_kwargs={"normalize_embeddings": True})
+                                       encode_kwargs={"normalize_embeddings": True,
+                                                      "prompt": "passage: "},
+                                       query_encode_kwargs={"normalize_embeddings": True,
+                                                            "prompt": "query: "})
     # This index is created locally by indexer.py from the two trusted project PDFs.
     return FAISS.load_local(FAISS_INDEX_DIR, embeddings,
                             allow_dangerous_deserialization=True)

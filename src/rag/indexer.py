@@ -142,7 +142,8 @@ def build_faiss_index(papers_dir: Path = PAPERS_DIR, output_dir: str = FAISS_IND
         tokenizer = AutoTokenizer.from_pretrained(embedding_model_name)
         chunks = chunk_pages(pages, lambda text: len(tokenizer.encode(text)))
         embeddings = HuggingFaceEmbeddings(model_name=embedding_model_name,
-                                           encode_kwargs={"normalize_embeddings": True})
+                                           encode_kwargs={"normalize_embeddings": True,
+                                                          "prompt": "passage: "})
         db = FAISS.from_documents(chunks, embeddings)
         db.save_local(output_dir)
         print(f"✅ [성공/통과] {len(chunks)} paper chunks indexed at {output_dir}")
