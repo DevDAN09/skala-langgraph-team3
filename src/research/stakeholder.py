@@ -57,6 +57,10 @@ STAKEHOLDER_QUERY_PLAN = [
 TECH_ORDER = ("KIVI", "CXL-PNM")
 END_USER_GAP = "인용 가능한 지연/품질 간접 근거 미확인"
 COUNTER_NOT_FOUND = "counter-evidence not found"
+BARRIER_GAP = "근거 미확인"
+# 반대 근거 snippet은 Concern·Barrier 요약 입력이라 summarize_snippet 입력 한도까지 보존한다.
+# 지지 근거 snippet(500자)은 D의 R5 Judge 입력이므로 바꾸지 않는다.
+COUNTER_SNIPPET_LIMIT = 2000
 # market.key_vendors는 알파벳순이라 첫 항목이 기술과 무관할 수 있다. 계열별로 쿼리에 넣을 벤더 후보를 정한다.
 VENDOR_PREFERENCE = {"CXL-PNM": ("Samsung", "SK Hynix", "Intel", "CXL Consortium"), "KIVI": ("NVIDIA",)}
 STAKEHOLDER_PLAN_BY_ID = {q["claim_id"]: q for q in STAKEHOLDER_QUERY_PLAN}
@@ -109,6 +113,26 @@ def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, 
     return proposed_id, new_source
 
 
+def _counter_evidence(counter_results: list[dict], ev_id: str, src_id: str, sources_pool: list[Source]):
+    """반대 검색 결과 최대 2건을 Evidence로 만든다. 1건째(-C)는 Concern, 2건째(-C2)는 Barrier 요약에 쓴다.
+    Claim.counter_evidence_ids에는 1건째만 넣어 Claim 스키마·기존 표기와 맞춘다."""
+    new_evidence: list[Evidence] = []
+    new_sources: list[Source] = []
+    for suffix, result in zip(("-C", "-C2"), counter_results[:2]):
+        url = result.get("url", "")
+        resolved_id, new_src = _build_source(
+            url, result.get("title", ""), result.get("published_date", ""), classify_tier(url),
+            f"{src_id}{suffix}", sources_pool + new_sources,
+        )
+        if new_src:
+            new_sources.append(new_src)
+        new_evidence.append({
+            "evidence_id": f"{ev_id}{suffix}", "source_id": resolved_id,
+            "snippet": (result.get("content") or "")[:COUNTER_SNIPPET_LIMIT],
+        })
+    return new_evidence, new_sources, f"{ev_id}-C"
+
+
 def _run_stakeholder_query(
     item: dict, key_vendors: list[str], sources_pool: list[Source], labels: dict[str, str],
     exclude_urls: set[str] = frozenset(),
@@ -149,15 +173,9 @@ def _run_stakeholder_query(
     counter_evidence_ids: list[str] = []
     counter_results = (counter or {}).get("results") or [] if counter else []
     if counter_results:
-        c_top = counter_results[0]
-        c_url = c_top.get("url", "")
-        c_ev_id, c_src_id = f"{ev_id}-C", f"{src_id}-C"
-        resolved_c_src_id, new_c_src = _build_source(
-            c_url, c_top.get("title", ""), c_top.get("published_date", ""), classify_tier(c_url), c_src_id, sources_pool + new_sources
-        )
-        if new_c_src:
-            new_sources.append(new_c_src)
-        new_evidence.append({"evidence_id": c_ev_id, "source_id": resolved_c_src_id, "snippet": (c_top.get("content") or "")[:500]})
+        c_evidence, c_sources, c_ev_id = _counter_evidence(counter_results, ev_id, src_id, sources_pool + new_sources)
+        new_evidence.extend(c_evidence)
+        new_sources.extend(c_sources)
         counter_evidence_ids = [c_ev_id]
     else:
         print(f"⚠️ [경고/Fallback] {claim_id}: counter-evidence not found")
@@ -188,14 +206,7 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
             # 반대 쿼리를 실행했으면 결과가 없어도 R3 충족. counter-evidence not found는 상태에 영향 없음 (설계 표 11)
             print(f"⚠️ [경고/Fallback] {claim_id}: 재실행에도 counter-evidence not found")
             return {**existing_claim, "counter_searched": True, "status": "ok"}, [], []
-        c_top = counter_results[0]
-        c_url = c_top.get("url", "")
-        c_ev_id, c_src_id = f"EV-{claim_id}-C", f"SRC-{claim_id}-C"
-        resolved_c_src_id, new_c_src = _build_source(
-            c_url, c_top.get("title", ""), c_top.get("published_date", ""), classify_tier(c_url), c_src_id, sources_pool
-        )
-        new_sources = [new_c_src] if new_c_src else []
-        new_evidence = [{"evidence_id": c_ev_id, "source_id": resolved_c_src_id, "snippet": (c_top.get("content") or "")[:500]}]
+        new_evidence, new_sources, c_ev_id = _counter_evidence(counter_results, f"EV-{claim_id}", f"SRC-{claim_id}", sources_pool)
         updated = {**existing_claim, "counter_evidence_ids": [c_ev_id], "counter_searched": True, "status": "ok"}
         return updated, new_evidence, new_sources
 
@@ -236,14 +247,23 @@ def _detail(item: dict, claim: Claim, snippets: dict[str, str], labels: dict[str
     Benefit은 지지 근거 Claim statement, Concern·Barrier는 반대 근거 snippet에서만 뽑는다. 근거 없는 Claim은 None."""
     if not claim or claim.get("status") != "ok":
         return None
-    counter = next((snippets[e] for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), "")
-    # ponytail: 같은 반대 snippet을 초점만 바꿔 두 번 요약한다. Concern·Barrier가 겹치면 Barrier 전용 쿼리 추가 검토.
-    return {
-        "benefit": claim["statement"],
-        "concern": summarize_snippet(counter, _counter_focus("concerns or risks about", item, labels)) if counter else COUNTER_NOT_FOUND,
-        "barrier": summarize_snippet(counter, _counter_focus("adoption barriers of", item, labels)) if counter else COUNTER_NOT_FOUND,
-        "evidence_ids": [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])],
-    }
+    counter_id = next((e for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), None)
+    if counter_id is None:
+        return {
+            "benefit": claim["statement"], "concern": COUNTER_NOT_FOUND, "barrier": COUNTER_NOT_FOUND,
+            "evidence_ids": [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])],
+        }
+    # Concern은 1건째 반대 근거, Barrier는 2건째(-C2)에서 요약한다. 2건째가 없으면 1건째를 다시 쓴다.
+    barrier_id = f"{counter_id}2" if snippets.get(f"{counter_id}2") else counter_id
+    concern = summarize_snippet(snippets[counter_id], _counter_focus("concerns or risks about", item, labels))
+    barrier = summarize_snippet(snippets[barrier_id], _counter_focus("adoption barriers of", item, labels))
+    # 같은 문장이면 반복하지 않고 근거 미확인으로 둔다 (추측으로 채우지 않음, common.md 7절 ②).
+    if barrier == concern:
+        barrier = BARRIER_GAP
+    evidence_ids = [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])]
+    if barrier_id != counter_id:
+        evidence_ids.append(barrier_id)
+    return {"benefit": claim["statement"], "concern": concern, "barrier": barrier, "evidence_ids": evidence_ids}
 
 
 def _slot_text(slot: str, claims_by_id: dict[str, Claim], snippets: dict[str, str], family_labels: dict[str, str]) -> str:
