@@ -144,7 +144,108 @@ def test_stakeholder_retry_only_patches_flagged_claim():
     }
     res = stakeholder_research_node(state)
     assert [c["id"] for c in res["claims"]] == ["STK-03"]
-    assert "stakeholder" not in res
+    assert "market" not in res
+
+
+def _stk_claim(claim_id, **kw):
+    base = {
+        "id": claim_id, "perspective": "stakeholder", "tech": "KIVI", "statement": f"{claim_id} old statement.",
+        "kind": "fact", "evidence_ids": [f"EV-{claim_id}"], "counter_evidence_ids": [],
+        "counter_searched": True, "status": "ok",
+    }
+    return {**base, **kw}
+
+
+def _retry_state(claims, issue, evidence=None, sources=None, stakeholder=None):
+    return {
+        **INITIAL_INPUT_STATE,
+        "claims": claims,
+        "evidence": evidence or [],
+        "sources": sources or [],
+        "stakeholder": stakeholder or {},
+        "audit": {"issues": [{"issue": "", "target_agent": "stakeholder", **issue}]},
+    }
+
+
+def test_stakeholder_counter_retry_without_result_restores_ok(monkeypatch):
+    """반대 쿼리를 다시 실행했는데 결과가 없으면 counter-evidence not found로 두고 상태는 ok (common.md 5절 ②)."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", lambda s, c: ({"results": []}, None))
+    state = _retry_state(
+        [_stk_claim("STK-01", status="flagged", counter_searched=False)],
+        {"claim_id": "STK-01", "rule": "R3", "action": "search_counter_evidence"},
+    )
+    claim = stakeholder_research_node(state)["claims"][0]
+    assert claim["counter_searched"] is True
+    assert claim["status"] == "ok"
+
+
+def test_stakeholder_retry_patches_only_its_summary_slot(monkeypatch):
+    """재실행한 Claim의 요약 슬롯만 갱신하고 나머지 Actor 슬롯은 유지한다 (설계 5.4)."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: "STK-01 new statement.")
+    state = _retry_state(
+        [_stk_claim("STK-01", status="flagged"), _stk_claim("STK-04", tech="CXL-PNM", statement="STK-04 kept.")],
+        {"claim_id": "STK-01", "rule": "R5", "action": "re_extract"},
+        evidence=[{"evidence_id": "EV-STK-01", "source_id": "SRC-STK-01", "snippet": "operator snippet."}],
+        stakeholder={"cloud_serving_operator": "STK-01 old statement.", "memory_vendor": "STK-04 kept.", "extra": "keep me"},
+    )
+    summary = stakeholder_research_node(state)["stakeholder"]
+    assert summary["cloud_serving_operator"] == "STK-01 new statement."
+    assert summary["cloud_ops"] == "STK-01 new statement."
+    assert summary["memory_vendor"] == "STK-04 kept."
+    assert summary["extra"] == "keep me"
+
+
+def test_stakeholder_prefers_non_t4_source(monkeypatch):
+    """T4(블로그) 단독 근거를 피하려고 검색 결과 중 T1~T3를 먼저 채택한다 (R2)."""
+    import src.research.stakeholder as stk
+    results = [
+        {"url": "https://medium.com/post", "title": "blog", "content": "Blog text about serving."},
+        {"url": "https://www.theregister.com/news", "title": "news", "content": "News text about serving."},
+    ]
+    monkeypatch.setattr(stk, "search_pair", lambda s, c: ({"results": results}, None))
+    res = stakeholder_research_node({**INITIAL_INPUT_STATE, "market": {"key_vendors": ["Samsung"]}})
+    tiers = {s["source_id"]: s["source_tier"] for s in res["sources"]}
+    ev = next(e for e in res["evidence"] if e["evidence_id"] == "EV-STK-01")
+    assert tiers[ev["source_id"]] == "T3"
+
+
+def test_stakeholder_search_evidence_retry_skips_previous_url(monkeypatch):
+    """재검색은 같은 결과를 다시 채택하지 않고 직전 근거 URL을 제외한다 (재시도 낭비 방지)."""
+    import src.research.stakeholder as stk
+    results = [
+        {"url": "https://www.theregister.com/a", "title": "a", "content": "First article."},
+        {"url": "https://www.zdnet.com/b", "title": "b", "content": "Second article."},
+    ]
+    monkeypatch.setattr(stk, "search_pair", lambda s, c: ({"results": results}, None))
+    old_src = {"source_id": "SRC-STK-01", "title": "a", "publisher": "Web", "date": "n.d.",
+               "url": "https://www.theregister.com/a", "source_type": "web", "source_tier": "T3"}
+    state = _retry_state(
+        [_stk_claim("STK-01", status="flagged")],
+        {"claim_id": "STK-01", "rule": "R2", "action": "search_evidence"},
+        evidence=[{"evidence_id": "EV-STK-01", "source_id": "SRC-STK-01", "snippet": "First article."}],
+        sources=[old_src],
+    )
+    res = stakeholder_research_node(state)
+    ev = next(e for e in res["evidence"] if e["evidence_id"] == "EV-STK-01")
+    src = {s["source_id"]: s for s in union_sources([old_src], res["sources"])}[ev["source_id"]]
+    assert src["url"] == "https://www.zdnet.com/b"
+
+
+def test_stakeholder_relabel_changes_fact_even_on_non_vendor_domain():
+    """R4 relabel은 URL 도메인과 무관하게 fact를 vendor_claim으로 바꿔야 재위반 루프가 끝난다."""
+    src = {"source_id": "SRC-STK-02", "title": "t", "publisher": "Web", "date": "n.d.",
+           "url": "https://www.theregister.com/x", "source_type": "web", "source_tier": "T3"}
+    state = _retry_state(
+        [_stk_claim("STK-02", status="flagged")],
+        {"claim_id": "STK-02", "rule": "R4", "action": "relabel"},
+        evidence=[{"evidence_id": "EV-STK-02", "source_id": "SRC-STK-02", "snippet": "Vendor says 2x."}],
+        sources=[src],
+    )
+    claim = stakeholder_research_node(state)["claims"][0]
+    assert claim["kind"] == "vendor_claim"
+    assert claim["status"] == "ok"
 
 
 def test_search_pair():

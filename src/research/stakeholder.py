@@ -34,6 +34,14 @@ STAKEHOLDER_QUERY_PLAN = [
     },
 ]
 STAKEHOLDER_PLAN_BY_ID = {q["claim_id"]: q for q in STAKEHOLDER_QUERY_PLAN}
+TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
+
+
+def _pick_result(results: list[dict], exclude_urls: set[str] = frozenset()) -> dict:
+    """T1~T3 결과를 먼저 고른다 (R2: T4 단독 근거 금지). 재검색 때는 직전 근거 URL을 뺀다.
+    제외하고 남는 결과가 없으면 원래 목록에서 고른다."""
+    candidates = [r for r in results if (r.get("url") or "") not in exclude_urls] or results
+    return min(candidates, key=lambda r: TIER_RANK[classify_tier(r.get("url", ""))])
 
 
 def _fill_vendor(template: str, key_vendors: list[str]) -> str:
@@ -58,7 +66,9 @@ def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, 
     return proposed_id, new_source
 
 
-def _run_stakeholder_query(item: dict, key_vendors: list[str], sources_pool: list[Source]) -> tuple[Claim, list[Evidence], list[Source]]:
+def _run_stakeholder_query(
+    item: dict, key_vendors: list[str], sources_pool: list[Source], exclude_urls: set[str] = frozenset()
+) -> tuple[Claim, list[Evidence], list[Source]]:
     """Actor별 지지/반대 쿼리를 1회 병행 실행해 Claim + Evidence(+반대 근거) + Source를 만든다."""
     claim_id, tech, actor = item["claim_id"], item["tech"], item["actor"]
     ev_id, src_id = f"EV-{claim_id}", f"SRC-{claim_id}"
@@ -77,7 +87,7 @@ def _run_stakeholder_query(item: dict, key_vendors: list[str], sources_pool: lis
         return claim, [], []
 
     new_sources: list[Source] = []
-    top = support_results[0]
+    top = _pick_result(support_results, exclude_urls)
     url = top.get("url", "")
     tier = classify_tier(url)
     resolved_src_id, new_src = _build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
@@ -129,8 +139,9 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
         _, counter = search_pair(_fill_vendor(plan_item["support"], key_vendors), counter_query)
         counter_results = (counter or {}).get("results") or [] if counter else []
         if not counter_results:
+            # 반대 쿼리를 실행했으면 결과가 없어도 R3 충족. counter-evidence not found는 상태에 영향 없음 (설계 표 11)
             print(f"⚠️ [경고/Fallback] {claim_id}: 재실행에도 counter-evidence not found")
-            return {**existing_claim, "counter_searched": True}, [], []
+            return {**existing_claim, "counter_searched": True, "status": "ok"}, [], []
         c_top = counter_results[0]
         c_url = c_top.get("url", "")
         c_ev_id, c_src_id = f"EV-{claim_id}-C", f"SRC-{claim_id}-C"
@@ -143,10 +154,9 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
         return updated, new_evidence, new_sources
 
     if action == "relabel" and existing_claim:
-        ev = evidence_by_id.get((existing_claim.get("evidence_ids") or [None])[0])
-        src = sources_by_id.get(ev["source_id"]) if ev else None
-        new_kind = infer_kind(src["url"]) if src else existing_claim.get("kind", "fact")
-        return {**existing_claim, "kind": new_kind, "status": "ok"}, [], []
+        # R4는 벤더 수치를 fact로 둔 경우다. 도메인으로 다시 추론하면 제3자 매체 인용은 또 fact가 되어 재위반한다.
+        kind = existing_claim.get("kind")
+        return {**existing_claim, "kind": "vendor_claim" if kind == "fact" else kind, "status": "ok"}, [], []
 
     if action == "re_extract" and existing_claim:
         ev = evidence_by_id.get((existing_claim.get("evidence_ids") or [None])[0])
@@ -157,12 +167,36 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
             statement, status = "", "insufficient"
         return {**existing_claim, "statement": statement, "status": status}, [], []
 
-    # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행
+    # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행.
+    # 같은 쿼리는 같은 결과를 돌려주므로 직전 근거 URL은 제외해야 R1/R2 재위반을 피할 수 있다.
     if plan_item:
-        return _run_stakeholder_query(plan_item, key_vendors, sources_pool)
+        prev_ev = evidence_by_id.get(((existing_claim or {}).get("evidence_ids") or [None])[0])
+        prev_src = sources_by_id.get(prev_ev["source_id"]) if prev_ev else None
+        exclude = {prev_src["url"]} if prev_src and prev_src.get("url") else set()
+        return _run_stakeholder_query(plan_item, key_vendors, sources_pool, exclude)
     if existing_claim:
         return {**existing_claim, "status": "insufficient"}, [], []
     return None, [], []
+
+
+def _summarize(claims: list[Claim]) -> dict:
+    """STK Claim으로 Actor별 요약 dict를 만든다. 재실행에서도 같은 함수로 슬롯을 다시 계산한다."""
+    actor_by_claim_id = {q["claim_id"]: q["actor"] for q in STAKEHOLDER_QUERY_PLAN}
+    ok = {c["id"]: c["statement"] for c in claims if c.get("status") == "ok"}
+    cloud_serving_operator = ok.get("STK-01", "")
+    memory_vendor = ok.get("STK-04", "")
+    return {
+        "actors_surveyed": [actor_by_claim_id[cid] for cid in actor_by_claim_id if cid in ok] or list(actor_by_claim_id.values()),
+        "cloud_serving_operator": cloud_serving_operator,
+        "framework_developer": ok.get("STK-02", ""),
+        # End User는 지연/품질 간접 근거가 없으면 명시적으로 미확인으로 남긴다 (추정 금지).
+        "end_user": ok.get("STK-03") or "인용 가능한 지연/품질 간접 근거 미확인",
+        "memory_vendor": memory_vendor,
+        # report.md.j2(E 소유)가 읽는 기존 키 이름과의 하위 호환 별칭.
+        # E가 4-Actor 세부 키로 템플릿을 갱신하기 전까지 보고서가 빈 칸으로 렌더링되지 않게 한다.
+        "cloud_ops": cloud_serving_operator,
+        "hw_vendors": memory_vendor,
+    }
 
 
 def stakeholder_research_node(state: OverallState) -> dict:
@@ -188,8 +222,11 @@ def stakeholder_research_node(state: OverallState) -> dict:
             claims.append(claim)
             evidence.extend(new_ev)
             sources.extend(new_src)
-        # 재실행에서는 자기 claim만 patch. stakeholder 요약 dict는 건드리지 않는다.
-        return {"claims": claims, "evidence": evidence, "sources": sources}
+        # 재실행: 자기 claim만 upsert. 요약 dict는 Overwrite 키라 기존 값을 펼친 뒤 STK Claim 기준으로 슬롯을 다시 계산한다.
+        merged = {c["id"]: c for c in state.get("claims", []) if c.get("id", "").startswith("STK-")}
+        merged.update({c["id"]: c for c in claims})
+        stakeholder = {**(state.get("stakeholder") or {}), **_summarize(list(merged.values()))}
+        return {"stakeholder": stakeholder, "claims": claims, "evidence": evidence, "sources": sources}
 
     # 최초 실행: STK-01~04 (서빙 운영자/개발자/End User/공급자) 전량 조사
     claims = []
@@ -201,30 +238,8 @@ def stakeholder_research_node(state: OverallState) -> dict:
         evidence.extend(new_ev)
         sources.extend(new_src)
 
-    actor_by_claim_id = {q["claim_id"]: q["actor"] for q in STAKEHOLDER_QUERY_PLAN}
-    actors_surveyed = [actor_by_claim_id[c["id"]] for c in claims if c.get("status") == "ok"]
-    # End User는 지연/품질 간접 근거가 없으면 명시적으로 insufficient로 남긴다 (추정 금지).
-    end_user_claim = next((c for c in claims if c["id"] == "STK-03"), None)
-    end_user_evidence = "인용 가능한 지연/품질 간접 근거 미확인" if not end_user_claim or end_user_claim.get("status") != "ok" else end_user_claim["statement"]
-
-    cloud_serving_operator = next((c["statement"] for c in claims if c["id"] == "STK-01" and c.get("status") == "ok"), "")
-    framework_developer = next((c["statement"] for c in claims if c["id"] == "STK-02" and c.get("status") == "ok"), "")
-    memory_vendor = next((c["statement"] for c in claims if c["id"] == "STK-04" and c.get("status") == "ok"), "")
-
-    stakeholder = {
-        "actors_surveyed": actors_surveyed or list(actor_by_claim_id.values()),
-        "cloud_serving_operator": cloud_serving_operator,
-        "framework_developer": framework_developer,
-        "end_user": end_user_evidence,
-        "memory_vendor": memory_vendor,
-        # report.md.j2(E 소유)가 읽는 기존 키 이름과의 하위 호환 별칭.
-        # E가 4-Actor 세부 키로 템플릿을 갱신하기 전까지 보고서가 빈 칸으로 렌더링되지 않게 한다.
-        "cloud_ops": cloud_serving_operator,
-        "hw_vendors": memory_vendor,
-    }
-
     return {
-        "stakeholder": stakeholder,
+        "stakeholder": _summarize(claims),
         "claims": claims,
         "evidence": evidence,
         "sources": sources,
