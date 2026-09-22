@@ -21,5 +21,5 @@ EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 # Directory & File Paths
 DATA_DIR = PROJECT_ROOT / "data"
 PAPERS_DIR = DATA_DIR / "papers"
-FAISS_INDEX_DIR = str(PROJECT_ROOT / "src" / "rag" / "data" / "faiss_index")
+FAISS_INDEX_DIR = str(DATA_DIR / "faiss_index")
 REPORT_OUTPUT_PATH = PROJECT_ROOT / "final_evaluation_report.md"

@@ -59,3 +59,30 @@ def test_initial_input_state_defaults():
     assert INITIAL_INPUT_STATE["audit"] == {"issues": []}
     assert INITIAL_INPUT_STATE["retry_count"] == {"paper": 0, "market": 0, "stakeholder": 0}
     assert INITIAL_INPUT_STATE["report"] == ""
+
+
+def test_mock_sources_match_design_references():
+    """설계서 표 5의 원문 서지 정보와 같아야 한다. 가짜 URL은 REFERENCE로 새어 나간다."""
+    src = {s["source_id"]: s for s in MOCK_STATE["sources"]}
+    assert src["SRC-PAPER-KIVI"]["url"] == "https://arxiv.org/abs/2402.02750"
+    assert src["SRC-PAPER-CXL-PNM"]["url"] == "https://arxiv.org/abs/2511.00321"
+    assert src["SRC-PAPER-CXL-PNM"]["date"] == "2025"
+    for trl in MOCK_STATE["trl"].values():
+        assert not any("PACT 2024" in e for e in trl["research_evidence"])
+
+
+def test_mock_has_no_unsupported_claims():
+    """근거 없는 비용 단정·수치는 mock에도 넣지 않는다 (role_A §7 공통)."""
+    import json
+    text = json.dumps(MOCK_STATE, ensure_ascii=False).lower()
+    for banned in ["zero capex", "zero-capex", "3.1x", "fp2"]:
+        assert banned not in text, banned
+
+
+def test_mock_vendor_press_is_vendor_claim():
+    claims = {c["id"]: c for c in MOCK_STATE["claims"]}
+    assert claims["MKT-01"]["kind"] == "vendor_claim"
+
+
+def test_mock_market_exposes_key_vendors_for_stakeholder_chaining():
+    assert MOCK_STATE["market"]["key_vendors"]

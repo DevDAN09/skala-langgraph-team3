@@ -3,7 +3,29 @@ import sys
 import time
 from src.config import REPORT_OUTPUT_PATH
 from src.graph import build_evaluation_graph
-from tests.mock_data import INITIAL_INPUT_STATE
+
+# 설계 5.1: START에서 selected만 주입. 나머지 키는 빈 값, retry_count는 관점별 0으로 시작한다.
+INITIAL_INPUT_STATE = {
+    "selected": {
+        "sw": "KIVI",
+        "hw": "CXL-PNM",
+        "families": {"sw": "KV Quantization", "hw": "CXL Memory Expansion"},
+        "rationale": "KIVI represents algorithmic 2-bit quantization while CXL-PNM represents hardware near-memory acceleration.",
+    },
+    "tech_sw": {},
+    "tech_hw": {},
+    "domain": {},
+    "market": {},
+    "stakeholder": {},
+    "claims": [],
+    "evidence": [],
+    "sources": [],
+    "audit": {"issues": []},
+    "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    "trl": {},
+    "synthesis": {},
+    "report": "",
+}
 
 def main():
     print("=" * 70)
@@ -16,7 +38,6 @@ def main():
         graph = build_evaluation_graph()
         print("🔗 StateGraph 컴파일 완료. 파이프라인 실행 시작...")
         final_state = graph.invoke(INITIAL_INPUT_STATE)
-        REPORT_OUTPUT_PATH.write_text(final_state["report"], encoding="utf-8")
         elapsed = time.time() - start_time
 
         print("=" * 70)
