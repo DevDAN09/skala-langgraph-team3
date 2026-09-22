@@ -1,0 +1,54 @@
+[
+  {
+    "id": "Q-01", "tech": "KIVI",
+    "query": "How does KIVI achieve 2-bit quantization for Key cache?",
+    "target_chunk": "KIVI applies per-channel quantization to Key cache due to distinct channel-wise outlier distributions.",
+    "corpus": [
+      "KIVI applies per-channel quantization to Key cache due to distinct channel-wise outlier distributions.",
+      "CXL-PNM introduces an in-memory near-data processing accelerator for large language models.",
+      "Standard LLM serving uses 16-bit floating point representations for KV cache.",
+      "Quantization reduces memory footprint but may introduce perplexity degradation.",
+      "Per-token quantization is used for Value cache in KIVI."
+    ],
+    "target_index": 0
+  },
+  {
+    "id": "Q-02", "tech": "KIVI",
+    "query": "Why does KIVI use per-token quantization for Value cache?",
+    "target_chunk": "Value cache exhibits token-wise magnitude variations, making per-token quantization optimal without quality loss.",
+    "corpus": [
+      "CXL 2.0 interface connects CPU and memory over PCIe Gen 5 channels.",
+      "Value cache exhibits token-wise magnitude variations, making per-token quantization optimal without quality loss.",
+      "Quantization is a post-training optimization technique.",
+      "FP16 KV cache storage rapidly exhausts HBM capacity during long-context serving.",
+      "KIVI maintains the most recent tokens in original FP16 precision."
+    ],
+    "target_index": 1
+  },
+  {
+    "id": "Q-03", "tech": "CXL-PNM",
+    "query": "Where is the near-memory processing unit located in CXL-PNM?",
+    "target_chunk": "The PNM accelerator is integrated directly inside the CXL memory controller ASIC.",
+    "corpus": [
+      "KIVI requires custom Triton CUDA kernels for GPU decompression.",
+      "The PNM accelerator is integrated directly inside the CXL memory controller ASIC.",
+      "Near-memory processing eliminates data movement over the PCIe interconnect.",
+      "GPU memory capacity limits batch size during high-concurrency inference.",
+      "HBM bandwidth remains saturated under multi-tenant LLM serving."
+    ],
+    "target_index": 1
+  },
+  {
+    "id": "Q-04", "tech": "CXL-PNM",
+    "query": "What process node is used for the CXL-PNM hardware design simulation?",
+    "target_chunk": "The CXL-PNM hardware architecture is evaluated using a 7nm ASIC cycle-accurate simulation.",
+    "corpus": [
+      "KIVI was tested on Llama-2 and Falcon models using A100 GPUs.",
+      "The CXL-PNM hardware architecture is evaluated using a 7nm ASIC cycle-accurate simulation.",
+      "CXL 2.0 pooled memory allows disaggregated host access.",
+      "Perplexity degradation is measured using WikiText-2 and C4 datasets.",
+      "PagedAttention allocates non-contiguous physical memory blocks."
+    ],
+    "target_index": 1
+  }
+]
