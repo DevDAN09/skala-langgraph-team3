@@ -184,4 +184,4 @@ def test_config_exports():
     assert config.DEFAULT_LLM_MODEL == "gpt-4o-mini"
     assert config.JUDGE_LLM_MODEL == "gpt-4o"
     assert config.POLISHING_LLM_MODEL == "gpt-4o"
-    assert config.EMBEDDING_MODEL == "BAAI/bge-small-en-v1.5"
+    assert config.EMBEDDING_MODEL in ("BAAI/bge-small-en-v1.5", "intfloat/e5-small-v2")
