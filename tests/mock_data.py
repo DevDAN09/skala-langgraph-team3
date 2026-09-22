@@ -86,6 +86,17 @@ MOCK_STATE = {
             "counter_searched": True,
             "status": "ok",
         },
+        {
+            "id": "MKT-02",
+            "perspective": "market",
+            "tech": "KIVI",
+            "statement": "The KIVI authors released an open-source implementation of KIVI on GitHub.",
+            "kind": "vendor_claim",
+            "evidence_ids": ["EV-MKT-02"],
+            "counter_evidence_ids": [],
+            "counter_searched": True,
+            "status": "ok",
+        },
     ],
     "evidence": [
         {
@@ -103,6 +114,11 @@ MOCK_STATE = {
             "source_id": "SRC-MKT-01",
             "snippet": "Samsung Electronics announced commercial readiness of 256GB CXL 2.0 DRAM in 2024.",
         },
+        {
+            "evidence_id": "EV-MKT-02",
+            "source_id": "SRC-MKT-02",
+            "snippet": "Official GitHub implementation of KIVI, released by the authors of the ICML 2024 paper.",
+        },
     ],
     "sources": [
         {
@@ -116,7 +132,7 @@ MOCK_STATE = {
         },
         {
             "source_id": "SRC-PAPER-CXL-PNM",
-            "title": "CXL-PNM: Processing-near-Memory Acceleration for Large Language Models",
+            "title": "Scalable Processing-Near-Memory for 1M-Token LLM Inference: CXL-Enabled KV-Cache Management Beyond GPU Limits",
             "publisher": "PACT",
             "date": "2025",
             "url": "https://arxiv.org/abs/2511.00321",
@@ -129,6 +145,15 @@ MOCK_STATE = {
             "publisher": "Samsung Semiconductor",
             "date": "2024",
             "url": "https://semiconductor.samsung.com/newsroom",
+            "source_type": "web",
+            "source_tier": "T2",
+        },
+        {
+            "source_id": "SRC-MKT-02",
+            "title": "KIVI official implementation repository",
+            "publisher": "KIVI authors (GitHub)",
+            "date": "2024",
+            "url": "https://github.com/jy-yuan/KIVI",
             "source_type": "web",
             "source_tier": "T2",
         },

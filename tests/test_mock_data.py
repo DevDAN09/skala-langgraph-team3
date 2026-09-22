@@ -86,3 +86,20 @@ def test_mock_vendor_press_is_vendor_claim():
 
 def test_mock_market_exposes_key_vendors_for_stakeholder_chaining():
     assert MOCK_STATE["market"]["key_vendors"]
+
+
+def test_mock_cxl_paper_title_matches_actual_paper():
+    """data/papers/cxl_pnm.pdf 실제 제목과 같아야 한다 (REFERENCE에 그대로 인용됨)."""
+    src = {s["source_id"]: s for s in MOCK_STATE["sources"]}
+    assert src["SRC-PAPER-CXL-PNM"]["title"] == (
+        "Scalable Processing-Near-Memory for 1M-Token LLM Inference: "
+        "CXL-Enabled KV-Cache Management Beyond GPU Limits"
+    )
+
+
+def test_mock_has_kivi_adoption_claim_for_dual_trl():
+    """E의 TRL 이원화 테스트가 쓰는 KIVI 채택 근거 MKT-02 (#5). 저자 자체 공개라 vendor_claim."""
+    claims = {c["id"]: c for c in MOCK_STATE["claims"]}
+    mkt02 = claims["MKT-02"]
+    assert (mkt02["tech"], mkt02["perspective"], mkt02["kind"], mkt02["status"]) == ("KIVI", "market", "vendor_claim", "ok")
+    assert mkt02["counter_searched"] is True
