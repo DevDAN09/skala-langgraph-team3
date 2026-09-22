@@ -33,9 +33,13 @@ def evidence_audit_node(state: OverallState) -> dict:
     # 1단계: 0ms 정적 룰 검사 (이미 insufficient/rejected로 확정된 Claim은 rules.py가 스킵)
     issues: list[AuditIssue] = run_static_rules(claims, sources, evidence)
 
-    # 1단계 위반이 없을 때만 2단계 R5 LLM Judge 실행 (Fast-Fail)
-    if not issues:
-        active_claims = [c for c in claims if c.get("status") == "ok"]
+    # 2단계: 1단계 정적 룰(R1~R4) 결함이 없는 정상 Claim들에 대해 R5 LLM Judge 사실성 검증 수행 (Claim 단위 Fast-Fail)
+    flagged_claim_ids = {issue["claim_id"] for issue in issues}
+    active_claims = [
+        c for c in claims
+        if c.get("status") not in TERMINAL_CLAIM_STATUSES and c.get("id") not in flagged_claim_ids
+    ]
+    if active_claims:
         stage2_issues = judge.run_llm_judge(active_claims, evidence)
         issues.extend(stage2_issues)
 

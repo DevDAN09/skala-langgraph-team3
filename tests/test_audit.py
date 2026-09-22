@@ -684,15 +684,15 @@ def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
     assert result2["retry_count"]["stakeholder"] == 0
 
 
-def test_evidence_audit_node_fast_fail_skips_llm_across_mixed_rules():
-    """When ANY R1~R4 static defect exists anywhere in the batch, the R5 LLM judge must
-    not be invoked at all (batch-level Fast-Fail), even if other claims in the same
-    batch would otherwise be eligible for LLM review.
+def test_evidence_audit_node_claim_level_fast_fail():
+    """Claim-level Fast-Fail: when an R1~R4 static defect exists on one claim,
+    that defective claim skips R5 LLM review, but other clean claims in the same batch
+    proceed to R5 LLM review without being blocked.
     """
     state = {
         **MOCK_STATE,
         "claims": [
-            # Clean claim that would normally proceed to R5 LLM review
+            # Clean claim that proceeds to R5 LLM review
             {
                 "id": "DOM-OK",
                 "perspective": "domain",
@@ -704,7 +704,7 @@ def test_evidence_audit_node_fast_fail_skips_llm_across_mixed_rules():
                 "counter_searched": False,
                 "status": "ok",
             },
-            # R4 violation elsewhere in the same batch
+            # R4 violation on another claim in the same batch
             {
                 "id": "DOM-R4-ERR",
                 "perspective": "domain",
@@ -719,15 +719,19 @@ def test_evidence_audit_node_fast_fail_skips_llm_across_mixed_rules():
         ],
         "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     }
-    with patch("src.audit.judge.ChatOpenAI") as mock_chat_openai, patch(
-        "src.audit.judge.run_llm_judge"
+    with patch(
+        "src.audit.judge.run_llm_judge", return_value=[]
     ) as mock_run_llm_judge:
         result = evidence_audit_node(state)
-        mock_run_llm_judge.assert_not_called()
-        mock_chat_openai.assert_not_called()
+        # R5 LLM judge is called ONLY for the clean claim (DOM-OK), NOT for DOM-R4-ERR
+        mock_run_llm_judge.assert_called_once()
+        reviewed_claims = mock_run_llm_judge.call_args[0][0]
+        assert [c["id"] for c in reviewed_claims] == ["DOM-OK"]
 
+    # Only DOM-R4-ERR is flagged with R4; DOM-OK passed both R1~R4 and R5
     assert len(result["audit"]["issues"]) == 1
     assert result["audit"]["issues"][0]["rule"] == "R4"
+    assert result["audit"]["issues"][0]["claim_id"] == "DOM-R4-ERR"
 
 
 def test_evidence_audit_node_finalizes_status_when_retry_limit_reached():
