@@ -24,6 +24,26 @@ flowchart TD
     report_generation --> END([END])
 ```
 
+### 1.1 데이터 흐름 상세 (End-to-End Data Flow)
+
+파이프라인 실행 시 14개의 전역 State 필드가 각 노드를 거치며 점진적으로 축적·검증·종합되는 데이터 라이프사이클은 다음과 같습니다.
+
+| 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
+| :---: | :--- | :--- | :--- | :--- |
+| **Step 1<br/>초기화 & 병렬 분기** | `START` (A) | `INITIAL_INPUT_STATE` | • 대상 기술(KIVI vs CXL-PNM) 및 기술 계열 선정 사유 주입<br/>• `paper_analysis` 및 `market_research`로 병렬 Fan-out | `selected`, `retry_count: 0` |
+| **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(2.6배 압축, 3.1배 효율 등) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
+| **Step 3<br/>시장성 및 이해관계자** | `market_research`<br/>→ `stakeholder_research` (C) | `selected`<br/>(+ `market` 컨텍스트) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 핵심 액터(CSP, 운영자, HW 벤더, 개발사) 관점 영향도 분석<br/>• 컨텍스트 체이닝을 통해 시장 데이터를 반영한 정량/정성 Claim 생성 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
+| **Step 4<br/>Fast-Fail 근거 검증** | `evidence_audit` (D) | `claims`, `evidence`, `sources` | • **1단계 규칙 검증**: 형식·출처(T1~T4)·수치 왜곡 4대 룰 체크<br/>• **2단계 LLM 심사**: `gpt-4o` 기반 Claim-Snippet 사실 일치 판정<br/>• 검증 미달 항목 피드백 발행 및 라우팅 (최대 2회 재시도) | `audit.issues`, `retry_count`,<br/>`claims[*].status` (ok/flagged/insufficient/rejected) |
+| **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
+| **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • Jinja2 템플릿 기반 마크다운 렌더링 및 인용 넘버링 연동<br/>• LLM(`gpt-4o`) 문체 정제 및 `final_evaluation_report.md` 생성<br/>• 한국어 폰트 임베딩 기반 PDF(`result.pdf`) 자동 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `result.pdf` |
+
+#### 1.2 State 계약 및 충돌 방지 원칙 (Reducer)
+- **전담 Writer 분리**: 각 노드는 자신이 전담하는 State 키만 수정하여 병렬 실행 시 경합(Race Condition)을 원천 방지합니다.
+- **멱등적 Reducer 적용**:
+  - `claims`: Claim ID 기준 멱등 업데이트 (`upsert_claims`)로 재시도 시 기존 Claim 정정
+  - `evidence`: Evidence ID 기준 멱등 업데이트 (`upsert_evidence`)
+  - `sources`: URL 기준 정규화 및 중복 제거 결합 (`union_sources`)
+
 ## 2. 빠른 실행 방법
 
 ### 환경 변수 설정 (`.env.example`)

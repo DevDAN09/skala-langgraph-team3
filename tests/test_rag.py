@@ -243,6 +243,264 @@ def test_numeric_quote_with_full_context_is_accepted():
     assert selected is doc
 
 
+def test_nonverbatim_llm_quote_selects_only_contiguous_source_sentences():
+    text = ("CXL-PNM stores the KV cache in external CXL memory. "
+            "The near-memory accelerator selects token pages.")
+    doc = Document(page_content=text, metadata={"tech": "CXL-PNM"})
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [doc]
+
+    class LLM:
+        def invoke(self, prompt):
+            if prompt.startswith("Answer YES"):
+                content = "YES"
+            elif prompt.startswith("Copy an exact"):
+                content = "CXL-PNM keeps the KV cache in CXL memory."
+            elif prompt.startswith("Select one"):
+                content = "1"
+            else:
+                content = ""
+            return type("Response", (), {"content": content})()
+
+    quote, selected = agentic_rag._grounded_quote(
+        "Where is the KV cache stored?", "CXL-PNM", DB(), LLM())
+    assert quote == "CXL-PNM stores the KV cache in external CXL memory."
+    assert selected is doc
+
+
+def test_bandwidth_query_cannot_be_rewritten_to_throughput_evidence():
+    doc = Document(page_content="KIVI allows 3.47× throughput.",
+                   metadata={"tech": "KIVI"})
+    gate_questions = []
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [doc]
+
+    class LLM:
+        def invoke(self, prompt):
+            if prompt.startswith("Answer YES"):
+                gate_questions.append(prompt)
+                content = "YES"
+            elif prompt.startswith("Copy an exact"):
+                content = doc.page_content
+            else:
+                content = "How does KIVI affect throughput?"
+            return type("Response", (), {"content": content})()
+
+    quote, selected = agentic_rag._grounded_quote(
+        "How does KIVI affect KV cache memory transfer bandwidth?",
+        "KIVI", DB(), LLM())
+    assert (quote, selected) == ("", None)
+    assert len(gate_questions) == 3
+    assert all("memory transfer bandwidth?" in prompt for prompt in gate_questions)
+
+
+def test_dom08_query_stays_on_accuracy_axis():
+    _, _, axis, query = agentic_rag.AXIS_BY_ID["DOM-08"]
+    assert axis == "accuracy"
+    assert "accuracy" in query.lower()
+    assert "capacity" not in query.lower()
+    assert "overhead" not in query.lower()
+
+
+@pytest.mark.parametrize(("claim_id", "drifted"), [
+    ("DOM-01", "What throughput increase does KIVI report?"),
+    ("DOM-03", "What throughput increase does KIVI report?"),
+    ("DOM-03", "What bandwidth and throughput increase does KIVI report?"),
+    ("DOM-05", "What memory footprint does KIVI report?"),
+    ("DOM-08", "What memory capacity does CXL-PNM report?"),
+    ("DOM-08", "What accuracy and memory capacity does CXL-PNM report?"),
+    ("DOM-09", "What accuracy degradation does KIVI report?"),
+    ("DOM-12", "What throughput increase does CXL-PNM report?"),
+])
+def test_rewrite_does_not_change_evaluation_axis(claim_id, drifted):
+    _, tech, _, original = agentic_rag.AXIS_BY_ID[claim_id]
+    searches = []
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            searches.append(query)
+            return []
+
+    class LLM:
+        def invoke(self, prompt):
+            return type("Response", (), {"content": drifted})()
+
+    assert agentic_rag._grounded_quote(original, tech, DB(), LLM()) == ("", None)
+    assert searches == [original] * 3
+
+
+def test_rewrite_accepts_bandwidth_synonym_with_same_axis():
+    original = agentic_rag.AXIS_BY_ID["DOM-03"][3]
+    rewritten = "How does KIVI affect KV cache transfer traffic?"
+    searches = []
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            searches.append(query)
+            return []
+
+    class LLM:
+        def invoke(self, prompt):
+            return type("Response", (), {"content": rewritten})()
+
+    assert agentic_rag._grounded_quote(original, "KIVI", DB(), LLM()) == ("", None)
+    assert searches == [original, rewritten, rewritten]
+
+
+def test_partial_experimental_conditions_quote_is_rejected():
+    partial = Document(page_content="We evaluated Llama3.1-8B on A100 GPUs.",
+                       metadata={"tech": "CXL-PNM"})
+    complete = Document(page_content=(
+        "We evaluated Llama3.1-8B with 128K-token contexts on A100 GPUs."),
+        metadata={"tech": "CXL-PNM"})
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [partial, complete]
+
+    class LLM:
+        def invoke(self, prompt):
+            if prompt.startswith("Answer YES"):
+                content = "YES"
+            elif "Passage: " + partial.page_content in prompt:
+                content = partial.page_content
+            else:
+                content = complete.page_content
+            return type("Response", (), {"content": content})()
+
+    quote, selected = agentic_rag._grounded_quote(
+        "What experimental conditions include model, context length, and GPU hardware?",
+        "CXL-PNM", DB(), LLM())
+    assert quote == complete.page_content
+    assert selected is complete
+
+
+def test_interleaved_figure_caption_is_not_used_as_claim():
+    broken = Document(page_content=(
+        "Throughput improved while the GPU and Figure 12: Energy comparison. "
+        "PNM were active."), metadata={"tech": "CXL-PNM"})
+    clean = Document(page_content=(
+        "PNM-KV and PnG-KV achieve up to 21.9× throughput improvement."),
+        metadata={"tech": "CXL-PNM"})
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [broken, clean]
+
+    class LLM:
+        def invoke(self, prompt):
+            if prompt.startswith("Answer YES"):
+                content = "YES"
+            elif "Passage: " + broken.page_content in prompt:
+                content = broken.page_content
+            else:
+                content = clean.page_content
+            return type("Response", (), {"content": content})()
+
+    quote, selected = agentic_rag._grounded_quote(
+        "What throughput improvement is reported?", "CXL-PNM", DB(), LLM())
+    assert quote == clean.page_content
+    assert selected is clean
+
+
+def test_dom11_rejects_memory_result_without_configuration():
+    _, tech, axis, question = agentic_rag.AXIS_BY_ID["DOM-11"]
+    assert axis == "operational_complexity"
+    assert "residual length" in question.lower()
+    assert "group size" in question.lower()
+    unrelated = Document(page_content=(
+        "KIVI reduces peak memory usage with little to no accuracy drop."),
+        metadata={"tech": tech})
+    settings = Document(page_content=(
+        "We use a 32 group size and 128 residual length for KIVI-2."),
+        metadata={"tech": tech})
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [unrelated, settings]
+
+    class LLM:
+        def invoke(self, prompt):
+            if prompt.startswith("Answer YES"):
+                content = "YES"
+            elif "Passage: " + unrelated.page_content in prompt:
+                content = unrelated.page_content
+            else:
+                content = settings.page_content
+            return type("Response", (), {"content": content})()
+
+    quote, selected = agentic_rag._grounded_quote(question, tech, DB(), LLM())
+    assert quote == settings.page_content
+    assert selected is settings
+
+
+def test_mat_r02_links_conditions_from_two_retrieved_chunks(monkeypatch):
+    setup = Document(page_content=(
+        "For performance evaluation, we use a cycle-level simulator. "
+        "Evaluation uses an NVIDIA DGX system with A100 GPUs. "
+        "We use Llama models for evaluation."),
+        metadata={"tech": "CXL-PNM", "page": 8,
+                  "section": "4.1 Evaluation Settings"})
+    workload = Document(page_content=(
+        "Workloads span long-context inference with 128K–1M tokens."),
+        metadata={"tech": "CXL-PNM", "page": 8,
+                  "section": "4.1 Evaluation Settings"})
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            assert k == 5 and filter == {"tech": "CXL-PNM"}
+            return [setup] if "simulator" in query else [workload]
+
+    monkeypatch.setattr(agentic_rag, "load_index", lambda: DB())
+    class LLM:
+        def invoke(self, prompt):
+            assert "model, context length, hardware, and simulation setup" in prompt
+            return type("Response", (), {"content": "YES"})()
+
+    monkeypatch.setattr(agentic_rag, "make_llm", lambda: LLM())
+    state = deepcopy(INITIAL_INPUT_STATE)
+    state["audit"] = {"issues": [{"target_agent": "paper", "claim_id": "MAT-R02",
+                                   "action": "search_evidence"}]}
+    result = agentic_rag.paper_analysis_node(state)
+    claim = result["claims"][0]
+    assert claim["id"] == "MAT-R02" and claim["status"] == "ok"
+    assert claim["kind"] == "simulation"
+    assert len(claim["evidence_ids"]) == 2
+    assert {e["snippet"] for e in result["evidence"]} == {
+        setup.page_content, workload.page_content}
+    assert {e["evidence_id"] for e in result["evidence"]} == set(claim["evidence_ids"])
+    assert all(sentence in claim["statement"] for sentence in (
+        "cycle-level simulator", "NVIDIA DGX", "Llama models", "128K–1M tokens"))
+
+
+def test_mat_r02_stays_insufficient_if_a_condition_is_missing(monkeypatch):
+    setup = Document(page_content=(
+        "For performance evaluation, we use a cycle-level simulator. "
+        "Evaluation uses an NVIDIA DGX system with A100 GPUs. "
+        "We use Llama models for evaluation."),
+        metadata={"tech": "CXL-PNM", "page": 8,
+                  "section": "4.1 Evaluation Settings"})
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [setup]
+
+    monkeypatch.setattr(agentic_rag, "load_index", lambda: DB())
+    monkeypatch.setattr(agentic_rag, "make_llm", lambda: object())
+    state = deepcopy(INITIAL_INPUT_STATE)
+    state["audit"] = {"issues": [{"target_agent": "paper", "claim_id": "MAT-R02",
+                                   "action": "search_evidence"}]}
+    result = agentic_rag.paper_analysis_node(state)
+    assert result["claims"][0]["status"] == "insufficient"
+    assert result["claims"][0]["statement"] == ""
+    assert result["claims"][0]["evidence_ids"] == []
+    assert result["evidence"] == []
+
+
 def test_re_extract_without_matching_evidence_is_rejected(monkeypatch):
     monkeypatch.setattr(agentic_rag, "load_index", lambda: object())
     monkeypatch.setattr(agentic_rag, "make_llm", lambda: object())
