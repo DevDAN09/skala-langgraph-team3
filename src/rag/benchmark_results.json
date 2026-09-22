@@ -1,0 +1,14 @@
+{
+  "results": {
+    "BAAI/bge-small-en-v1.5": {
+      "hit_at_5": 0.85,
+      "mrr": 0.5756495098039216
+    },
+    "intfloat/e5-small-v2": {
+      "hit_at_5": 0.6,
+      "mrr": 0.5001926545676546
+    }
+  },
+  "selected": "BAAI/bge-small-en-v1.5",
+  "queries": 20
+}

@@ -1,73 +1,190 @@
-"""src/rag/agentic_rag.py - Paper analysis node with Agentic RAG and fallback"""
-import os
-from src.state import OverallState, Claim, Evidence, Source
-from src.config import FAISS_INDEX_DIR, EMBEDDING_MODEL, DEFAULT_LLM_MODEL
+"""Paper only Agentic RAG: retrieve, check sufficiency, rewrite, and ground."""
+import re
+
+from langchain_core.documents import Document
+
+from src.config import DEFAULT_LLM_MODEL, EMBEDDING_MODEL, FAISS_INDEX_DIR
+from src.state import Claim, Evidence, OverallState, Source
+
+# Six cloud serving axes for each technology, plus paper research maturity.
+AXES = (
+    ("DOM-01", "KIVI", "memory_footprint", "What measured GPU memory footprint does KIVI report?"),
+    ("DOM-02", "CXL-PNM", "memory_footprint", "How does CXL-PNM store the KV cache beyond GPU memory?"),
+    ("DOM-03", "KIVI", "bandwidth_transfer", "How does KIVI affect KV cache memory transfer bandwidth?"),
+    ("DOM-04", "CXL-PNM", "bandwidth_transfer", "How does CXL-PNM reduce KV cache recall transfers?"),
+    ("DOM-05", "KIVI", "throughput_latency", "What throughput or latency measurements does KIVI report?"),
+    ("DOM-06", "CXL-PNM", "throughput_latency", "What simulated throughput or latency does CXL-PNM report?"),
+    ("DOM-07", "KIVI", "accuracy", "What accuracy degradation or limitations does KIVI acknowledge?"),
+    ("DOM-08", "CXL-PNM", "accuracy", "What accuracy or retrieval limitations does CXL-PNM acknowledge?"),
+    ("DOM-09", "KIVI", "infrastructure", "What GPU software or kernel changes does KIVI require?"),
+    ("DOM-10", "CXL-PNM", "infrastructure", "What CXL hardware and PNM components does the design require?"),
+    ("DOM-11", "KIVI", "operational_complexity", "What residual cache or quantization settings does KIVI require?"),
+    ("DOM-12", "CXL-PNM", "operational_complexity", "What GPU and PNM coordination does the design require?"),
+    ("MAT-R01", "KIVI", "research", "What experimental evaluation of KIVI is described in the paper?"),
+    ("MAT-R02", "CXL-PNM", "research", "What simulation or research prototype evaluation is described?"),
+)
+AXIS_BY_ID = {row[0]: row for row in AXES}
+SOURCES: dict[str, Source] = {
+    "KIVI": {"source_id": "SRC-PAPER-KIVI",
+             "title": "KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache",
+             "publisher": "ICML", "date": "2024",
+             "url": "https://arxiv.org/abs/2402.02750",
+             "source_type": "paper", "source_tier": "T1"},
+    "CXL-PNM": {"source_id": "SRC-PAPER-CXL-PNM",
+                "title": "Scalable Processing-Near-Memory for 1M-Token LLM Inference: CXL-Enabled KV-Cache Management Beyond GPU Limits",
+                "publisher": "arXiv", "date": "2025",
+                "url": "https://arxiv.org/abs/2511.00321",
+                "source_type": "paper", "source_tier": "T1"},
+}
+
+
+def load_index():
+    from langchain_community.vectorstores import FAISS
+    from langchain_huggingface import HuggingFaceEmbeddings
+
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL,
+                                       encode_kwargs={"normalize_embeddings": True})
+    # This index is created locally by indexer.py from the two trusted project PDFs.
+    return FAISS.load_local(FAISS_INDEX_DIR, embeddings,
+                            allow_dangerous_deserialization=True)
+
+
+def make_llm():
+    from langchain_openai import ChatOpenAI
+
+    return ChatOpenAI(model=DEFAULT_LLM_MODEL, temperature=0)
+
+
+def _ask(llm, prompt: str) -> str:
+    try:
+        return str(llm.invoke(prompt).content).strip()
+    except Exception as exc:
+        print(f"⚠️ [경고/Fallback] Paper LLM call failed: {exc}")
+        return ""
+
+
+def _numeric_context_present(quote: str) -> bool:
+    if not re.search(r"\d+(?:\.\d+)?\s*(?:×|x|%)", quote):
+        return True
+    return all(re.search(pattern, quote, flags=re.IGNORECASE) for pattern in (
+        r"\b(?:\d+B|Llama|Falcon|Mistral)\b",
+        r"(?:\d+[kKmM]?\s*tokens?|context length)",
+        r"(?:GPU|A100|H100|7nm|ASIC|CXL)",
+        r"(?:simulation|measured|real workload|experiment)",
+    ))
+
+
+def _grounded_quote(query: str, tech: str, db, llm) -> tuple[str, Document | None]:
+    for attempt in range(3):
+        try:
+            docs = db.similarity_search(query, k=5, filter={"tech": tech})
+        except Exception as exc:
+            print(f"⚠️ [경고/Fallback] Paper retrieval failed: {exc}")
+            docs = []
+        for doc in docs:
+            if doc.metadata.get("tech") != tech:
+                continue
+            gate = _ask(llm, "Answer YES or NO only. Does this passage explicitly answer "
+                        f"the question?\nQuestion: {query}\nPassage: {doc.page_content}")
+            if gate.upper() != "YES":
+                continue
+            quote = _ask(llm, "Copy an exact, contiguous passage of at most three sentences that "
+                         "answers the question. Do not invent numbers, compare technologies, "
+                         "or recommend anything. If context for a number (model size, context "
+                         "length, hardware, measurement method) is missing, answer INSUFFICIENT.\n"
+                         f"Question: {query}\nPassage: {doc.page_content}")
+            if quote and quote != "INSUFFICIENT" and quote in doc.page_content \
+                    and _numeric_context_present(quote):
+                return quote, doc
+        if attempt < 2:
+            rewritten = _ask(llm, "Rewrite this English paper search query using technical "
+                             "synonyms only. Return one English query, no answer or new facts.\n"
+                             f"Query: {query}")
+            if rewritten:
+                query = rewritten
+    return "", None
+
+
+def _claim(axis, quote: str) -> Claim:
+    claim_id, tech, _, _ = axis
+    maturity = claim_id.startswith("MAT-")
+    return {
+        "id": claim_id, "perspective": "maturity" if maturity else "domain",
+        "tech": tech, "statement": quote,
+        "kind": "simulation" if tech == "CXL-PNM" else "fact",
+        "evidence_ids": [f"EV-{claim_id}"] if quote else [],
+        "counter_evidence_ids": [], "counter_searched": False,
+        "status": "ok" if quote else "insufficient",
+    }
+
 
 def paper_analysis_node(state: OverallState) -> dict:
-    """Paper analysis agent for KIVI (SW) and CXL-PNM (HW) with graceful fallback."""
     print("📄 [원문 분석] 논문 기반 메커니즘 및 도메인 6대 축 분석 실행")
-    
-    claims: list[Claim] = [
-        {
-            "id": "DOM-01",
-            "perspective": "domain",
-            "tech": "KIVI",
-            "statement": "KIVI reduces KV cache memory footprint by up to 2.6x via 2-bit asymmetric quantization without fine-tuning.",
-            "kind": "fact",
-            "evidence_ids": ["EV-DOM-01"],
-            "counter_evidence_ids": [],
-            "counter_searched": False,
-            "status": "ok"
-        },
-        {
-            "id": "DOM-02",
-            "perspective": "domain",
-            "tech": "CXL-PNM",
-            "statement": "CXL-PNM controller architecture simulated on 7nm ASIC demonstrates 3.1x attention energy efficiency by offloading KV storage to CXL DRAM.",
-            "kind": "simulation",
-            "evidence_ids": ["EV-DOM-02"],
-            "counter_evidence_ids": [],
-            "counter_searched": False,
-            "status": "ok"
-        }
-    ]
+    paper_issues = [issue for issue in (state.get("audit") or {}).get("issues", [])
+                    if issue.get("target_agent") == "paper"]
+    retry = bool(paper_issues)
+    axes = [AXIS_BY_ID[issue["claim_id"]] for issue in paper_issues
+            if issue.get("claim_id") in AXIS_BY_ID] if retry else AXES
+    # Keep one update per ID even if multiple audit rules target the same claim.
+    axes = list(dict.fromkeys(axes))
+    actions = {issue["claim_id"]: issue.get("action") for issue in paper_issues}
+    needs_search = any(actions.get(axis[0]) != "relabel" for axis in axes)
+    db = llm = None
+    if needs_search:
+        try:
+            db = load_index()
+            llm = make_llm()
+        except Exception as exc:
+            print(f"⚠️ [경고/Fallback] Paper index or LLM unavailable: {exc}")
 
-    evidence: list[Evidence] = [
-        {"evidence_id": "EV-DOM-01", "source_id": "SRC-PAPER-KIVI", "snippet": "Under 2-bit asymmetric quantization (Key per-channel, Value per-token), KIVI reduces KV cache footprint by 2.6x on Llama-2-70B."},
-        {"evidence_id": "EV-DOM-02", "source_id": "SRC-PAPER-CXL-PNM", "snippet": "Near-memory processing inside CXL controller offloads attention compute and reduces host bus memory transfer in 7nm cycle-accurate simulation."}
-    ]
-
-    sources: list[Source] = [
-        {"source_id": "SRC-PAPER-KIVI", "title": "KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache", "publisher": "ICML", "date": "2024", "url": "https://arxiv.org/abs/2402.02750", "source_type": "paper", "source_tier": "T1"},
-        {"source_id": "SRC-PAPER-CXL-PNM", "title": "CXL-PNM: Processing-near-Memory Acceleration for Large Language Models", "publisher": "PACT", "date": "2024", "url": "https://doi.org/10.1109/PACT", "source_type": "paper", "source_tier": "T1"}
-    ]
-
-    tech_sw = {
-        "name": "KIVI",
-        "mechanism": "Asymmetric 2-bit quantization (Key per-channel, Value per-token)",
-        "quant_scheme": "Per-channel FP2 Key, Per-token FP2 Value",
-        "serving_benefit": "Zero additional CAPEX, up to 2.6x larger batch size"
-    }
-
-    tech_hw = {
-        "name": "CXL-PNM",
-        "mechanism": "Processing-near-memory inside CXL memory controller",
-        "interconnect": "PCIe 5.0 / CXL 2.0 type 3",
-        "serving_benefit": "DRAM expansion pool beyond host GPU memory limits"
-    }
-
-    domain = {
-        "memory_footprint": "KIVI: 2.6x reduction in GPU VRAM; CXL-PNM: Offloaded to external CXL DRAM pool",
-        "latency_impact": "KIVI: Minimal kernel decoding overhead; CXL-PNM: Alleviates PCIe transfer bottleneck",
-        "serving_scalability": "Both expand concurrent batch size in cloud serving environments",
-        "hardware_dependency": "KIVI: Existing GPUs; CXL-PNM: Requires CXL 2.0 compliant server host"
-    }
-
-    return {
-        "tech_sw": tech_sw,
-        "tech_hw": tech_hw,
-        "domain": domain,
-        "claims": claims,
-        "evidence": evidence,
-        "sources": sources
-    }
+    claims: list[Claim] = []
+    evidence: list[Evidence] = []
+    sources: dict[str, Source] = {}
+    by_tech: dict[str, dict] = {"KIVI": {}, "CXL-PNM": {}}
+    domain = {}
+    for axis in axes:
+        claim_id, tech, key, query = axis
+        if actions.get(claim_id) == "relabel":
+            old = next((claim for claim in state.get("claims", [])
+                        if claim["id"] == claim_id), None)
+            if old:
+                claims.append({**old, "kind": "simulation" if tech == "CXL-PNM" else "fact",
+                               "status": "ok" if old.get("statement") and old.get("evidence_ids")
+                               else "insufficient"})
+            continue
+        quote, doc = _grounded_quote(query, tech, db, llm) if db and llm else ("", None)
+        claims.append(_claim(axis, quote))
+        if doc:
+            source = SOURCES[tech]
+            sources[tech] = source
+            evidence.append({"evidence_id": f"EV-{claim_id}",
+                             "source_id": source["source_id"],
+                             "snippet": doc.page_content})
+            by_tech[tech].setdefault("locations", {})[claim_id] = {
+                "page": doc.metadata.get("page"),
+                "section": doc.metadata.get("section"),
+            }
+            if key == "research":
+                by_tech[tech]["research_evidence"] = quote
+                by_tech[tech]["research_trl_range"] = "3-4 (estimate from paper stage)"
+                by_tech[tech]["experimental_conditions"] = quote
+            else:
+                domain.setdefault(key, {})[tech] = quote
+                by_tech[tech].setdefault("evidence", {})[key] = quote
+                if key == "infrastructure":
+                    by_tech[tech]["mechanism"] = quote
+                elif key == "accuracy":
+                    by_tech[tech]["limitations"] = quote
+                elif key in ("memory_footprint", "throughput_latency"):
+                    by_tech[tech].setdefault("performance_numbers", []).append(quote)
+        elif not retry:
+            if key == "research":
+                by_tech[tech]["research_evidence"] = "corpus 내 근거 미확인"
+            else:
+                domain.setdefault(key, {})[tech] = "corpus 내 근거 미확인"
+    result = {"claims": claims, "evidence": evidence, "sources": list(sources.values())}
+    if not retry:
+        result.update({"tech_sw": {"name": "KIVI", **by_tech["KIVI"]},
+                       "tech_hw": {"name": "CXL-PNM", **by_tech["CXL-PNM"]},
+                       "domain": domain})
+    return result

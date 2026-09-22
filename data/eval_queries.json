@@ -1,54 +1,22 @@
 [
-  {
-    "id": "Q-01", "tech": "KIVI",
-    "query": "How does KIVI achieve 2-bit quantization for Key cache?",
-    "target_chunk": "KIVI applies per-channel quantization to Key cache due to distinct channel-wise outlier distributions.",
-    "corpus": [
-      "KIVI applies per-channel quantization to Key cache due to distinct channel-wise outlier distributions.",
-      "CXL-PNM introduces an in-memory near-data processing accelerator for large language models.",
-      "Standard LLM serving uses 16-bit floating point representations for KV cache.",
-      "Quantization reduces memory footprint but may introduce perplexity degradation.",
-      "Per-token quantization is used for Value cache in KIVI."
-    ],
-    "target_index": 0
-  },
-  {
-    "id": "Q-02", "tech": "KIVI",
-    "query": "Why does KIVI use per-token quantization for Value cache?",
-    "target_chunk": "Value cache exhibits token-wise magnitude variations, making per-token quantization optimal without quality loss.",
-    "corpus": [
-      "CXL 2.0 interface connects CPU and memory over PCIe Gen 5 channels.",
-      "Value cache exhibits token-wise magnitude variations, making per-token quantization optimal without quality loss.",
-      "Quantization is a post-training optimization technique.",
-      "FP16 KV cache storage rapidly exhausts HBM capacity during long-context serving.",
-      "KIVI maintains the most recent tokens in original FP16 precision."
-    ],
-    "target_index": 1
-  },
-  {
-    "id": "Q-03", "tech": "CXL-PNM",
-    "query": "Where is the near-memory processing unit located in CXL-PNM?",
-    "target_chunk": "The PNM accelerator is integrated directly inside the CXL memory controller ASIC.",
-    "corpus": [
-      "KIVI requires custom Triton CUDA kernels for GPU decompression.",
-      "The PNM accelerator is integrated directly inside the CXL memory controller ASIC.",
-      "Near-memory processing eliminates data movement over the PCIe interconnect.",
-      "GPU memory capacity limits batch size during high-concurrency inference.",
-      "HBM bandwidth remains saturated under multi-tenant LLM serving."
-    ],
-    "target_index": 1
-  },
-  {
-    "id": "Q-04", "tech": "CXL-PNM",
-    "query": "What process node is used for the CXL-PNM hardware design simulation?",
-    "target_chunk": "The CXL-PNM hardware architecture is evaluated using a 7nm ASIC cycle-accurate simulation.",
-    "corpus": [
-      "KIVI was tested on Llama-2 and Falcon models using A100 GPUs.",
-      "The CXL-PNM hardware architecture is evaluated using a 7nm ASIC cycle-accurate simulation.",
-      "CXL 2.0 pooled memory allows disaggregated host access.",
-      "Perplexity degradation is measured using WikiText-2 and C4 datasets.",
-      "PagedAttention allocates non-contiguous physical memory blocks."
-    ],
-    "target_index": 1
-  }
+  {"id":"Q-01","tech":"KIVI","query":"How does KIVI report 2.6× less peak memory including model weight?","target_phrase":"2.6× less peak memory"},
+  {"id":"Q-02","tech":"KIVI","query":"How should KIVI quantize the key cache?","target_phrase":"quantized per-channel"},
+  {"id":"Q-03","tech":"KIVI","query":"How should KIVI quantize the value cache?","target_phrase":"quantized per-token"},
+  {"id":"Q-04","tech":"KIVI","query":"How does KIVI quantize residual key cache when residual length R is reached?","target_phrase":"residual length"},
+  {"id":"Q-05","tech":"KIVI","query":"Where is group size 32 set for KIVI KV cache quantization configurations?","target_phrase":"group size is set as 32"},
+  {"id":"Q-06","tech":"KIVI","query":"What throughput increase is reported for real LLM inference with KIVI?","target_phrase":"2.35×∼ 3.47× throughput"},
+  {"id":"Q-07","tech":"KIVI","query":"How does the KIVI paper use LongBench for long context evaluation?","target_phrase":"LongBench"},
+  {"id":"Q-08","tech":"KIVI","query":"Which GPU kernel framework is used for KIVI group-wise quantization?","target_phrase":"in Triton"},
+  {"id":"Q-09","tech":"KIVI","query":"What batch size increase does KIVI enable?","target_phrase":"up to 4× larger batch size"},
+  {"id":"Q-10","tech":"KIVI","query":"Is KIVI compatible with weight-only quantization?","target_phrase":"fully compatible with weight-"},
+  {"id":"Q-11","tech":"CXL-PNM","query":"Under what evaluation does CXL-PNM report up to 21.9× throughput improvement?","target_phrase":"21.9× throughput improvement"},
+  {"id":"Q-12","tech":"CXL-PNM","query":"What energy per token reduction does the CXL-PNM system report?","target_phrase":"60× lower energy per token"},
+  {"id":"Q-13","tech":"CXL-PNM","query":"Where is CXL-PNM's up to 7.3× total cost efficiency improvement measured?","target_phrase":"7.3× better total cost efficiency"},
+  {"id":"Q-14","tech":"CXL-PNM","query":"How does steady-token selection improve GPU PNM execution?","target_phrase":"steady-token selection mechanism"},
+  {"id":"Q-15","tech":"CXL-PNM","query":"What is the transfer cost of recalling non-resident KV tokens to GPU memory?","target_phrase":"recalling non-resident KV tokens"},
+  {"id":"Q-16","tech":"CXL-PNM","query":"What largest model size was evaluated for CXL-PNM?","target_phrase":"405B parameters"},
+  {"id":"Q-17","tech":"CXL-PNM","query":"What results are reported for CXL-PNM with 405B parameters and 1M-token contexts?","target_phrase":"1M- token contexts"},
+  {"id":"Q-18","tech":"CXL-PNM","query":"How does the PNM-only offloading scheme PNM-KV manage the KV cache?","target_phrase":"PNM-only offloading scheme"},
+  {"id":"Q-19","tech":"CXL-PNM","query":"How is data parallelism used in multi PNM attention?","target_phrase":"data parallelism (DP)"},
+  {"id":"Q-20","tech":"CXL-PNM","query":"Where is token page selection offloaded?","target_phrase":"token page selection"}
 ]
