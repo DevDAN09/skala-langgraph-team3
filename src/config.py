@@ -16,7 +16,7 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 DEFAULT_LLM_MODEL = "gpt-4o-mini"
 JUDGE_LLM_MODEL = "gpt-4o"
 POLISHING_LLM_MODEL = "gpt-4o"
-EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+EMBEDDING_MODEL = "intfloat/e5-small-v2"
 
 # Directory & File Paths
 DATA_DIR = PROJECT_ROOT / "data"

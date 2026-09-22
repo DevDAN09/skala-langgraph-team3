@@ -233,31 +233,35 @@ Phase 2에 [`design_checklist.md`](design_checklist.md) / [`common.md`](common.m
 - stakeholder는 `state["market"]`을 읽기만 하고 `market` 키를 덮어쓰지 않음
 
 ### 공통 (설계 1.4 · 3.7 · 3.8) — C 적용 범위: 검색 쿼리·Claim·statement
-- [ ] 조사 statement/프롬프트에 우열 판정·승자·추천을 넣지 않았다
-- [ ] 시장 규모·미래 예측·근거 없는 추측을 생성하지 않는다 (3.4)
-- [ ] Claim `kind`/`status`가 설계 3.7 값만 사용한다
-- [ ] 벤더 홍보 수치는 `vendor_claim`. 논문 시뮬레이션 수치를 웹에서 가져와 `fact`로 바꾸지 않는다
-- [ ] 출처 없는 항목은 `insufficient`. 추측으로 채우지 않는다
-- [ ] `OverallState`에 없는 키를 반환하지 않는다
-- [ ] 수치 인용 시 실측/시뮬레이션·출처 맥락을 병기한다
-- [ ] 온디바이스를 평가 도메인으로 쓰지 않는다
+- [x] 조사 statement/프롬프트에 우열 판정·승자·추천을 넣지 않았다 (`summarize_snippet` 프롬프트가 비교/평가 어휘 금지)
+- [x] 시장 규모·미래 예측·근거 없는 추측을 생성하지 않는다 (3.4)
+- [x] Claim `kind`/`status`가 설계 3.7 값만 사용한다 (`fact`/`vendor_claim`/`estimate`, `ok`/`insufficient`/`rejected`)
+- [x] 벤더 홍보 수치는 `vendor_claim`. 논문 시뮬레이션 수치를 웹에서 가져와 `fact`로 바꾸지 않는다 (`infer_kind`)
+- [x] 출처 없는 항목은 `insufficient`. 추측으로 채우지 않는다
+- [x] `OverallState`에 없는 키를 반환하지 않는다
+- [x] 수치 인용 시 실측/시뮬레이션·출처 맥락을 병기한다 (수치는 직접 창작하지 않고 검색 원문에서만 인용)
+- [x] 온디바이스를 평가 도메인으로 쓰지 않는다 (전 쿼리 클라우드/데이터센터 서빙 범위로 한정)
 
 ### 검색 규칙 (4.5 · 3.8)
-- [ ] Tavily. URL·날짜를 Source에 저장
-- [ ] 페르소나/가상 이해관계자 생성 금지. 공개 자료만
-- [ ] 항목마다 지지 쿼리 + 반대 쿼리. 없으면 `counter-evidence not found`, 상태는 `ok`
-- [ ] `counter_searched=True` = 쿼리 실행함 (결과 유무 무관)
-- [ ] Tier T1~T4. T4 단독 근거 금지
-- [ ] 인접 시장(HBM 등) 인용 시 인접 시장임을 명시
+- [x] Tavily. URL·날짜를 Source에 저장 (`client.py:search_pair` + `market.py`/`stakeholder.py`의 `_build_source`)
+- [x] 페르소나/가상 이해관계자 생성 금지. 공개 자료만
+- [x] 항목마다 지지 쿼리 + 반대 쿼리. 없으면 `counter-evidence not found`, 상태는 `ok`
+- [x] `counter_searched=True` = 쿼리 실행함 (결과 유무 무관)
+- [x] Tier T1~T4. T4 단독 근거 금지 (`classify_tier`; 위반 시 D의 R2가 감지해 재실행 루프로 회수)
+- [ ] 인접 시장(HBM 등) 인용 시 인접 시장임을 명시 — 현재 쿼리 플랜이 HBM 등 인접 시장을 직접 인용하지 않아 미해당. 실제 Tavily 응답에서 인접 시장 콘텐츠가 잡히면 라벨링 로직 추가 필요
 
 ### 시장성 (3.4 · 3.2)
-- [ ] 평가 단위 = 기술 계열 (KV 양자화 / CXL 메모리 확장)
-- [ ] 4지표: adoption / deployment / ecosystem / barriers
-- [ ] `market`에 stakeholder가 읽을 `key_vendors`(또는 동등 키워드) 포함
-- [ ] MAT 채택 `MAT-A*`(TRL 5-9). 연구 MAT(`MAT-R*`) 만들지 않음
+- [x] 평가 단위 = 기술 계열 (KV 양자화 / CXL 메모리 확장)
+- [x] 4지표: adoption / deployment / ecosystem / barriers (`market` dict 4키 모두 채움)
+- [x] `market`에 stakeholder가 읽을 `key_vendors`(또는 동등 키워드) 포함
+- [x] MAT 채택 `MAT-A*`(TRL 5-9). 연구 MAT(`MAT-R*`) 만들지 않음
 
 ### 이해관계자 (3.5)
-- [ ] `state["market"]`으로 쿼리 구체화
-- [ ] Actor 4명: 서빙 운영자 / 개발자 / End User / 공급자
-- [ ] Actor마다 Benefit / Concern / Adoption Barrier / Evidence
-- [ ] End User는 지연·품질 간접 근거. 없으면 `insufficient`
+- [x] `state["market"]`으로 쿼리 구체화 (`key_vendors` -> `{vendor}` 템플릿)
+- [x] Actor 4명: 서빙 운영자 / 개발자 / End User / 공급자
+- [x] Actor마다 Benefit / Concern / Adoption Barrier / Evidence (statement=Benefit, counter_evidence=Concern/Barrier, evidence_ids=Evidence)
+- [x] End User는 지연·품질 간접 근거. 없으면 `insufficient`
+
+### Task A 요청 반영 — Source URL 중복 시 source_id 재사용
+- [x] `market_research`/`stakeholder_research`가 새 Source를 만들기 전에 `client.resolve_source_id()`로 `state["sources"]`(+이번 호출에서 이미 만든 Source)에서 같은 URL을 먼저 찾아 기존 `source_id`를 재사용한다. `state.py`의 `union_sources`/Claim 스키마는 변경하지 않음 (state 계약 유지)
+- [x] 회귀 테스트: `tests/test_research.py::test_resolve_source_id_reuses_existing_url`, `test_market_to_stakeholder_url_dedup_chain_keeps_evidence_linked`
