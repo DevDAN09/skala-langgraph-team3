@@ -36,6 +36,7 @@ def search_pair(
     중요한 질의에서 호출부가 명시적으로 넘긴다 (기본 None = 기간 제한 없음).
     """
     if not TAVILY_API_KEY:
+        print("⚠️ [경고/Fallback] TAVILY_API_KEY 없음: 웹 검색 결과 없이 진행")
         return {"results": []}, None
     try:
         from tavily import TavilyClient

@@ -9,36 +9,71 @@ from src.research.client import (
     vendor_label,
 )
 
-# 4대 Actor: 서빙 운영자 / 프레임워크 개발자 / End User / 공급자(메모리 벤더).
+# 4대 Actor(서빙 운영자 / 프레임워크 개발자 / End User / 공급자) × 기술 계열 2개 (설계 3.2·3.5, #8).
+# STK-01~04는 기존 의미를 유지하고, 05~08이 각 Actor의 반대 계열을 채운다. slot은 stakeholder 요약 dict 키.
 # {vendor}는 state["market"]["key_vendors"] (market_research가 남긴 컨텍스트)로 채워 쿼리를 구체화한다.
 STAKEHOLDER_QUERY_PLAN = [
     {
-        "claim_id": "STK-01", "actor": "Cloud Serving Operator", "tech": "KIVI",
+        "claim_id": "STK-01", "actor": "Cloud Serving Operator", "slot": "cloud_serving_operator", "tech": "KIVI",
         "support": "cloud LLM serving operator cost savings KV cache quantization deployment {vendor}",
         "counter": "KV cache quantization production serving operational risk concern",
     },
     {
-        "claim_id": "STK-02", "actor": "Framework Developer", "tech": "KIVI",
+        "claim_id": "STK-02", "actor": "Framework Developer", "slot": "framework_developer", "tech": "KIVI",
         "support": "vLLM TensorRT-LLM developer KV cache quantization kernel integration effort",
         "counter": "KV cache quantization kernel developer integration difficulty complaint",
     },
     {
-        "claim_id": "STK-03", "actor": "End User", "tech": "CXL-PNM",
+        "claim_id": "STK-03", "actor": "End User", "slot": "end_user", "tech": "CXL-PNM",
         "support": "CXL memory expansion LLM inference latency long context end user experience",
         "counter": "CXL memory expansion inference latency degradation user complaint",
     },
     {
-        "claim_id": "STK-04", "actor": "Memory Vendor", "tech": "CXL-PNM",
+        "claim_id": "STK-04", "actor": "HW/Memory Supplier", "slot": "memory_vendor", "tech": "CXL-PNM",
         "support": "{vendor} CXL memory module enterprise AI server roadmap strategy",
         "counter": "CXL memory vendor adoption challenge cost competitiveness",
     },
+    {
+        "claim_id": "STK-05", "actor": "Cloud Serving Operator", "slot": "cloud_serving_operator", "tech": "CXL-PNM",
+        "support": "cloud data center CXL memory expansion LLM inference server deployment {vendor}",
+        "counter": "CXL memory expansion data center deployment cost operational concern",
+    },
+    {
+        "claim_id": "STK-06", "actor": "Framework Developer", "slot": "framework_developer", "tech": "CXL-PNM",
+        "support": "LLM serving framework CXL memory tiering KV cache offload support",
+        "counter": "CXL memory tiering software support complexity developer challenge",
+    },
+    {
+        "claim_id": "STK-07", "actor": "End User", "slot": "end_user", "tech": "KIVI",
+        "support": "KV cache quantization LLM response quality latency long context user impact",
+        "counter": "KV cache 2-bit quantization accuracy degradation long context output quality",
+    },
+    {
+        "claim_id": "STK-08", "actor": "HW/Memory Supplier", "slot": "memory_vendor", "tech": "KIVI",
+        "support": "{vendor} GPU inference SDK KV cache quantization support",
+        "counter": "KV cache quantization hardware support limitation GPU",
+    },
 ]
+TECH_ORDER = ("KIVI", "CXL-PNM")
+END_USER_GAP = "인용 가능한 지연/품질 간접 근거 미확인"
+COUNTER_NOT_FOUND = "counter-evidence not found"
+# market.key_vendors는 알파벳순이라 첫 항목이 기술과 무관할 수 있다. 계열별로 쿼리에 넣을 벤더 후보를 정한다.
+VENDOR_PREFERENCE = {"CXL-PNM": ("Samsung", "SK Hynix", "Intel", "CXL Consortium"), "KIVI": ("NVIDIA",)}
 STAKEHOLDER_PLAN_BY_ID = {q["claim_id"]: q for q in STAKEHOLDER_QUERY_PLAN}
+TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
 
 
-def _fill_vendor(template: str, key_vendors: list[str]) -> str:
-    vendor = key_vendors[0] if key_vendors else "leading vendors"
-    return template.format(vendor=vendor)
+def _pick_result(results: list[dict], exclude_urls: set[str] = frozenset()) -> dict:
+    """T1~T3 결과를 먼저 고른다 (R2: T4 단독 근거 금지). 재검색 때는 직전 근거 URL을 뺀다.
+    제외하고 남는 결과가 없으면 원래 목록에서 고른다."""
+    candidates = [r for r in results if (r.get("url") or "") not in exclude_urls] or results
+    return min(candidates, key=lambda r: TIER_RANK[classify_tier(r.get("url", ""))])
+
+
+def _fill_vendor(template: str, key_vendors: list[str], tech: str) -> str:
+    """market이 찾은 벤더 중 이 기술 계열에 맞는 벤더로 쿼리를 구체화한다. 없으면 벤더 없이 검색한다."""
+    vendor = next((v for v in VENDOR_PREFERENCE[tech] if v in key_vendors), "")
+    return " ".join(template.format(vendor=vendor).split())
 
 
 def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, sources_pool: list[Source]):
@@ -58,13 +93,15 @@ def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, 
     return proposed_id, new_source
 
 
-def _run_stakeholder_query(item: dict, key_vendors: list[str], sources_pool: list[Source]) -> tuple[Claim, list[Evidence], list[Source]]:
+def _run_stakeholder_query(
+    item: dict, key_vendors: list[str], sources_pool: list[Source], exclude_urls: set[str] = frozenset()
+) -> tuple[Claim, list[Evidence], list[Source]]:
     """Actor별 지지/반대 쿼리를 1회 병행 실행해 Claim + Evidence(+반대 근거) + Source를 만든다."""
     claim_id, tech, actor = item["claim_id"], item["tech"], item["actor"]
     ev_id, src_id = f"EV-{claim_id}", f"SRC-{claim_id}"
 
-    support_query = _fill_vendor(item["support"], key_vendors)
-    counter_query = _fill_vendor(item["counter"], key_vendors)
+    support_query = _fill_vendor(item["support"], key_vendors, tech)
+    counter_query = _fill_vendor(item["counter"], key_vendors, tech)
     support, counter = search_pair(support_query, counter_query)
     support_results = (support or {}).get("results") or []
 
@@ -77,7 +114,7 @@ def _run_stakeholder_query(item: dict, key_vendors: list[str], sources_pool: lis
         return claim, [], []
 
     new_sources: list[Source] = []
-    top = support_results[0]
+    top = _pick_result(support_results, exclude_urls)
     url = top.get("url", "")
     tier = classify_tier(url)
     resolved_src_id, new_src = _build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
@@ -87,7 +124,7 @@ def _run_stakeholder_query(item: dict, key_vendors: list[str], sources_pool: lis
     # R5(LLM Judge)는 Evidence.snippet만 보고 statement 정합성을 판정하므로,
     # statement 생성 입력과 저장되는 snippet을 동일한 텍스트로 맞춘다.
     snippet_text = (top.get("content") or "")[:500]
-    statement = summarize_snippet(snippet_text, f"the {actor}'s benefit, concern, or adoption barrier regarding {tech}")
+    statement = summarize_snippet(snippet_text, f"the {actor}'s benefit or adoption status regarding {tech}")
     new_evidence: list[Evidence] = [{
         "evidence_id": ev_id, "source_id": resolved_src_id, "snippet": snippet_text,
     }]
@@ -125,12 +162,14 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
     plan_item = STAKEHOLDER_PLAN_BY_ID.get(claim_id)
 
     if action == "search_counter_evidence" and existing_claim and plan_item:
-        counter_query = _fill_vendor(plan_item["counter"], key_vendors)
-        _, counter = search_pair(_fill_vendor(plan_item["support"], key_vendors), counter_query)
+        tech = plan_item["tech"]
+        counter_query = _fill_vendor(plan_item["counter"], key_vendors, tech)
+        _, counter = search_pair(_fill_vendor(plan_item["support"], key_vendors, tech), counter_query)
         counter_results = (counter or {}).get("results") or [] if counter else []
         if not counter_results:
+            # 반대 쿼리를 실행했으면 결과가 없어도 R3 충족. counter-evidence not found는 상태에 영향 없음 (설계 표 11)
             print(f"⚠️ [경고/Fallback] {claim_id}: 재실행에도 counter-evidence not found")
-            return {**existing_claim, "counter_searched": True}, [], []
+            return {**existing_claim, "counter_searched": True, "status": "ok"}, [], []
         c_top = counter_results[0]
         c_url = c_top.get("url", "")
         c_ev_id, c_src_id = f"EV-{claim_id}-C", f"SRC-{claim_id}-C"
@@ -143,10 +182,9 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
         return updated, new_evidence, new_sources
 
     if action == "relabel" and existing_claim:
-        ev = evidence_by_id.get((existing_claim.get("evidence_ids") or [None])[0])
-        src = sources_by_id.get(ev["source_id"]) if ev else None
-        new_kind = infer_kind(src["url"]) if src else existing_claim.get("kind", "fact")
-        return {**existing_claim, "kind": new_kind, "status": "ok"}, [], []
+        # R4는 벤더 수치를 fact로 둔 경우다. 도메인으로 다시 추론하면 제3자 매체 인용은 또 fact가 되어 재위반한다.
+        kind = existing_claim.get("kind")
+        return {**existing_claim, "kind": "vendor_claim" if kind == "fact" else kind, "status": "ok"}, [], []
 
     if action == "re_extract" and existing_claim:
         ev = evidence_by_id.get((existing_claim.get("evidence_ids") or [None])[0])
@@ -157,12 +195,76 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
             statement, status = "", "insufficient"
         return {**existing_claim, "statement": statement, "status": status}, [], []
 
-    # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행
+    # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행.
+    # 같은 쿼리는 같은 결과를 돌려주므로 직전 근거 URL은 제외해야 R1/R2 재위반을 피할 수 있다.
     if plan_item:
-        return _run_stakeholder_query(plan_item, key_vendors, sources_pool)
+        prev_ev = evidence_by_id.get(((existing_claim or {}).get("evidence_ids") or [None])[0])
+        prev_src = sources_by_id.get(prev_ev["source_id"]) if prev_ev else None
+        exclude = {prev_src["url"]} if prev_src and prev_src.get("url") else set()
+        return _run_stakeholder_query(plan_item, key_vendors, sources_pool, exclude)
     if existing_claim:
         return {**existing_claim, "status": "insufficient"}, [], []
     return None, [], []
+
+
+def _family_labels(state: OverallState) -> dict[str, str]:
+    families = (state.get("selected") or {}).get("families") or {}
+    return {"KIVI": families.get("sw", "KV Quantization"), "CXL-PNM": families.get("hw", "CXL Memory Expansion")}
+
+
+def _detail(item: dict, claim: Claim, snippets: dict[str, str]) -> dict | None:
+    """Actor 한 칸의 Benefit / Concern / Adoption Barrier / Evidence (설계 3.5).
+    Benefit은 지지 근거 Claim statement, Concern·Barrier는 반대 근거 snippet에서만 뽑는다. 근거 없는 Claim은 None."""
+    if not claim or claim.get("status") != "ok":
+        return None
+    counter = next((snippets[e] for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), "")
+    subject = f"the {item['actor']} regarding {claim['tech']}"
+    # ponytail: 같은 반대 snippet을 초점만 바꿔 두 번 요약한다. Concern·Barrier가 겹치면 Barrier 전용 쿼리 추가 검토.
+    return {
+        "benefit": claim["statement"],
+        "concern": summarize_snippet(counter, f"concerns or risks raised by {subject}") if counter else COUNTER_NOT_FOUND,
+        "barrier": summarize_snippet(counter, f"adoption barriers faced by {subject}") if counter else COUNTER_NOT_FOUND,
+        "evidence_ids": [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])],
+    }
+
+
+def _slot_text(slot: str, claims_by_id: dict[str, Claim], snippets: dict[str, str], family_labels: dict[str, str]) -> str:
+    """Actor 슬롯 하나를 문자열로 만든다. stakeholder dict 계약(Actor별 문자열)은 그대로 두고,
+    계열별로 [계열명] Benefit | Concern | Barrier (근거 ID)를 이어 붙인다 (설계 3.2·3.5·3.8)."""
+    items = sorted((q for q in STAKEHOLDER_QUERY_PLAN if q["slot"] == slot), key=lambda q: TECH_ORDER.index(q["tech"]))
+    parts = []
+    for q in items:
+        label = f"[{family_labels[q['tech']]} 계열]"
+        d = _detail(q, claims_by_id.get(q["claim_id"]), snippets)
+        if d is None:
+            # End User는 지연/품질 간접 근거가 없으면 미확인을 명시한다 (추정 금지).
+            parts.append(f"{label} {END_USER_GAP if slot == 'end_user' else '근거 미확인'}")
+        else:
+            parts.append(
+                f"{label} Benefit: {d['benefit']} | Concern: {d['concern']} | Barrier: {d['barrier']}"
+                f" (근거: {', '.join(d['evidence_ids'])})"
+            )
+    return " / ".join(parts)
+
+
+SLOTS = tuple(dict.fromkeys(q["slot"] for q in STAKEHOLDER_QUERY_PLAN))
+
+
+def _summarize(claims_by_id: dict[str, Claim], snippets: dict[str, str], family_labels: dict[str, str],
+               prev: dict | None = None, slots: tuple[str, ...] = SLOTS) -> dict:
+    """stakeholder 요약 dict. 재실행에서는 prev를 두고 지정한 슬롯만 다시 쓴다."""
+    out = dict(prev or {})
+    for slot in slots:
+        out[slot] = _slot_text(slot, claims_by_id, snippets, family_labels)
+    actors = list(dict.fromkeys(q["actor"] for q in STAKEHOLDER_QUERY_PLAN))
+    ok_ids = {cid for cid, c in claims_by_id.items() if c.get("status") == "ok"}
+    out["actors_surveyed"] = [a for a in actors if any(
+        q["actor"] == a and q["claim_id"] in ok_ids for q in STAKEHOLDER_QUERY_PLAN
+    )] or actors
+    # report.md.j2(E 소유)가 읽는 기존 키 이름과의 하위 호환 별칭.
+    out["cloud_ops"] = out.get("cloud_serving_operator", "")
+    out["hw_vendors"] = out.get("memory_vendor", "")
+    return out
 
 
 def stakeholder_research_node(state: OverallState) -> dict:
@@ -170,7 +272,7 @@ def stakeholder_research_node(state: OverallState) -> dict:
     print("👥 [이해관계자] 4대 핵심 Actor(서빙 운영자/개발자/End User/공급자) 반응 조사 실행")
 
     market_context = state.get("market") or {}
-    key_vendors = market_context.get("key_vendors") or ["Cloud CSPs", "Hardware Vendors"]
+    key_vendors = market_context.get("key_vendors") or []
 
     audit_issues = (state.get("audit") or {}).get("issues") or []
     my_issues = {i["claim_id"]: i for i in audit_issues if i.get("target_agent") == "stakeholder"}
@@ -188,10 +290,15 @@ def stakeholder_research_node(state: OverallState) -> dict:
             claims.append(claim)
             evidence.extend(new_ev)
             sources.extend(new_src)
-        # 재실행에서는 자기 claim만 patch. stakeholder 요약 dict는 건드리지 않는다.
-        return {"claims": claims, "evidence": evidence, "sources": sources}
+        # 재실행: 자기 claim만 upsert. 요약 dict는 Overwrite 키라 기존 값을 펼친 뒤 재실행한 Claim이 속한 Actor 슬롯만 다시 쓴다.
+        claims_by_id = {c["id"]: c for c in state.get("claims", []) if c.get("id", "").startswith("STK-")}
+        claims_by_id.update({c["id"]: c for c in claims})
+        snippets = {e["evidence_id"]: e["snippet"] for e in list(state.get("evidence", [])) + evidence}
+        touched = tuple(dict.fromkeys(STAKEHOLDER_PLAN_BY_ID[c["id"]]["slot"] for c in claims if c["id"] in STAKEHOLDER_PLAN_BY_ID))
+        stakeholder = _summarize(claims_by_id, snippets, _family_labels(state), prev=state.get("stakeholder"), slots=touched)
+        return {"stakeholder": stakeholder, "claims": claims, "evidence": evidence, "sources": sources}
 
-    # 최초 실행: STK-01~04 (서빙 운영자/개발자/End User/공급자) 전량 조사
+    # 최초 실행: STK-01~08 (4대 Actor × 기술 계열 2개) 전량 조사
     claims = []
     evidence = []
     sources: list[Source] = []
@@ -201,30 +308,9 @@ def stakeholder_research_node(state: OverallState) -> dict:
         evidence.extend(new_ev)
         sources.extend(new_src)
 
-    actor_by_claim_id = {q["claim_id"]: q["actor"] for q in STAKEHOLDER_QUERY_PLAN}
-    actors_surveyed = [actor_by_claim_id[c["id"]] for c in claims if c.get("status") == "ok"]
-    # End User는 지연/품질 간접 근거가 없으면 명시적으로 insufficient로 남긴다 (추정 금지).
-    end_user_claim = next((c for c in claims if c["id"] == "STK-03"), None)
-    end_user_evidence = "인용 가능한 지연/품질 간접 근거 미확인" if not end_user_claim or end_user_claim.get("status") != "ok" else end_user_claim["statement"]
-
-    cloud_serving_operator = next((c["statement"] for c in claims if c["id"] == "STK-01" and c.get("status") == "ok"), "")
-    framework_developer = next((c["statement"] for c in claims if c["id"] == "STK-02" and c.get("status") == "ok"), "")
-    memory_vendor = next((c["statement"] for c in claims if c["id"] == "STK-04" and c.get("status") == "ok"), "")
-
-    stakeholder = {
-        "actors_surveyed": actors_surveyed or list(actor_by_claim_id.values()),
-        "cloud_serving_operator": cloud_serving_operator,
-        "framework_developer": framework_developer,
-        "end_user": end_user_evidence,
-        "memory_vendor": memory_vendor,
-        # report.md.j2(E 소유)가 읽는 기존 키 이름과의 하위 호환 별칭.
-        # E가 4-Actor 세부 키로 템플릿을 갱신하기 전까지 보고서가 빈 칸으로 렌더링되지 않게 한다.
-        "cloud_ops": cloud_serving_operator,
-        "hw_vendors": memory_vendor,
-    }
-
+    snippets = {e["evidence_id"]: e["snippet"] for e in evidence}
     return {
-        "stakeholder": stakeholder,
+        "stakeholder": _summarize({c["id"]: c for c in claims}, snippets, _family_labels(state)),
         "claims": claims,
         "evidence": evidence,
         "sources": sources,
