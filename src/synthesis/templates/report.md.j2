@@ -1,7 +1,12 @@
 # KV Cache 최적화 기술 다관점 평가 보고서 ({{ selected.get('sw', 'KIVI') }} vs {{ selected.get('hw', 'CXL-PNM') }})
 
-{% set refs = namespace(numbers={}) %}
-{% for source in sources %}{% set _ = refs.numbers.update({source.get('source_id'): loop.index}) %}{% endfor %}
+{% set refs = namespace(numbers={}, source_ids=[]) %}
+{% for claim in claims if claim.get('status') == 'ok' %}
+{% for item in evidence if item.get('evidence_id') in claim.get('evidence_ids', []) %}
+{% if item.get('source_id') not in refs.source_ids %}{% set _ = refs.source_ids.append(item.get('source_id')) %}{% endif %}
+{% endfor %}
+{% endfor %}
+{% for source in sources if source.get('source_id') in refs.source_ids %}{% set _ = refs.numbers.update({source.get('source_id'): loop.index}) %}{% endfor %}
 
 > **발행일자**: 2026-09-22  
 > **평가 도메인**: 클라우드 LLM 서빙 인프라  
@@ -15,13 +20,16 @@
 
 - **{{ selected.get('sw', 'KIVI') }} (SW)**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
 - **{{ selected.get('hw', 'CXL-PNM') }} (HW)**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
-- **평가 원칙**: 기술별 근거와 워크로드 조건을 대조하며 우열 또는 추천을 판정하지 않습니다.
+- **평가 원칙**: 기술별 근거와 워크로드 조건을 대조하며 우열 또는 추천을 판정하지 않는다.
 
 ---
 
 ## 1. 분석 배경
 
 LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 차지하는 GPU HBM 메모리 점유율이 기하급수적으로 증가하며, 이는 서빙 시스템의 최대 동시 배치 크기와 처리량을 제약하는 결정적 병목이다. 본 평가는 클라우드 서빙 환경에서의 실질적 도입 타당성을 검증하기 위해 수행되었다.
+
+- **해석 원칙**: 성능 수치는 모델 크기·문맥 길이·하드웨어·실측/시뮬레이션 조건이 같을 때만 직접 대조하며, 조건이 다르면 각 근거의 맥락을 보존한다.
+- **범위**: 대규모 동시 요청과 장문맥 추론이 발생하는 클라우드 LLM 서빙을 다루며, 온디바이스 환경은 한계점에서만 다룬다.
 
 ---
 
@@ -54,26 +62,38 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 ## 4. 관점별 평가
 
-### 4.1 TRL (기술 성숙도) 이원화 평가
-
-| 기술 | 개별 기술 성숙도 (tech_trl) | 계열 산업 성숙도 (family_trl) | 평가 신뢰도 | 비고 |
-| :--- | :---: | :---: | :---: | :--- |
-| **KIVI** | {{ trl.get("KIVI", {}).get("tech_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("family_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("confidence", "none") }} | 연구: {{ trl.get("KIVI", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("KIVI", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
-| **CXL-PNM** | {{ trl.get("CXL-PNM", {}).get("tech_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("family_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("confidence", "none") }} | 연구: {{ trl.get("CXL-PNM", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("CXL-PNM", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
-
-### 4.2 시장성 및 생태계
+### 4.1 시장성 및 생태계
 - **시장 수용도**: {{ market.get("adoption", "검증된 시장 정보가 없습니다.") }}
 - **도입 장벽**: {{ market.get("barriers", "검증된 장벽 정보가 없습니다.") }}
 
-### 4.3 이해관계자 영향
+### 4.2 이해관계자 영향
 - **클라우드 운영자**: {{ stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없습니다.") }}
 - **하드웨어 벤더**: {{ stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없습니다.") }}
+
+### 4.3 도메인 6대 축 적합성
+| 평가 축 | 검증 결과 |
+| :--- | :--- |
+| 메모리 점유량 | {{ domain.get("memory_footprint", "근거 미확인") }} |
+| 대역폭·전송 | {{ domain.get("bandwidth_transfer", "근거 미확인") }} |
+| 처리량·응답 지연 | {{ domain.get("latency_impact", "근거 미확인") }} |
+| 정확도 | {{ domain.get("accuracy", "근거 미확인") }} |
+| 인프라 변경 | {{ domain.get("infrastructure_change", "근거 미확인") }} |
+| 운영 복잡도 | {{ domain.get("operational_complexity", "근거 미확인") }} |
 
 ---
 
 ## 5. 시사점
 
+### 5.1 관점별 평가가 엇갈리는 지점
+{{ synthesis.get("disagreement", "검증된 근거에서 관점별 해석 차이가 확인되지 않았습니다.") }}
+
+### 5.2 원문 근거와 외부 생태계의 구분
+{{ synthesis.get("research_vs_adoption", "개별 기술의 원문 근거와 계열 생태계의 채택 근거는 TRL 표에서 분리하여 해석합니다.") }}
+
+### 5.3 워크로드별 트레이드오프
 - **워크로드별 트레이드오프**: {{ synthesis.get("tradeoffs", "검증된 트레이드오프가 없습니다.") }}
+
+### 5.4 결합 가능성
 - **결합 가능성**: {{ synthesis.get("synergy", "검증된 결합 가능성 정보가 없습니다.") }}
 
 ---
@@ -89,11 +109,17 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 - 미확인 Claim이 없습니다.
 {% endif %}
 
+### 6.2 분석 범위와 해석 제약
+- 공개 논문·공식 웹 자료에 기반한 추정이며, 비공개 구현·배포 현황은 포함하지 않습니다.
+- CXL-PNM 성능 수치는 simulation 결과로, 실측 환경의 결과와 동일시하지 않습니다.
+- 온디바이스 환경과 미래 시장 규모 예측은 분석 범위 밖입니다.
+- 외부 조사는 지지·반대 근거를 함께 확인하며, 반대 근거가 없을 때에도 이를 임의의 상충으로 만들지 않아 확증편향을 방지합니다.
+
 ---
 
 ## REFERENCE
 
-{% for s in sources %}
+{% for s in sources if s.get('source_id') in refs.source_ids %}
 {% if s.source_type == 'patent' %}
 [{{ loop.index }}] {{ s.get('applicant', s.publisher) }}({{ s.date }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
 {% elif s.source_type == 'paper' %}

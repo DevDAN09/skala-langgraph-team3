@@ -35,6 +35,9 @@ def report_generation_node(state: OverallState) -> dict:
 - SUMMARY, 1~6, REFERENCE 제목과 순서를 변경하지 마십시오.
 - 수치, TRL, Claim ID, URL, 출처 Tier, simulation 표기를 변경하거나 추가하지 마십시오.
 - 기술 우열, 승자, 추천, 근거 없는 전망을 추가하지 마십시오.
+- 영어 원문 자료를 바탕으로 하더라도 보고서의 서술 문장은 한국어로 작성하십시오.
+- KIVI, CXL-PNM, LLM, KV Cache 같은 고유명사·기술 용어, 논문·특허·웹페이지 제목, 인용 번호는 원문 표기를 유지하십시오.
+- 영어 Claim 문장은 원문 그대로 남기지 말고 한국어로 번역하십시오. 단, 수치·단위·연도·Claim ID·인용 번호·고유명사·기술 용어는 변경하지 마십시오.
 - 마크다운 전문만 반환하십시오.
 
 {rendered}"""
