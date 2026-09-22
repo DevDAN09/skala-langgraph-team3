@@ -44,8 +44,10 @@ def evaluation_synthesis_node(state: OverallState) -> dict:
     gaps = [claim for claim in claims if claim.get("status") in {"insufficient", "rejected"}]
 
     synthesis = {
-        "tradeoffs": "KIVI는 기존 GPU 환경에서 압축을 적용할 수 있고, CXL-PNM은 메모리 확장 인프라를 전제로 근접 연산을 활용합니다.",
-        "synergy": "CXL 메모리 계층과 KIVI 압축을 함께 검토할 수 있습니다.",
+        "tradeoffs": "KIVI는 기존 GPU 환경에서 압축을 적용할 수 있고, CXL-PNM은 메모리 확장 인프라를 전제로 근접 연산을 활용한다.",
+        "synergy": "CXL 메모리 계층과 KIVI 압축을 함께 검토할 수 있다.",
+        "disagreement": "개별 기술의 실증 수준과 계열 생태계의 채택 수준은 같은 척도로 해석할 수 없으며, TRL 이원화로 이를 분리한다.",
+        "overall_opinion": "본 평가는 특정 기술의 우열을 결론내리지 않는다. 공개 근거가 보여 주는 기술 성숙도, 인프라 제약, 워크로드 조건을 함께 검토하고, 근거가 부족한 항목은 한계점으로 남긴다.",
         "evidence_gaps": gaps
     }
 

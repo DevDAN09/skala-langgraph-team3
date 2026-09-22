@@ -62,15 +62,22 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 ## 4. 관점별 평가
 
-### 4.1 시장성 및 생태계
+### 4.1 기술 성숙도 (TRL 이원화)
+
+| 기술 | 개별 기술 성숙도 (tech_trl) | 계열 생태계 성숙도 (family_trl) | 신뢰도 | 근거 Claim |
+| :--- | :---: | :---: | :---: | :--- |
+| **KIVI** | {{ trl.get("KIVI", {}).get("tech_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("family_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("confidence", "none") }} | 연구: {{ trl.get("KIVI", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("KIVI", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
+| **CXL-PNM** | {{ trl.get("CXL-PNM", {}).get("tech_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("family_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("confidence", "none") }} | 연구: {{ trl.get("CXL-PNM", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("CXL-PNM", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
+
+### 4.2 시장성 및 생태계
 - **시장 수용도**: {{ market.get("adoption", "검증된 시장 정보가 없다.") }}
 - **도입 장벽**: {{ market.get("barriers", "검증된 장벽 정보가 없다.") }}
 
-### 4.2 이해관계자 영향
+### 4.3 이해관계자 영향
 - **클라우드 운영자**: {{ stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없다.") }}
 - **하드웨어 벤더**: {{ stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없다.") }}
 
-### 4.3 도메인 6대 축 적합성
+### 4.4 도메인 6대 축 적합성
 | 평가 축 | 검증 결과 |
 | :--- | :--- |
 | 메모리 점유량 | {{ domain.get("memory_footprint", "근거 미확인") }} |
@@ -95,6 +102,9 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 ### 5.4 결합 가능성
 - **결합 가능성**: {{ synthesis.get("synergy", "검증된 결합 가능성 정보가 없다.") }}
+
+### 5.5 종합 의견
+{{ synthesis.get("overall_opinion", "특정 기술의 우열을 결론내리지 않고, 관점별 근거와 제약을 함께 해석한다.") }}
 
 ---
 

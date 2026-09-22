@@ -43,14 +43,19 @@ def test_report_generation_sections(monkeypatch):
     ]
     for sec in required_sections:
         assert sec in report_text
-    assert "### 4.1 시장성 및 생태계" in report_text
-    assert "### 4.2 이해관계자 영향" in report_text
-    assert "### 4.3 도메인 6대 축 적합성" in report_text
+    assert "### 4.1 기술 성숙도 (TRL 이원화)" in report_text
+    assert "### 4.2 시장성 및 생태계" in report_text
+    assert "### 4.3 이해관계자 영향" in report_text
+    assert "### 4.4 도메인 6대 축 적합성" in report_text
     assert "### 5.1 관점별 평가가 엇갈리는 지점" in report_text
+    assert "### 5.5 종합 의견" in report_text
     assert "### 6.2 분석 범위와 해석 제약" in report_text
     assert "더 우수하다" not in report_text
     assert "[DOM-01]" in report_text
     assert "[MKT-02]" in report_text
+    assert "특정 기술의 우열을 결론내리지 않는다." in report_text
+    assert "| **KIVI** | 5-6 | 6-7 |" in report_text
+    assert "| **CXL-PNM** | 3-4 | 6-7 |" in report_text
     assert "[1]" in report_text
     assert "[4]" in report_text
     assert "simulation" in report_text
