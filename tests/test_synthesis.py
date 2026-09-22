@@ -12,6 +12,13 @@ def test_evaluate_trl_dual():
     assert cxl_trl["tech_trl"] == "3-4"
     assert cxl_trl["family_trl"] == "7-8"
 
+
+def test_evaluate_trl_without_claims_uses_fallback():
+    result = evaluate_trl("KIVI", [])
+    assert result["tech_trl"] == "Unknown"
+    assert result["family_trl"] == "Unknown"
+    assert result["confidence"] == "none"
+
 def test_report_generation_sections():
     synth_res = evaluation_synthesis_node(MOCK_STATE)
     merged_state = {**MOCK_STATE, **synth_res}
