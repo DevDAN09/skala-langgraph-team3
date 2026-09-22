@@ -187,20 +187,20 @@ def test_stakeholder_counter_retry_without_result_restores_ok(monkeypatch):
 
 
 def test_stakeholder_retry_patches_only_its_summary_slot(monkeypatch):
-    """재실행한 Claim의 요약 슬롯만 갱신하고 나머지 Actor 슬롯은 그대로 둔다 (설계 5.4)."""
+    """재실행한 Claim이 속한 Actor 슬롯만 다시 쓰고 나머지 슬롯·키는 그대로 둔다 (설계 5.4)."""
     import src.research.stakeholder as stk
     monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: "STK-01 new statement.")
-    kept = {"claim_id": "STK-04", "benefit": "STK-04 kept.", "concern": "c", "barrier": "b", "evidence_ids": ["EV-STK-04"]}
     state = _retry_state(
         [_stk_claim("STK-01", status="flagged"), _stk_claim("STK-04", tech="CXL-PNM", statement="STK-04 kept.")],
         {"claim_id": "STK-01", "rule": "R5", "action": "re_extract"},
         evidence=[{"evidence_id": "EV-STK-01", "source_id": "SRC-STK-01", "snippet": "operator snippet."}],
-        stakeholder={"memory_vendor": {"CXL-PNM": kept}, "extra": "keep me"},
+        stakeholder={"memory_vendor": "memory vendor text kept", "hw_vendors": "memory vendor text kept", "extra": "keep me"},
     )
     summary = stakeholder_research_node(state)["stakeholder"]
-    assert summary["cloud_serving_operator"]["KIVI"]["benefit"] == "STK-01 new statement."
-    assert "STK-01 new statement." in summary["cloud_ops"]
-    assert summary["memory_vendor"]["CXL-PNM"] == kept
+    assert "Benefit: STK-01 new statement." in summary["cloud_serving_operator"]
+    assert summary["cloud_ops"] == summary["cloud_serving_operator"]
+    assert summary["memory_vendor"] == "memory vendor text kept"
+    assert summary["hw_vendors"] == "memory vendor text kept"
     assert summary["extra"] == "keep me"
 
 
@@ -216,29 +216,43 @@ def _fake_search(recorded=None, counter=True):
     return fake
 
 
+def test_stakeholder_dict_keeps_original_contract(monkeypatch):
+    """stakeholder dict 구조는 바꾸지 않는다: 키 7개, actors_surveyed만 list이고 나머지는 문자열."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search())
+    summary = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]
+    assert set(summary) == {"actors_surveyed", "cloud_serving_operator", "framework_developer",
+                            "end_user", "memory_vendor", "cloud_ops", "hw_vendors"}
+    assert isinstance(summary["actors_surveyed"], list)
+    assert all(isinstance(v, str) for k, v in summary.items() if k != "actors_surveyed")
+    assert summary["cloud_ops"] == summary["cloud_serving_operator"]
+    assert summary["hw_vendors"] == summary["memory_vendor"]
+
+
 def test_stakeholder_slot_has_benefit_concern_barrier_evidence(monkeypatch):
-    """Actor마다 Benefit / Concern / Adoption Barrier / Evidence를 남긴다 (설계 3.5).
+    """Actor마다 Benefit / Concern / Adoption Barrier / Evidence를 문자열 안에 계열별로 남긴다 (설계 3.5, 3.2).
     Benefit은 지지 근거 Claim, Concern·Barrier는 반대 근거에서만 뽑는다."""
     import src.research.stakeholder as stk
     monkeypatch.setattr(stk, "search_pair", _fake_search())
     monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: f"{focus.split()[0]}|{text}")
     res = stakeholder_research_node(INITIAL_INPUT_STATE)
-    slot = res["stakeholder"]["cloud_serving_operator"]["KIVI"]
+    text = res["stakeholder"]["cloud_serving_operator"]
     claim = next(c for c in res["claims"] if c["id"] == "STK-01")
-    assert slot["claim_id"] == "STK-01"
-    assert slot["benefit"] == claim["statement"]
-    assert slot["concern"].startswith("concerns|Counter:")
-    assert slot["barrier"].startswith("adoption|Counter:")
-    assert slot["evidence_ids"] == ["EV-STK-01", "EV-STK-01-C"]
+    kivi_part, cxl_part = text.split(" / [")
+    assert kivi_part.startswith("[KV Quantization 계열]")
+    assert cxl_part.startswith("CXL Memory Expansion 계열]")
+    assert f"Benefit: {claim['statement']}" in kivi_part
+    assert "Concern: concerns|Counter:" in kivi_part
+    assert "Barrier: adoption|Counter:" in kivi_part
+    assert "(근거: STK-01, EV-STK-01, EV-STK-01-C)" in kivi_part
 
 
 def test_stakeholder_records_counter_evidence_not_found(monkeypatch):
     """반대 쿼리 결과가 없으면 Concern·Barrier에 counter-evidence not found를 기록한다 (설계 표 11)."""
     import src.research.stakeholder as stk
     monkeypatch.setattr(stk, "search_pair", _fake_search(counter=False))
-    slot = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]["framework_developer"]["CXL-PNM"]
-    assert slot["concern"] == slot["barrier"] == "counter-evidence not found"
-    assert slot["benefit"]
+    text = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]["framework_developer"]
+    assert "Concern: counter-evidence not found | Barrier: counter-evidence not found" in text
 
 
 def test_stakeholder_queries_use_tech_relevant_vendor_from_market(monkeypatch):
@@ -272,7 +286,7 @@ def test_stakeholder_summary_labels_family_evidence(monkeypatch):
         assert isinstance(summary[alias], str)
         assert "KV Quantization" in summary[alias]
         assert "CXL Memory Expansion" in summary[alias]
-    assert set(summary["end_user"]) == {"KIVI", "CXL-PNM"}
+    assert "[KV Quantization 계열]" in summary["end_user"] and "[CXL Memory Expansion 계열]" in summary["end_user"]
 
 
 def test_stakeholder_end_user_gap_is_marked_per_tech(monkeypatch):
@@ -280,10 +294,10 @@ def test_stakeholder_end_user_gap_is_marked_per_tech(monkeypatch):
     import src.research.client as client
     monkeypatch.setattr(client, "TAVILY_API_KEY", "")
     summary = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]
-    assert {tech: v["benefit"] for tech, v in summary["end_user"].items()} == {
-        "KIVI": "인용 가능한 지연/품질 간접 근거 미확인",
-        "CXL-PNM": "인용 가능한 지연/품질 간접 근거 미확인",
-    }
+    assert summary["end_user"] == (
+        "[KV Quantization 계열] 인용 가능한 지연/품질 간접 근거 미확인"
+        " / [CXL Memory Expansion 계열] 인용 가능한 지연/품질 간접 근거 미확인"
+    )
 
 
 def test_stakeholder_prefers_non_t4_source(monkeypatch):
