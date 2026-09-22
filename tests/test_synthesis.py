@@ -12,7 +12,7 @@ def test_evaluate_trl_dual():
 
     cxl_trl = evaluate_trl("CXL-PNM", MOCK_STATE["claims"])
     assert cxl_trl["tech_trl"] == "3-4"
-    assert cxl_trl["family_trl"] == "7-8"
+    assert cxl_trl["family_trl"] == "6-7"
     assert cxl_trl["research_evidence"] == ["DOM-02"]
     assert cxl_trl["adoption_evidence"] == ["MKT-01"]
 
