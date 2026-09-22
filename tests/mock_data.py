@@ -86,6 +86,17 @@ MOCK_STATE = {
             "counter_searched": True,
             "status": "ok",
         },
+        {
+            "id": "MKT-02",
+            "perspective": "market",
+            "tech": "KIVI",
+            "statement": "vLLM evaluates 2-bit KV cache kernel integration for serving workloads.",
+            "kind": "vendor_claim",
+            "evidence_ids": ["EV-MKT-02"],
+            "counter_evidence_ids": [],
+            "counter_searched": True,
+            "status": "ok",
+        },
     ],
     "evidence": [
         {
@@ -102,6 +113,11 @@ MOCK_STATE = {
             "evidence_id": "EV-MKT-01",
             "source_id": "SRC-MKT-01",
             "snippet": "Samsung Electronics announced commercial readiness of 256GB CXL 2.0 DRAM in 2024.",
+        },
+        {
+            "evidence_id": "EV-MKT-02",
+            "source_id": "SRC-MKT-02",
+            "snippet": "vLLM community discussions evaluate 2-bit KV cache kernel integration.",
         },
     ],
     "sources": [
@@ -129,6 +145,15 @@ MOCK_STATE = {
             "publisher": "Samsung Semiconductor",
             "date": "2024",
             "url": "https://semiconductor.samsung.com/newsroom",
+            "source_type": "web",
+            "source_tier": "T2",
+        },
+        {
+            "source_id": "SRC-MKT-02",
+            "title": "vLLM 2-bit KV Cache Integration Discussion",
+            "publisher": "vLLM Project",
+            "date": "2024",
+            "url": "https://github.com/vllm-project/vllm",
             "source_type": "web",
             "source_tier": "T2",
         },

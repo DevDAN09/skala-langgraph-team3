@@ -38,7 +38,7 @@ def main():
         graph = build_evaluation_graph()
         print("🔗 StateGraph 컴파일 완료. 파이프라인 실행 시작...")
         final_state = graph.invoke(INITIAL_INPUT_STATE)
-        REPORT_OUTPUT_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
+        REPORT_OUTPUT_PATH.write_text(final_state["report"], encoding="utf-8")
         elapsed = time.time() - start_time
 
         print("=" * 70)

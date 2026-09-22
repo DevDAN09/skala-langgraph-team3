@@ -14,11 +14,13 @@ def test_full_pipeline_smoke():
 
 def test_main_writes_report_from_state(monkeypatch, tmp_path):
     """보고서 파일은 main.py가 State의 report 문자열로 기록한다 (E 노드는 문자열만 반환)."""
-    import src.graph as graph_module
+    class Graph:
+        def invoke(self, state):
+            return {"report": "# stub report"}
 
     out = tmp_path / "final_evaluation_report.md"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out)
-    monkeypatch.setattr(graph_module, "report_generation_node", lambda state: {"report": "# stub report"})
+    monkeypatch.setattr(main, "build_evaluation_graph", lambda: Graph())
 
     assert main.main() == 0
     assert out.read_text(encoding="utf-8") == "# stub report"
