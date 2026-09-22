@@ -203,3 +203,50 @@ def summarize_snippet(content: str, focus: str) -> str:
     except Exception as e:
         print(f"⚠️ [경고/Fallback] statement 요약 LLM 호출 실패, 원문 인용으로 대체: {e}")
         return _clip_to_sentence(text)
+
+
+TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
+
+
+def rank_results(results: list[dict], exclude_urls: frozenset[str] = frozenset()) -> list[dict]:
+    """검색 결과를 T1→T4 순으로 정렬한다 (R2: T4 단독 근거 회피).
+
+    재검색에서는 직전에 쓴 URL을 제외한다. 제외하고 남는 게 없으면 원래 목록을 쓴다.
+    """
+    candidates = [r for r in results or [] if (r.get("url") or "") not in exclude_urls]
+    return sorted(candidates or list(results or []),
+                  key=lambda r: TIER_RANK[classify_tier(r.get("url", ""))])
+
+
+def rewrite_query(query: str, reason: str = "") -> str:
+    """재검색용으로 질의를 다르게 다시 쓴다. LLM을 못 쓰면 원본을 그대로 돌려준다.
+
+    같은 질의는 같은 결과를 돌려주므로, 검증 실패 후 같은 질의를 다시 던지면 재시도가
+    한도(2회)만 소진하고 같은 실패로 끝난다. 질의 자체를 바꿔야 다른 출처에 닿는다.
+    """
+    text = (query or "").strip()
+    if not text:
+        return text
+    try:
+        if not OPENAI_API_KEY:
+            raise RuntimeError("OPENAI_API_KEY not set")
+        from langchain_openai import ChatOpenAI
+
+        llm = ChatOpenAI(model=DEFAULT_LLM_MODEL, temperature=0)
+        prompt = (
+            "Rewrite the web search question below so that it looks for the same information "
+            "with different wording. Use technical synonyms, and name concrete products, "
+            "vendors, frameworks, or standards where that would help. Keep it a single "
+            "natural-language question in English, scoped to cloud LLM serving. "
+            + (f"The previous attempt failed because: {reason}. " if reason else "")
+            + "Do not answer the question and do not add facts of your own. "
+            "Output only the rewritten question.\n\n"
+            f"Question: {text}"
+        )
+        rewritten = (getattr(llm.invoke(prompt), "content", "") or "").strip()
+        if rewritten:
+            print(f"  ♻️ [쿼리 재작성] \"{rewritten[:70]}\"")
+        return rewritten or text
+    except Exception as e:
+        print(f"⚠️ [경고/Fallback] 쿼리 재작성 실패, 원본 질의 재사용: {e}")
+        return text
