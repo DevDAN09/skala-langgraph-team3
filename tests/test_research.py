@@ -23,6 +23,16 @@ def test_infer_kind_vendor_domain_is_vendor_claim():
     assert infer_kind("https://www.anandtech.com/show/1234") == "fact"
 
 
+def test_infer_kind_forecast_content_is_estimate():
+    # 시장 리포트의 CAGR/미래 예측 수치는 실측 fact가 아니라 estimate로 분류한다
+    forecast_content = "The market is projected to reach $11.8 billion by 2034 at a CAGR of 28.7%."
+    assert infer_kind("https://marketintelo.com/report/cxl-memory", forecast_content) == "estimate"
+    # 예측 문구가 없으면 기존처럼 fact
+    assert infer_kind("https://marketintelo.com/report/cxl-memory", "vLLM added support for this feature.") == "fact"
+    # 벤더 도메인이 우선한다 (벤더가 자기 예측을 말해도 vendor_claim)
+    assert infer_kind("https://www.nvidia.com/blog", forecast_content) == "vendor_claim"
+
+
 def test_vendor_label_maps_known_domains():
     assert vendor_label("https://semiconductor.samsung.com/news") == "Samsung"
     assert vendor_label("https://github.com/vllm-project/vllm") == "GitHub OSS community"
@@ -115,7 +125,7 @@ def test_market_to_stakeholder_url_dedup_chain_keeps_evidence_linked():
     """
     shared_url = "https://github.com/vllm-project/vllm"
 
-    def fake_search_pair(support_query, counter_query):
+    def fake_search_pair(support_query, counter_query, **kwargs):
         return (
             {"results": [{
                 "url": shared_url, "title": "vLLM", "published_date": "2024",
