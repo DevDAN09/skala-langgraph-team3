@@ -1,4 +1,5 @@
 """src/research/client.py - Tavily Search wrapper, paired queries, Tier classifier, and shared research utilities"""
+import time
 from src.config import TAVILY_API_KEY, DEFAULT_LLM_MODEL, OPENAI_API_KEY
 from src.state import Source
 
@@ -41,14 +42,40 @@ def search_pair(
     try:
         from tavily import TavilyClient
         client = TavilyClient(api_key=TAVILY_API_KEY)
+
+        q_sup_display = (support_query[:65] + "...") if len(support_query) > 65 else support_query
+        print(f"  🔍 [Tavily 검색] 지지 질의: \"{q_sup_display}\" (depth={search_depth})")
+        t0 = time.time()
         sup = client.search(
             query=support_query, max_results=3, search_depth=search_depth, time_range=time_range
         )
+        sup_time = time.time() - t0
+        sup_results = sup.get("results", []) if isinstance(sup, dict) else []
+        print(f"     ↳ 지지 결과: {len(sup_results)}건 수신 ({sup_time:.2f}s)")
+        for idx, r in enumerate(sup_results[:2], 1):
+            url = r.get("url", "")
+            title = (r.get("title") or "No Title").strip()[:50]
+            tier = classify_tier(url)
+            print(f"        [{idx}] [{tier}] {title} ({url})")
+
+        cnt = None
+        q_cnt_display = (counter_query[:65] + "...") if len(counter_query) > 65 else counter_query
+        print(f"  🔍 [Tavily 검색] 반대 질의: \"{q_cnt_display}\"")
+        t1 = time.time()
         try:
             cnt = client.search(
                 query=counter_query, max_results=2, search_depth=search_depth, time_range=time_range
             )
-        except Exception:
+            cnt_time = time.time() - t1
+            cnt_results = cnt.get("results", []) if isinstance(cnt, dict) else []
+            print(f"     ↳ 반대 결과: {len(cnt_results)}건 수신 ({cnt_time:.2f}s)")
+            for idx, r in enumerate(cnt_results[:2], 1):
+                url = r.get("url", "")
+                title = (r.get("title") or "No Title").strip()[:50]
+                tier = classify_tier(url)
+                print(f"        [{idx}] [{tier}] {title} ({url})")
+        except Exception as cnt_exc:
+            print(f"     ↳ ⚠️ [Tavily 반대 질의 오류]: {cnt_exc}")
             cnt = None
         return sup, cnt
     except Exception as e:
