@@ -16,9 +16,14 @@ def classify_tier(url: str) -> str:
 
 
 def search_pair(support_query: str, counter_query: str) -> tuple[dict, dict | None]:
-    """Execute paired support and counter queries for R3 bias mitigation."""
+    """Execute paired support and counter queries for R3 bias mitigation.
+
+    키가 없거나 호출이 실패하면 빈 결과를 돌려준다. 가짜 결과를 만들면 호출 측이 근거로 오인해
+    status=ok Claim과 가짜 URL Source가 생긴다. 빈 결과면 조사 노드가 insufficient로 처리한다.
+    """
     if not TAVILY_API_KEY:
-        return {"results": [{"url": "https://semiconductor.samsung.com", "content": "Fallback support snippet"}]}, None
+        print("⚠️ [경고/Fallback] TAVILY_API_KEY 없음: 웹 검색 결과 없이 진행")
+        return {"results": []}, None
     try:
         from tavily import TavilyClient
         client = TavilyClient(api_key=TAVILY_API_KEY)
@@ -28,8 +33,9 @@ def search_pair(support_query: str, counter_query: str) -> tuple[dict, dict | No
         except Exception:
             cnt = None
         return sup, cnt
-    except Exception:
-        return {"results": [{"url": "https://semiconductor.samsung.com", "content": "Fallback support snippet"}]}, None
+    except Exception as e:
+        print(f"⚠️ [경고/Fallback] Tavily 검색 실패: {e}")
+        return {"results": []}, None
 
 
 # 벤더 자체 도메인: 이 도메인에서 나온 statement는 독립 검증된 fact가 아니라 vendor_claim으로 분류한다.
