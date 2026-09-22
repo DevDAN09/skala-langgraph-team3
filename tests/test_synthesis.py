@@ -7,10 +7,14 @@ def test_evaluate_trl_dual():
     kivi_trl = evaluate_trl("KIVI", MOCK_STATE["claims"])
     assert kivi_trl["tech_trl"] == "5-6"
     assert kivi_trl["family_trl"] == "6-7"
+    assert kivi_trl["research_evidence"] == ["DOM-01"]
+    assert kivi_trl["adoption_evidence"] == ["MKT-02"]
 
     cxl_trl = evaluate_trl("CXL-PNM", MOCK_STATE["claims"])
     assert cxl_trl["tech_trl"] == "3-4"
     assert cxl_trl["family_trl"] == "7-8"
+    assert cxl_trl["research_evidence"] == ["DOM-02"]
+    assert cxl_trl["adoption_evidence"] == ["MKT-01"]
 
 
 def test_evaluate_trl_without_claims_uses_fallback():

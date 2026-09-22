@@ -2,8 +2,12 @@
 from src.state import OverallState, TRL
 
 def evaluate_trl(tech: str, claims: list[dict]) -> TRL:
-    """Calculates research (tech_trl) and commercial adoption (family_trl) independently."""
-    if not claims:
+    """Derive dual TRL from verified research and adoption claims for one technology."""
+    verified = [claim for claim in claims if claim.get("tech") == tech and claim.get("status") == "ok"]
+    research = [claim for claim in verified if claim.get("perspective") in {"domain", "maturity"}]
+    adoption = [claim for claim in verified if claim.get("perspective") == "market"]
+
+    if not verified:
         return {
             "tech_trl": "Unknown",
             "family_trl": "Unknown",
@@ -12,25 +16,20 @@ def evaluate_trl(tech: str, claims: list[dict]) -> TRL:
             "research_evidence": [],
             "adoption_evidence": [],
         }
-    if tech == "KIVI":
-        return {
-            "tech_trl": "5-6",
-            "family_trl": "6-7",
-            "confidence": "medium",
-            "fallback_reason": None,
-            "research_evidence": ["ICML 2024 paper open-source code"],
-            "adoption_evidence": ["vLLM 2-bit kernel integrations"]
-        }
-    if tech == "CXL-PNM":
-        return {
-            "tech_trl": "3-4",
-            "family_trl": "7-8",
-            "confidence": "high",
-            "fallback_reason": None,
-            "research_evidence": ["PACT 2024 7nm cycle-accurate simulation"],
-            "adoption_evidence": ["Samsung and SK Hynix CXL 2.0 mass production"]
-        }
-    return evaluate_trl(tech, [])
+
+    research_kinds = {claim.get("kind") for claim in research}
+    adoption_kinds = {claim.get("kind") for claim in adoption}
+    tech_trl = "5-6" if "fact" in research_kinds else "3-4" if "simulation" in research_kinds else "Unknown"
+    family_trl = "7-8" if "fact" in adoption_kinds else "6-7" if "vendor_claim" in adoption_kinds else "Unknown"
+    confidence = "high" if research and adoption else "medium" if research or adoption else "none"
+    return {
+        "tech_trl": tech_trl,
+        "family_trl": family_trl,
+        "confidence": confidence,
+        "fallback_reason": None if confidence != "none" else "Insufficient Evidence",
+        "research_evidence": [claim["id"] for claim in research],
+        "adoption_evidence": [claim["id"] for claim in adoption],
+    }
 
 def evaluation_synthesis_node(state: OverallState) -> dict:
     """Synthesizes cross-perspective findings, calculates dual TRL, and extracts trade-offs."""
