@@ -16,9 +16,16 @@ def classify_tier(url: str) -> str:
 
 
 def search_pair(support_query: str, counter_query: str) -> tuple[dict, dict | None]:
-    """Execute paired support and counter queries for R3 bias mitigation."""
+    """Execute paired support and counter queries for R3 bias mitigation.
+
+    키가 없거나 호출이 실패하면 빈 결과({"results": []})를 반환한다 (Issue #3).
+    예전에는 가짜 URL(semiconductor.samsung.com)을 진짜 검색 결과처럼 돌려줘서,
+    market/stakeholder가 이를 실제 근거로 착각해 status="ok"인 가짜 Claim과
+    가짜 Source를 만들었다. 빈 결과를 주면 호출부의 "결과 없음 -> insufficient"
+    경로가 그대로 타져서, 크래시 없이도 근거를 지어내지 않는다 (Graceful Degradation).
+    """
     if not TAVILY_API_KEY:
-        return {"results": [{"url": "https://semiconductor.samsung.com", "content": "Fallback support snippet"}]}, None
+        return {"results": []}, None
     try:
         from tavily import TavilyClient
         client = TavilyClient(api_key=TAVILY_API_KEY)
@@ -28,8 +35,9 @@ def search_pair(support_query: str, counter_query: str) -> tuple[dict, dict | No
         except Exception:
             cnt = None
         return sup, cnt
-    except Exception:
-        return {"results": [{"url": "https://semiconductor.samsung.com", "content": "Fallback support snippet"}]}, None
+    except Exception as e:
+        print(f"⚠️ [경고/Fallback] Tavily 호출 실패, 결과 없음으로 처리: {e}")
+        return {"results": []}, None
 
 
 # 벤더 자체 도메인: 이 도메인에서 나온 statement는 독립 검증된 fact가 아니라 vendor_claim으로 분류한다.
