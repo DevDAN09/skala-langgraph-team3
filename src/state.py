@@ -17,7 +17,7 @@ class Evidence(TypedDict):
     snippet: str
 
 class Claim(TypedDict):
-    id: str  # e.g., "DOM-01", "MKT-01", "STK-01", "MAT-01"
+    id: str  # e.g., "DOM-01", "MKT-01", "STK-01", "MAT-R01", "MAT-A01"
     perspective: Literal["maturity", "market", "stakeholder", "domain"]
     tech: str  # "KIVI" | "CXL-PNM"
     statement: str
