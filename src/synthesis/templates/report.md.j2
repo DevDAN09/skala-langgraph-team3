@@ -1,5 +1,8 @@
 # KV Cache 최적화 기술 다관점 평가 보고서 ({{ selected.get('sw', 'KIVI') }} vs {{ selected.get('hw', 'CXL-PNM') }})
 
+{% set refs = namespace(numbers={}) %}
+{% for source in sources %}{% set _ = refs.numbers.update({source.get('source_id'): loop.index}) %}{% endfor %}
+
 > **발행일자**: 2026-09-22  
 > **평가 도메인**: 클라우드 LLM 서빙 인프라  
 > **평가 대상**: KIVI (SW/알고리즘 2-bit 양자화) vs CXL-PNM (HW/CXL 근접 처리 가속)  
@@ -34,7 +37,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ### 3.1 KIVI (SW 알고리즘)
 - **메커니즘**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
 {% for claim in claims if claim.get('tech') == 'KIVI' and claim.get('status') == 'ok' %}
-- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }})
+- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}){% for item in evidence if item.get('evidence_id') in claim.get('evidence_ids', []) %} [{{ refs.numbers.get(item.get('source_id'), '?') }}]{% endfor %}
 {% else %}
 - 검증된 KIVI Claim이 없습니다.
 {% endfor %}
@@ -42,7 +45,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ### 3.2 CXL-PNM (HW 가속)
 - **메커니즘**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
 {% for claim in claims if claim.get('tech') == 'CXL-PNM' and claim.get('status') == 'ok' %}
-- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}{% if claim.get('kind') == 'simulation' %}; simulation{% endif %})
+- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}{% if claim.get('kind') == 'simulation' %}; simulation{% endif %}){% for item in evidence if item.get('evidence_id') in claim.get('evidence_ids', []) %} [{{ refs.numbers.get(item.get('source_id'), '?') }}]{% endfor %}
 {% else %}
 - 검증된 CXL-PNM Claim이 없습니다.
 {% endfor %}
@@ -92,11 +95,11 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 {% for s in sources %}
 {% if s.source_type == 'patent' %}
-{{ s.get('applicant', s.publisher) }}({{ s.date }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
+[{{ loop.index }}] {{ s.get('applicant', s.publisher) }}({{ s.date }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
 {% elif s.source_type == 'paper' %}
-{{ s.get('authors', s.publisher) }}({{ s.date }}). {{ s.title }}. *{{ s.get('venue', s.publisher) }}*{% if s.get('volume') %}, {{ s.get('volume') }}{% if s.get('issue') %}({{ s.get('issue') }}){% endif %}{% endif %}{% if s.get('pages') %}, {{ s.get('pages') }}{% endif %}.
+[{{ loop.index }}] {{ s.get('authors') or '저자 미상' }}({{ s.date }}). {{ s.title }}. *{{ s.get('venue', s.publisher) }}*{% if s.get('volume') %}, {{ s.get('volume') }}{% if s.get('issue') %}({{ s.get('issue') }}){% endif %}{% endif %}{% if s.get('pages') %}, {{ s.get('pages') }}{% endif %}.
 {% else %}
-{{ s.get('authors', s.publisher) }}({{ s.date }}). *{{ s.title }}*. {{ s.get('site_name', s.publisher) }}, {{ s.url }}
+[{{ loop.index }}] {{ s.get('authors', s.publisher) }}({{ s.date }}). *{{ s.title }}*. {{ s.get('site_name', s.publisher) }}, {{ s.url }}
 {% endif %}
 {% else %}
 - 검증된 출처가 없습니다.

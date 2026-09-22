@@ -22,6 +22,7 @@ def report_generation_node(state: OverallState) -> dict:
         trl=state.get("trl", {}),
         synthesis=state.get("synthesis", {}),
         sources=state.get("sources", []),
+        evidence=state.get("evidence", []),
         claims=state.get("claims", [])
     )
 
