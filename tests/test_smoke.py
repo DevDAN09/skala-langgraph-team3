@@ -20,6 +20,7 @@ def test_main_writes_report_from_state(monkeypatch, tmp_path):
 
     out = tmp_path / "final_evaluation_report.md"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out)
+    monkeypatch.setattr(main, "REPORT_MD_PATH", tmp_path / "final_evaluation_report_backup.md")
     monkeypatch.setattr(main, "build_evaluation_graph", lambda: Graph())
 
     assert main.main() == 0
