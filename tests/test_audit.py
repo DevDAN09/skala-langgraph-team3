@@ -148,7 +148,8 @@ def test_judge_claim_consistency_fallback():
 
 
 def test_evidence_audit_node_clean_state():
-    result = evidence_audit_node(MOCK_STATE)
+    with patch("src.audit.judge.judge_claim_consistency", return_value=True):
+        result = evidence_audit_node(MOCK_STATE)
     assert "audit" in result
     assert "retry_count" in result
     assert result["audit"]["issues"] == []
