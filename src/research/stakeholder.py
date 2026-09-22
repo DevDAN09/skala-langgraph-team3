@@ -9,30 +9,53 @@ from src.research.client import (
     vendor_label,
 )
 
-# 4대 Actor: 서빙 운영자 / 프레임워크 개발자 / End User / 공급자(메모리 벤더).
+# 4대 Actor(서빙 운영자 / 프레임워크 개발자 / End User / 공급자) × 기술 계열 2개 (설계 3.2·3.5, #8).
+# STK-01~04는 기존 의미를 유지하고, 05~08이 각 Actor의 반대 계열을 채운다. slot은 stakeholder 요약 dict 키.
 # {vendor}는 state["market"]["key_vendors"] (market_research가 남긴 컨텍스트)로 채워 쿼리를 구체화한다.
 STAKEHOLDER_QUERY_PLAN = [
     {
-        "claim_id": "STK-01", "actor": "Cloud Serving Operator", "tech": "KIVI",
+        "claim_id": "STK-01", "actor": "Cloud Serving Operator", "slot": "cloud_serving_operator", "tech": "KIVI",
         "support": "cloud LLM serving operator cost savings KV cache quantization deployment {vendor}",
         "counter": "KV cache quantization production serving operational risk concern",
     },
     {
-        "claim_id": "STK-02", "actor": "Framework Developer", "tech": "KIVI",
+        "claim_id": "STK-02", "actor": "Framework Developer", "slot": "framework_developer", "tech": "KIVI",
         "support": "vLLM TensorRT-LLM developer KV cache quantization kernel integration effort",
         "counter": "KV cache quantization kernel developer integration difficulty complaint",
     },
     {
-        "claim_id": "STK-03", "actor": "End User", "tech": "CXL-PNM",
+        "claim_id": "STK-03", "actor": "End User", "slot": "end_user", "tech": "CXL-PNM",
         "support": "CXL memory expansion LLM inference latency long context end user experience",
         "counter": "CXL memory expansion inference latency degradation user complaint",
     },
     {
-        "claim_id": "STK-04", "actor": "Memory Vendor", "tech": "CXL-PNM",
+        "claim_id": "STK-04", "actor": "HW/Memory Supplier", "slot": "memory_vendor", "tech": "CXL-PNM",
         "support": "{vendor} CXL memory module enterprise AI server roadmap strategy",
         "counter": "CXL memory vendor adoption challenge cost competitiveness",
     },
+    {
+        "claim_id": "STK-05", "actor": "Cloud Serving Operator", "slot": "cloud_serving_operator", "tech": "CXL-PNM",
+        "support": "cloud data center CXL memory expansion LLM inference server deployment {vendor}",
+        "counter": "CXL memory expansion data center deployment cost operational concern",
+    },
+    {
+        "claim_id": "STK-06", "actor": "Framework Developer", "slot": "framework_developer", "tech": "CXL-PNM",
+        "support": "LLM serving framework CXL memory tiering KV cache offload support",
+        "counter": "CXL memory tiering software support complexity developer challenge",
+    },
+    {
+        "claim_id": "STK-07", "actor": "End User", "slot": "end_user", "tech": "KIVI",
+        "support": "KV cache quantization LLM response quality latency long context user impact",
+        "counter": "KV cache 2-bit quantization accuracy degradation long context output quality",
+    },
+    {
+        "claim_id": "STK-08", "actor": "HW/Memory Supplier", "slot": "memory_vendor", "tech": "KIVI",
+        "support": "GPU vendor inference SDK KV cache quantization support",
+        "counter": "KV cache quantization hardware support limitation GPU",
+    },
 ]
+TECH_ORDER = ("KIVI", "CXL-PNM")
+END_USER_GAP = "인용 가능한 지연/품질 간접 근거 미확인"
 STAKEHOLDER_PLAN_BY_ID = {q["claim_id"]: q for q in STAKEHOLDER_QUERY_PLAN}
 TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
 
@@ -179,23 +202,34 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
     return None, [], []
 
 
-def _summarize(claims: list[Claim]) -> dict:
-    """STK Claim으로 Actor별 요약 dict를 만든다. 재실행에서도 같은 함수로 슬롯을 다시 계산한다."""
-    actor_by_claim_id = {q["claim_id"]: q["actor"] for q in STAKEHOLDER_QUERY_PLAN}
+def _family_labels(state: OverallState) -> dict[str, str]:
+    families = (state.get("selected") or {}).get("families") or {}
+    return {"KIVI": families.get("sw", "KV Quantization"), "CXL-PNM": families.get("hw", "CXL Memory Expansion")}
+
+
+def _summarize(claims: list[Claim], family_labels: dict[str, str]) -> dict:
+    """STK Claim으로 Actor별 요약 dict를 만든다. 재실행에서도 같은 함수로 슬롯을 다시 계산한다.
+    슬롯은 {tech: statement}. 시장성·이해관계자 근거는 계열 단위라서 문자열 별칭에는 계열명을 붙인다 (설계 3.2)."""
     ok = {c["id"]: c["statement"] for c in claims if c.get("status") == "ok"}
-    cloud_serving_operator = ok.get("STK-01", "")
-    memory_vendor = ok.get("STK-04", "")
+    slots: dict[str, dict[str, str]] = {}
+    for q in STAKEHOLDER_QUERY_PLAN:
+        slots.setdefault(q["slot"], {})[q["tech"]] = ok.get(q["claim_id"], "")
+    # End User는 지연/품질 간접 근거가 없으면 기술별로 미확인을 남긴다 (추정 금지).
+    slots["end_user"] = {tech: stmt or END_USER_GAP for tech, stmt in slots["end_user"].items()}
+
+    def by_family(slot: str) -> str:
+        return " / ".join(
+            f"[{family_labels[tech]} 계열] {slots[slot][tech] or '근거 미확인'}" for tech in TECH_ORDER
+        )
+
+    actors = list(dict.fromkeys(q["actor"] for q in STAKEHOLDER_QUERY_PLAN))
+    surveyed = list(dict.fromkeys(q["actor"] for q in STAKEHOLDER_QUERY_PLAN if q["claim_id"] in ok))
     return {
-        "actors_surveyed": [actor_by_claim_id[cid] for cid in actor_by_claim_id if cid in ok] or list(actor_by_claim_id.values()),
-        "cloud_serving_operator": cloud_serving_operator,
-        "framework_developer": ok.get("STK-02", ""),
-        # End User는 지연/품질 간접 근거가 없으면 명시적으로 미확인으로 남긴다 (추정 금지).
-        "end_user": ok.get("STK-03") or "인용 가능한 지연/품질 간접 근거 미확인",
-        "memory_vendor": memory_vendor,
-        # report.md.j2(E 소유)가 읽는 기존 키 이름과의 하위 호환 별칭.
-        # E가 4-Actor 세부 키로 템플릿을 갱신하기 전까지 보고서가 빈 칸으로 렌더링되지 않게 한다.
-        "cloud_ops": cloud_serving_operator,
-        "hw_vendors": memory_vendor,
+        "actors_surveyed": surveyed or actors,
+        **slots,
+        # report.md.j2(E 소유)가 읽는 기존 키 이름과의 하위 호환 문자열 별칭.
+        "cloud_ops": by_family("cloud_serving_operator"),
+        "hw_vendors": by_family("memory_vendor"),
     }
 
 
@@ -225,10 +259,10 @@ def stakeholder_research_node(state: OverallState) -> dict:
         # 재실행: 자기 claim만 upsert. 요약 dict는 Overwrite 키라 기존 값을 펼친 뒤 STK Claim 기준으로 슬롯을 다시 계산한다.
         merged = {c["id"]: c for c in state.get("claims", []) if c.get("id", "").startswith("STK-")}
         merged.update({c["id"]: c for c in claims})
-        stakeholder = {**(state.get("stakeholder") or {}), **_summarize(list(merged.values()))}
+        stakeholder = {**(state.get("stakeholder") or {}), **_summarize(list(merged.values()), _family_labels(state))}
         return {"stakeholder": stakeholder, "claims": claims, "evidence": evidence, "sources": sources}
 
-    # 최초 실행: STK-01~04 (서빙 운영자/개발자/End User/공급자) 전량 조사
+    # 최초 실행: STK-01~08 (4대 Actor × 기술 계열 2개) 전량 조사
     claims = []
     evidence = []
     sources: list[Source] = []
@@ -239,7 +273,7 @@ def stakeholder_research_node(state: OverallState) -> dict:
         sources.extend(new_src)
 
     return {
-        "stakeholder": _summarize(claims),
+        "stakeholder": _summarize(claims, _family_labels(state)),
         "claims": claims,
         "evidence": evidence,
         "sources": sources,

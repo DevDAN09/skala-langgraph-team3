@@ -87,11 +87,17 @@ def test_stakeholder_node_reads_market_context_and_covers_four_actors():
     state = {**INITIAL_INPUT_STATE, **market_ctx}
     res = stakeholder_research_node(state)
 
-    assert len(STAKEHOLDER_QUERY_PLAN) == 4
-    assert {c["id"] for c in res["claims"]} == {"STK-01", "STK-02", "STK-03", "STK-04"}
+    # 4대 Actor × 기술 계열 2개 (설계 3.2·3.5, #8). STK-01~04 의미는 유지하고 05~08로 반대 계열을 채운다.
+    assert len(STAKEHOLDER_QUERY_PLAN) == 8
+    assert {c["id"] for c in res["claims"]} == {f"STK-0{i}" for i in range(1, 9)}
     for c in res["claims"]:
         assert c["tech"] in ("KIVI", "CXL-PNM")
         assert c["perspective"] == "stakeholder"
+    techs_by_actor = {}
+    for q in STAKEHOLDER_QUERY_PLAN:
+        techs_by_actor.setdefault(q["actor"], set()).add(q["tech"])
+    assert len(techs_by_actor) == 4
+    assert all(t == {"KIVI", "CXL-PNM"} for t in techs_by_actor.values())
     # stakeholder는 market 딕셔너리를 절대 반환하지 않는다 (쓰기 권한은 market 노드 전용)
     assert "market" not in res
 
@@ -191,10 +197,34 @@ def test_stakeholder_retry_patches_only_its_summary_slot(monkeypatch):
         stakeholder={"cloud_serving_operator": "STK-01 old statement.", "memory_vendor": "STK-04 kept.", "extra": "keep me"},
     )
     summary = stakeholder_research_node(state)["stakeholder"]
-    assert summary["cloud_serving_operator"] == "STK-01 new statement."
-    assert summary["cloud_ops"] == "STK-01 new statement."
-    assert summary["memory_vendor"] == "STK-04 kept."
+    assert summary["cloud_serving_operator"]["KIVI"] == "STK-01 new statement."
+    assert "STK-01 new statement." in summary["cloud_ops"]
+    assert summary["memory_vendor"]["CXL-PNM"] == "STK-04 kept."
     assert summary["extra"] == "keep me"
+
+
+def test_stakeholder_summary_labels_family_evidence(monkeypatch):
+    """시장성·이해관계자 근거는 계열 근거임을 표기한다 (설계 3.2). E 템플릿용 문자열 별칭에도 계열명이 붙는다."""
+    import src.research.stakeholder as stk
+    results = [{"url": "https://www.theregister.com/a", "title": "a", "content": "Operators report lower serving cost."}]
+    monkeypatch.setattr(stk, "search_pair", lambda s, c: ({"results": results}, None))
+    summary = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]
+    for alias in ("cloud_ops", "hw_vendors"):
+        assert isinstance(summary[alias], str)
+        assert "KV Quantization" in summary[alias]
+        assert "CXL Memory Expansion" in summary[alias]
+    assert set(summary["end_user"]) == {"KIVI", "CXL-PNM"}
+
+
+def test_stakeholder_end_user_gap_is_marked_per_tech(monkeypatch):
+    """End User 근거가 없으면 기술별로 미확인을 남기고 추정하지 않는다 (설계 3.5)."""
+    import src.research.client as client
+    monkeypatch.setattr(client, "TAVILY_API_KEY", "")
+    summary = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]
+    assert summary["end_user"] == {
+        "KIVI": "인용 가능한 지연/품질 간접 근거 미확인",
+        "CXL-PNM": "인용 가능한 지연/품질 간접 근거 미확인",
+    }
 
 
 def test_stakeholder_prefers_non_t4_source(monkeypatch):
