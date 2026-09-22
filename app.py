@@ -5,7 +5,15 @@ import streamlit as st
 from pathlib import Path
 
 from src.graph import build_evaluation_graph
-from src.config import REPORT_OUTPUT_PATH, DEFAULT_LLM_MODEL, JUDGE_LLM_MODEL, FAISS_INDEX_DIR
+from src.config import (
+    REPORT_OUTPUT_PATH,
+    REPORT_MD_PATH,
+    REPORT_PDF_PATH,
+    DEFAULT_LLM_MODEL,
+    JUDGE_LLM_MODEL,
+    FAISS_INDEX_DIR,
+)
+from src.synthesis.pdf_export import convert_markdown_to_pdf
 from main import INITIAL_INPUT_STATE
 from tests.mock_data import MOCK_STATE
 
@@ -85,7 +93,11 @@ if run_btn:
             # 최종 State 확보
             final_state = graph.invoke(INITIAL_INPUT_STATE)
             elapsed = time.time() - start_time
-            REPORT_OUTPUT_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
+            REPORT_MD_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
+            if REPORT_OUTPUT_PATH.suffix.lower() == ".pdf":
+                convert_markdown_to_pdf(final_state.get("report") or "", REPORT_OUTPUT_PATH)
+            else:
+                REPORT_OUTPUT_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
             status_box.update(label=f"✅ 파이프라인 실행 완료! (소요 시간: {elapsed:.2f}초)", state="complete", expanded=False)
             
         progress_bar.progress(1.0, text="완료")
@@ -112,8 +124,8 @@ else:
         st.subheader("📑 최종 평가 보고서 (final_evaluation_report.md)")
         report_text = state.get("report", "")
         if report_text:
-            col_download, col_info = st.columns([1, 4])
-            with col_download:
+            col_md, col_pdf, col_info = st.columns([1, 1, 3])
+            with col_md:
                 st.download_button(
                     label="📥 보고서 (.md) 다운로드",
                     data=report_text,
@@ -121,8 +133,20 @@ else:
                     mime="text/markdown",
                     use_container_width=True,
                 )
+            with col_pdf:
+                pdf_bytes = b""
+                if REPORT_PDF_PATH.exists():
+                    pdf_bytes = REPORT_PDF_PATH.read_bytes()
+                st.download_button(
+                    label="📄 보고서 (.pdf) 다운로드",
+                    data=pdf_bytes,
+                    file_name="final_evaluation_report.pdf",
+                    mime="application/pdf",
+                    disabled=len(pdf_bytes) == 0,
+                    use_container_width=True,
+                )
             with col_info:
-                st.caption(f"보고서 크기: {len(report_text):,} 자 | 저장 경로: `{REPORT_OUTPUT_PATH}`")
+                st.caption(f"보고서 크기: {len(report_text):,} 자 | PDF 저장 경로: `{REPORT_OUTPUT_PATH}`")
 
             st.divider()
             st.markdown(report_text)

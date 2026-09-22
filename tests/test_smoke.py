@@ -20,10 +20,31 @@ def test_main_writes_report_from_state(monkeypatch, tmp_path):
 
     out = tmp_path / "final_evaluation_report.md"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out)
+    monkeypatch.setattr(main, "REPORT_MD_PATH", tmp_path / "final_evaluation_report_backup.md")
     monkeypatch.setattr(main, "build_evaluation_graph", lambda: Graph())
 
     assert main.main() == 0
     assert out.read_text(encoding="utf-8") == "# stub report"
+
+
+def test_main_writes_pdf_report_from_state(monkeypatch, tmp_path):
+    """main.py 실행 시 REPORT_OUTPUT_PATH가 .pdf이면 PDF 파일을 생성한다."""
+    class Graph:
+        def invoke(self, state):
+            return {"report": "# 최종 평가 보고서\n\n내용입니다."}
+
+    out_pdf = tmp_path / "final_evaluation_report.pdf"
+    out_md = tmp_path / "final_evaluation_report.md"
+    monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out_pdf)
+    monkeypatch.setattr(main, "REPORT_MD_PATH", out_md)
+    monkeypatch.setattr(main, "build_evaluation_graph", lambda: Graph())
+
+    assert main.main() == 0
+    assert out_pdf.exists()
+    assert out_pdf.stat().st_size > 500
+    assert out_md.exists()
+    assert "# 최종 평가 보고서" in out_md.read_text(encoding="utf-8")
+
 
 
 def test_main_initial_state_matches_contract():
