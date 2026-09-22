@@ -91,7 +91,13 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ## REFERENCE
 
 {% for s in sources %}
-- [{{ s.source_id }}] {{ s.title }} ({{ s.publisher }}, {{ s.date }}) - {{ s.url }} [Tier: {{ s.source_tier }}]
+{% if s.source_type == 'patent' %}
+{{ s.get('applicant', s.publisher) }}({{ s.date }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
+{% elif s.source_type == 'paper' %}
+{{ s.get('authors', s.publisher) }}({{ s.date }}). {{ s.title }}. *{{ s.get('venue', s.publisher) }}*{% if s.get('volume') %}, {{ s.get('volume') }}{% if s.get('issue') %}({{ s.get('issue') }}){% endif %}{% endif %}{% if s.get('pages') %}, {{ s.get('pages') }}{% endif %}.
+{% else %}
+{{ s.get('authors', s.publisher) }}({{ s.date }}). *{{ s.title }}*. {{ s.get('site_name', s.publisher) }}, {{ s.url }}
+{% endif %}
 {% else %}
 - 검증된 출처가 없습니다.
 {% endfor %}
