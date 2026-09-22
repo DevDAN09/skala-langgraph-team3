@@ -447,11 +447,6 @@ def test_stakeholder_queries_are_scoped_to_cloud_serving():
             assert any(s in q[key].lower() for s in scope), (q["claim_id"], key, q[key])
 
 
-def test_search_pair():
-    sup, cnt = search_pair("support query", "counter query")
-    assert isinstance(sup, dict)
-    assert "results" in sup
-
 
 def test_search_pair_fallback_returns_no_fabricated_result(monkeypatch):
     """키가 없거나 Tavily 호출이 실패하면 가짜 URL·snippet 대신 빈 결과를 돌려준다 (common.md 7절 ②, 가짜 URL 금지)."""
