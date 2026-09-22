@@ -390,6 +390,63 @@ def test_stakeholder_relabel_changes_fact_even_on_non_vendor_domain():
     assert claim["status"] == "ok"
 
 
+def _record_focus(monkeypatch):
+    import src.research.stakeholder as stk
+    focuses = []
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: (focuses.append(focus), "Summarized.")[1])
+    return focuses
+
+
+def test_stakeholder_focus_describes_family_not_single_tech(monkeypatch):
+    """웹 근거는 계열 단위다. focus가 개별 기술만 가리키면 일반론을 KIVI 주장으로 옮겨 쓴다 (설계 3.2)."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search())
+    focuses = _record_focus(monkeypatch)
+    stakeholder_research_node(INITIAL_INPUT_STATE)
+    benefit, concern, barrier = focuses[0], focuses[8], focuses[9]  # STK-01: 지지 요약 → (8개 Claim 후) Concern·Barrier
+    for f in (benefit, concern, barrier):
+        assert "KV Quantization technology family" in f
+        assert "(e.g., KIVI)" in f
+
+
+def test_stakeholder_concern_barrier_do_not_attribute_to_actor(monkeypatch):
+    """반대 근거가 그 Actor의 발언이라는 보장이 없다. 주어를 지어내지 않게 한다 (설계 4.5 페르소나 금지)."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search())
+    focuses = _record_focus(monkeypatch)
+    stakeholder_research_node(INITIAL_INPUT_STATE)
+    for f in focuses[8:]:
+        assert "raised by" not in f and "faced by" not in f
+        assert "relevant to the" in f
+        assert "Do not attribute" in f
+
+
+def test_stakeholder_re_extract_reuses_initial_benefit_focus(monkeypatch):
+    """R5 재추출은 처음 생성할 때와 같은 초점으로, snippet 내용만 다시 서술한다."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search())
+    focuses = _record_focus(monkeypatch)
+    stakeholder_research_node(INITIAL_INPUT_STATE)
+    initial = focuses[0]
+    focuses.clear()
+    state = _retry_state(
+        [_stk_claim("STK-01", status="flagged")],
+        {"claim_id": "STK-01", "rule": "R5", "action": "re_extract"},
+        evidence=[{"evidence_id": "EV-STK-01", "source_id": "SRC-STK-01", "snippet": "operator snippet."}],
+    )
+    stakeholder_research_node(state)
+    assert focuses[0].startswith(initial)
+    assert "Restate only what the text says" in focuses[0]
+
+
+def test_stakeholder_queries_are_scoped_to_cloud_serving():
+    """평가 도메인은 클라우드 LLM 서빙 (설계 3.1). 온디바이스 양자화 글이 잡히지 않게 모든 쿼리에 서빙 범위를 둔다."""
+    scope = ("cloud", "data center", "serving", "server")
+    for q in STAKEHOLDER_QUERY_PLAN:
+        for key in ("support", "counter"):
+            assert any(s in q[key].lower() for s in scope), (q["claim_id"], key, q[key])
+
+
 def test_search_pair():
     sup, cnt = search_pair("support query", "counter query")
     assert isinstance(sup, dict)
