@@ -254,6 +254,32 @@ def test_search_pair():
     assert "results" in sup
 
 
+def test_search_pair_fallback_returns_no_fabricated_result(monkeypatch):
+    """키가 없거나 Tavily 호출이 실패하면 가짜 URL·snippet 대신 빈 결과를 돌려준다 (common.md 7절 ②, 가짜 URL 금지)."""
+    import src.research.client as client
+    monkeypatch.setattr(client, "TAVILY_API_KEY", "")
+    assert client.search_pair("support", "counter") == ({"results": []}, None)
+
+    class BrokenTavily:
+        def __init__(self, api_key):
+            raise RuntimeError("network down")
+
+    import tavily
+    monkeypatch.setattr(client, "TAVILY_API_KEY", "dummy-key")
+    monkeypatch.setattr(tavily, "TavilyClient", BrokenTavily)
+    assert client.search_pair("support", "counter") == ({"results": []}, None)
+
+
+def test_stakeholder_without_search_results_is_insufficient(monkeypatch):
+    """검색 결과가 없으면 추측으로 채우지 않고 insufficient, Source도 만들지 않는다."""
+    import src.research.client as client
+    monkeypatch.setattr(client, "TAVILY_API_KEY", "")
+    res = stakeholder_research_node(INITIAL_INPUT_STATE)
+    assert {c["status"] for c in res["claims"]} == {"insufficient"}
+    assert all(c["statement"] == "" for c in res["claims"])
+    assert res["sources"] == []
+
+
 if __name__ == "__main__":
     import pytest
     raise SystemExit(pytest.main([__file__, "-v"]))
