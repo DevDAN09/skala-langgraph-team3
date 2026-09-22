@@ -43,16 +43,27 @@
 | Web Search | Tavily Search |
 | Report | Jinja2, xhtml2pdf (한글 폰트 `NanumGothic`) |
 
+### Embedding 모델 선정
+논문 원문에서 만든 질의 20개(KIVI·CXL-PNM 각 10개)로 코퍼스 청크 검색 성능을 측정했다. **Hit@5 ≥ 0.8을 만족하는 소형 모델 중 MRR이 가장 높은 모델**을 채택하고, 소형 모델이 모두 미달하면 `BAAI/bge-m3`로 전환한다.
+
+| 모델 | 규모 | Hit@5 | MRR | Hit@5 ≥ 0.8 | 결과 |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| `BAAI/bge-small-en-v1.5` | 33M | 0.75 | 0.548 | 미달 | — |
+| `intfloat/e5-small-v2` | 33M | **0.80** | **0.596** | 충족 | **채택** |
+| `BAAI/bge-m3` | 568M | — | — | — | 소형 모델이 기준을 충족해 미측정 |
+
+> 근거: `src/rag/benchmark.py`, `src/rag/benchmark_results.json` (`python -m src.rag.benchmark`로 재현)
+
 
 ## Agents
-| Agent / Node | 담당 | 역할 | 출력 State |
-| :--- | :---: | :--- | :--- |
-| `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
-| `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | `market`, `claims(MKT-*, MAT-A*)` |
-| `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | `stakeholder`, `claims(STK-01~08)` |
-| `evidence_audit` | D | 2단계 Fast-Fail 검증(R1~R4 → R5), 위반 관점만 표적 피드백, 한도 도달 시 상태 확정 | `audit`, `retry_count`, `claims[*].status` |
-| `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
-| `report_generation` | E | Jinja2 골격 조립 → Strict Grounding Polishing | `report` |
+| Agent / Node | 담당 | 역할 | 도구 | 출력 State |
+| :--- | :---: | :--- | :--- | :--- |
+| `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | RAG (FAISS + `e5-small-v2`) + LLM(`gpt-4o-mini`, 충분성 게이트·Query Rewrite·원문 인용) | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
+| `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | Web Search (Tavily) + LLM 요약(`gpt-4o-mini`) | `market`, `claims(MKT-*, MAT-A*)` |
+| `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | Web Search (Tavily) + LLM 요약(`gpt-4o-mini`) | `stakeholder`, `claims(STK-01~08)` |
+| `evidence_audit` | D | 2단계 Fast-Fail 검증(R1~R4 → R5), 위반 관점만 표적 피드백, 한도 도달 시 상태 확정 | 규칙 검사(Python, R1~R4) + LLM Judge(`gpt-4o`, R5) | `audit`, `retry_count`, `claims[*].status` |
+| `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | 규칙 기반 집계 (LLM 미사용) | `trl`, `synthesis` |
+| `report_generation` | E | Jinja2 골격 조립 → Strict Grounding Polishing | Jinja2 템플릿 + LLM(`gpt-4o`) | `report` |
 
 
 ## Architecture
@@ -91,6 +102,31 @@ flowchart TD
   - `evidence`: Evidence ID 기준 멱등 업데이트 (`upsert_evidence`)
   - `sources`: URL 기준 정규화 및 중복 제거 결합 (`union_sources`)
 
+
+## Evaluation Results
+최종 평가 보고서(`final_evaluation_report.pdf`, 2026-09-22 실행 결과) 기준이다. LLM·웹 검색 결과에 따라 실행마다 일부 Claim은 달라질 수 있다.
+
+### TRL 추정 결과 (TRL 이원화)
+| 기술 | 개별 기술 성숙도 (`tech_trl`) | 계열 생태계 성숙도 (`family_trl`) | 신뢰도 | 근거 Claim |
+| :--- | :---: | :---: | :---: | :--- |
+| **KIVI** (SW) | 5-6 | 7-8 | high | 연구: DOM-05, DOM-09, DOM-11 / 채택: MKT-02 |
+| **CXL-PNM** (HW) | 3-4 | 7-8 | high | 연구: MAT-A02, DOM-02, DOM-04, DOM-06, DOM-10, DOM-12, MAT-R02 / 채택: MKT-03, MKT-04, MKT-06 |
+
+- 두 기술 모두 계열 생태계(KV 양자화 / CXL 메모리 확장)는 7-8 수준이지만, 개별 기술은 KIVI가 오픈소스 구현 단계(5-6), CXL-PNM이 시뮬레이션 연구 단계(3-4)로 **개별 기술과 계열 사이의 성숙도 간극**이 드러난다.
+
+### 선정 기술 평가 결과
+| 관점 | KIVI (SW · 2-bit KV 양자화) | CXL-PNM (HW · CXL 근접 메모리 처리) |
+| :--- | :--- | :--- |
+| 메커니즘 | Key는 채널 단위, Value는 토큰 단위로 양자화하는 튜닝 없는 2-bit KV cache 양자화 [DOM-09] | CXL Type 3 메모리 장치 내부(CXL 프로토콜 스택 ↔ LPDDR5X 컨트롤러)에 KV cache 관리·어텐션 연산 전용 PNM을 두어 GPU recall 오버헤드 제거 [DOM-10, DOM-04] |
+| 주요 수치 | 유사한 peak memory에서 최대 **4× 배치**, **2.35~3.47× 처리량** (실측) [DOM-05] | 최대 **21.9× 처리량**, 토큰당 최대 **60× 낮은 에너지**, 최대 **7.3× 비용 효율** (**시뮬레이션**) [DOM-06] |
+| 실험 조건 | group size 32, residual length 128 (KIVI-2 / KIVI-4) [DOM-11] | 7nm 사이클 단위 시뮬레이터, 8×A100-80GB DGX 대비, Llama3.1 8B~405B, 128K~1M 토큰 [MAT-R02] |
+| 시장성 | KV cache 관리 계열 오픈소스(Dynamo, AIBrix, llm-d, KServe) 지원 [MKT-02] | 하이퍼스케일러·클라우드·HPC 시범 배포 [MKT-03], 2023년부터 CXL 2.0 지원 CPU 출하 [MKT-06] |
+| 도입 장벽 | 클라우드 서빙 범위의 공개 근거 미확인 | 독립 검증 비용, 생태계 분열·대체 기술 위험, CXL 4.0 대역폭 활용도 10% 미만 보고 (보고서 4.2) |
+| 이해관계자 | 근거 미확인 (STK Claim `insufficient`) | 근거 미확인 (STK Claim `insufficient`) |
+| 정확도 | 공개 근거 미확인 | 공개 근거 미확인 |
+
+- **워크로드별 트레이드오프**: KIVI는 기존 GPU 환경에 소프트웨어로 압축을 적용하고, CXL-PNM은 메모리 확장 인프라를 전제로 근접 연산을 활용한다. 두 방식은 CXL 메모리 계층과 KIVI 압축을 함께 검토하는 **결합 가능성**도 있다.
+- **Evidence Gap**: 근거를 확인하지 못한 Claim 16건(`insufficient`)은 결론에서 제외하고 보고서 6장 한계점에만 기록했다.
 
 ## Directory Structure
 ```
