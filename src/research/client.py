@@ -198,14 +198,9 @@ def summarize_snippet(content: str, focus: str) -> str:
         resp = llm.invoke(prompt)
         summarized = (getattr(resp, "content", "") or "").strip()
         if not summarized or summarized.strip(' .').upper() == "NONE":
-            # 예전에는 여기서도 원문을 잘라 statement로 썼다. 그래서 LLM이 "관련 내용 없음"이라고
-            # 판정한 텍스트(검색 리스팅 페이지의 저자 목록, 로그인·네비게이션 메뉴)가 그대로
-            # Claim statement와 보고서 "도입 장벽"으로 승격됐다. 근거로 쓸 수 없다고 판정된
-            # 텍스트는 빈 문자열로 돌려, 호출부가 다음 후보로 넘어가거나 insufficient로 남기게 한다.
-            return ""
+            return _clip_to_sentence(text)
         return summarized
     except Exception as e:
-        # LLM 자체를 못 쓰는 경우(키 없음·호출 실패)는 판정이 없었던 것이므로 원문 인용으로 버틴다.
         print(f"⚠️ [경고/Fallback] statement 요약 LLM 호출 실패, 원문 인용으로 대체: {e}")
         return _clip_to_sentence(text)
 

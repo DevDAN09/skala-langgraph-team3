@@ -68,9 +68,9 @@ SNIPPET_LIMIT = 500
 def _select_evidence(results: list[dict], focus: str, exclude_urls: set[str] = frozenset()):
     """T1~T3 결과를 먼저 고르고(R2: T4 단독 근거 금지), 쓸 만한 statement가 나오는 첫 후보를 쓴다.
 
-    summarize_snippet이 빈 문자열을 주면 그 텍스트에 관련 내용이 없다는 뜻이라(리스팅 페이지,
-    네비게이션 메뉴 등) 다음 후보로 넘어간다. 전부 실패하면 Tier가 가장 높은 후보를 근거로만
-    남기고 statement는 비운다. 재검색 때는 직전 근거 URL을 뺀다.
+    summarize_snippet이 빈 문자열을 주면 다음 후보로 넘어간다. 전부 실패하면 Tier가 가장 높은
+    후보를 근거로만 남기고 statement는 비운다. 재검색 때는 직전 근거 URL을 뺀다.
+    (요약이 "관련 내용 없음"을 빈 문자열로 알리는 부분은 이슈 #18 담당이다.)
     """
     ranked = rank_results(results, exclude_urls)
     if not ranked:
@@ -264,12 +264,10 @@ def _detail(item: dict, claim: Claim, snippets: dict[str, str], labels: dict[str
         return None
     counter = next((snippets[e] for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), "")
     # ponytail: 같은 반대 snippet을 초점만 바꿔 두 번 요약한다. Concern·Barrier가 겹치면 Barrier 전용 쿼리 추가 검토.
-    # 요약이 비면(=그 snippet에 해당 내용 없음) 빈칸 대신 미확인으로 남긴다. 예전에는 원문이
-    # 그대로 들어가 로그인·네비게이션 메뉴가 Concern/Barrier로 실렸다.
     return {
         "benefit": claim["statement"],
-        "concern": (summarize_snippet(counter, _counter_focus("concerns or risks about", item, labels)) or COUNTER_NOT_FOUND) if counter else COUNTER_NOT_FOUND,
-        "barrier": (summarize_snippet(counter, _counter_focus("adoption barriers of", item, labels)) or COUNTER_NOT_FOUND) if counter else COUNTER_NOT_FOUND,
+        "concern": summarize_snippet(counter, _counter_focus("concerns or risks about", item, labels)) if counter else COUNTER_NOT_FOUND,
+        "barrier": summarize_snippet(counter, _counter_focus("adoption barriers of", item, labels)) if counter else COUNTER_NOT_FOUND,
         "evidence_ids": [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])],
     }
 

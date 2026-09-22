@@ -138,9 +138,10 @@ def _market_search_pair(support_query: str, counter_query: str) -> tuple[dict, d
 def _select_evidence(results: list[dict], focus: str, exclude_urls: frozenset[str] = frozenset()):
     """Tier 순으로 후보를 돌며 쓸 만한 statement가 나오는 첫 결과를 고른다.
 
-    예전에는 results[0] 한 건만 썼다. Tavily 1위가 검색 리스팅·광고 페이지면 본문이 없어
-    statement 자리에 저자 목록이나 로그인 메뉴가 들어갔다. summarize_snippet이 빈 문자열을
-    주면(=그 텍스트에 관련 내용 없음) 다음 후보로 넘어간다.
+    예전에는 results[0] 한 건만 썼다. Tavily 1위가 검색 리스팅·광고 페이지면 그 자리에서
+    실패가 확정됐다. summarize_snippet이 빈 문자열을 주면 다음 후보로 넘어간다.
+    (요약이 "관련 내용 없음"을 빈 문자열로 알리는 부분은 이슈 #18 담당이다. 그 수정이
+    들어오기 전까지 이 순회는 본문이 아예 없는 후보만 건너뛴다.)
 
     전부 실패해도 Tier가 가장 높은 후보를 근거로는 남긴다(statement는 빈 문자열). 근거 없이
     insufficient로만 두면 D의 R1이 "근거 없음"으로만 보고, 어떤 출처를 확인했는지가 사라진다.
