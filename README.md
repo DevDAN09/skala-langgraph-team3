@@ -43,6 +43,17 @@
 | Web Search | Tavily Search |
 | Report | Jinja2, xhtml2pdf (한글 폰트 `NanumGothic`) |
 
+### Embedding 모델 선정
+논문 원문에서 만든 질의 20개(KIVI·CXL-PNM 각 10개)로 코퍼스 청크 검색 성능을 측정했다. **Hit@5 ≥ 0.8을 만족하는 소형 모델 중 MRR이 가장 높은 모델**을 채택하고, 소형 모델이 모두 미달하면 `BAAI/bge-m3`로 전환한다.
+
+| 모델 | 규모 | Hit@5 | MRR | Hit@5 ≥ 0.8 | 결과 |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| `BAAI/bge-small-en-v1.5` | 33M | 0.75 | 0.548 | 미달 | — |
+| `intfloat/e5-small-v2` | 33M | **0.80** | **0.596** | 충족 | **채택** |
+| `BAAI/bge-m3` | 568M | — | — | — | 소형 모델이 기준을 충족해 미측정 |
+
+> 근거: `src/rag/benchmark.py`, `src/rag/benchmark_results.json` (`python -m src.rag.benchmark`로 재현)
+
 
 ## Agents
 | Agent / Node | 담당 | 역할 | 출력 State |
@@ -91,6 +102,17 @@ flowchart TD
   - `evidence`: Evidence ID 기준 멱등 업데이트 (`upsert_evidence`)
   - `sources`: URL 기준 정규화 및 중복 제거 결합 (`union_sources`)
 
+
+## Evaluation Results
+최종 평가 보고서(`final_evaluation_report.pdf`, 2026-09-22 실행 결과) 기준이다. LLM·웹 검색 결과에 따라 실행마다 일부 Claim은 달라질 수 있다.
+
+### TRL 추정 결과 (TRL 이원화)
+| 기술 | 개별 기술 성숙도 (`tech_trl`) | 계열 생태계 성숙도 (`family_trl`) | 신뢰도 | 근거 Claim |
+| :--- | :---: | :---: | :---: | :--- |
+| **KIVI** (SW) | 5-6 | 7-8 | high | 연구: DOM-05, DOM-09, DOM-11 / 채택: MKT-02 |
+| **CXL-PNM** (HW) | 3-4 | 7-8 | high | 연구: MAT-A02, DOM-02, DOM-04, DOM-06, DOM-10, DOM-12, MAT-R02 / 채택: MKT-03, MKT-04, MKT-06 |
+
+- 두 기술 모두 계열 생태계(KV 양자화 / CXL 메모리 확장)는 7-8 수준이지만, 개별 기술은 KIVI가 오픈소스 구현 단계(5-6), CXL-PNM이 시뮬레이션 연구 단계(3-4)로 **개별 기술과 계열 사이의 성숙도 간극**이 드러난다.
 
 ## Directory Structure
 ```
