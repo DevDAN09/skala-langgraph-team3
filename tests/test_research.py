@@ -286,6 +286,98 @@ def test_stakeholder_slot_has_benefit_concern_barrier_evidence(monkeypatch):
     assert "(근거: STK-01, EV-STK-01, EV-STK-01-C)" in kivi_part
 
 
+def _fake_search_two_counters(first="Counter one about risks.", second="Counter two about adoption barriers."):
+    def fake(support_query, counter_query):
+        sup = {"results": [{"url": f"https://www.theregister.com/{abs(hash(support_query))}", "title": "s",
+                            "content": f"Support: {support_query}."}]}
+        h = abs(hash(counter_query))
+        cnt = {"results": [
+            {"url": f"https://www.zdnet.com/{h}", "title": "c1", "content": first},
+            {"url": f"https://www.infoworld.com/{h}", "title": "c2", "content": second},
+        ]}
+        return sup, cnt
+    return fake
+
+
+def test_stakeholder_barrier_uses_second_counter_result(monkeypatch):
+    """Concern과 Barrier가 같은 원문 하나에서 나와 겹치지 않도록, Barrier는 두 번째 반대 검색 결과에서 요약한다.
+    Claim 스키마는 그대로: counter_evidence_ids는 첫 번째 반대 근거만 가리킨다."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search_two_counters())
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: f"Summary of {text}")
+    res = stakeholder_research_node(INITIAL_INPUT_STATE)
+    kivi_part = res["stakeholder"]["cloud_serving_operator"].split(" / [")[0]
+    assert "Concern: Summary of Counter one about risks." in kivi_part
+    assert "Barrier: Summary of Counter two about adoption barriers." in kivi_part
+    assert "(근거: STK-01, EV-STK-01, EV-STK-01-C, EV-STK-01-C2)" in kivi_part
+    claim = next(c for c in res["claims"] if c["id"] == "STK-01")
+    assert claim["counter_evidence_ids"] == ["EV-STK-01-C"]
+    ev_ids = {e["evidence_id"] for e in res["evidence"]}
+    assert {"EV-STK-01-C", "EV-STK-01-C2"} <= ev_ids
+    src_ids = {s["source_id"] for s in res["sources"]}
+    assert all(e["source_id"] in src_ids for e in res["evidence"])
+
+
+def test_stakeholder_barrier_same_as_concern_is_marked_unverified(monkeypatch):
+    """반대 근거가 1건뿐이라 요약이 같게 나오면 같은 문장을 반복하지 않고 Barrier를 근거 미확인으로 둔다."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search())
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: "Same sentence.")
+    text = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]["cloud_serving_operator"]
+    assert "Concern: Same sentence. | Barrier: 근거 미확인" in text
+
+
+def test_stakeholder_counter_snippet_keeps_more_text_than_support(monkeypatch):
+    """반대 근거 snippet은 요약 입력 한도(2000자)까지 보존한다. 지지 근거 snippet은 D의 R5 입력이라 500자 그대로 둔다."""
+    import src.research.stakeholder as stk
+    long_text = "x" * 3000
+    monkeypatch.setattr(stk, "search_pair", _fake_search_two_counters(first=long_text, second=long_text))
+    res = stakeholder_research_node(INITIAL_INPUT_STATE)
+    ev = {e["evidence_id"]: e for e in res["evidence"]}
+    assert len(ev["EV-STK-01-C"]["snippet"]) == 2000
+    assert len(ev["EV-STK-01-C2"]["snippet"]) == 2000
+    assert len(ev["EV-STK-01"]["snippet"]) <= 500
+
+
+def test_stakeholder_counter_retry_also_collects_second_counter(monkeypatch):
+    """R3 재실행(search_counter_evidence)도 첫 실행과 같은 방식으로 반대 근거 2건을 남긴다."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search_two_counters())
+    state = _retry_state(
+        [_stk_claim("STK-01", status="flagged", counter_searched=False)],
+        {"claim_id": "STK-01", "rule": "R3", "action": "search_counter_evidence"},
+    )
+    res = stakeholder_research_node(state)
+    assert {e["evidence_id"] for e in res["evidence"]} == {"EV-STK-01-C", "EV-STK-01-C2"}
+    assert res["claims"][0]["counter_evidence_ids"] == ["EV-STK-01-C"]
+
+
+def test_stakeholder_raw_snippet_fallback_is_not_used_as_concern_or_barrier(monkeypatch):
+    """summarize_snippet은 LLM이 NONE을 반환하거나 실패하면 원문 앞부분을 그대로 돌려준다(#18).
+    요약이 아니라 페이지 제목·메뉴 같은 잡문이므로 Concern·Barrier로 쓰지 않고 근거 미확인으로 둔다."""
+    import src.research.stakeholder as stk
+    from src.research.client import _clip_to_sentence
+    monkeypatch.setattr(stk, "search_pair", _fake_search_two_counters(
+        first="Skip to primary navigation\n Skip to footer\n Investor Relations",
+        second="Table of Contents\n\n## Introduction\nLong-context LLM serving is memory-bound.",
+    ))
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: _clip_to_sentence(text.strip()))
+    text = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]["cloud_serving_operator"]
+    assert "Concern: 근거 미확인 | Barrier: 근거 미확인" in text
+    assert "Skip to primary navigation" not in text and "Table of Contents" not in text
+
+
+def test_stakeholder_slot_text_is_single_line(monkeypatch):
+    """요약 문장에 줄바꿈·마크다운 제목이 섞여도 Actor 문자열은 한 줄이다. 보고서 4.3절 목록 구조가 깨지지 않게 한다."""
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "search_pair", _fake_search_two_counters())
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: f"{focus.split()[0]} line one.\n\n## Heading\n  line two.")
+    summary = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]
+    for key in ("cloud_serving_operator", "framework_developer", "end_user", "memory_vendor", "cloud_ops", "hw_vendors"):
+        assert "\n" not in summary[key], key
+        assert "## " not in summary[key], key
+
+
 def test_stakeholder_records_counter_evidence_not_found(monkeypatch):
     """반대 쿼리 결과가 없으면 Concern·Barrier에 counter-evidence not found를 기록한다 (설계 표 11)."""
     import src.research.stakeholder as stk
