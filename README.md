@@ -22,7 +22,7 @@
 - **PDF 원문 기반 정보 추출** : KIVI·CXL-PNM 논문 PDF를 청킹·임베딩해 FAISS로 검색하고, 검색된 원문 청크를 Evidence snippet으로 Claim에 연결
 - **Agentic RAG Loop** : `tech` 필터 top-5 검색 → 충분성 게이트 → Query Rewrite(최대 2회, 평가 축이 바뀐 Rewrite는 거부) → 실패 시 `insufficient`(corpus 내 근거 미확인)
 - **외부 웹 조사** : Tavily로 시장성(채택·배포·생태계·도입 장벽)과 이해관계자(4대 Actor × 기술 계열)를 조사하고, 시장성 결과를 이해관계자 쿼리에 체이닝
-- **2단계 Fast-Fail 근거 검증** : 1단계 정적 규칙(R1~R4)에서 위반이 없을 때만 2단계 LLM Judge(R5) 실행, 위반 관점만 표적 재실행(최대 2회)
+- **2단계 Fast-Fail 근거 검증** : 1단계 정적 규칙(R1~R4)을 통과한 Claim에 한해 2단계 LLM Judge(R5) 실행, 위반 관점만 표적 재실행(최대 2회)
 - **TRL 이원화** : 개별 기술 성숙도(`tech_trl`)와 기술 계열 생태계 성숙도(`family_trl`)를 분리 산출
 - **보고서 자동 생성** : Jinja2 골격 + Strict Grounding Polishing → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
 - **확증 편향 방지 전략** :
@@ -107,9 +107,11 @@ flowchart TD
 │   ├── research/          # [C] client · market · stakeholder
 │   ├── audit/             # [D] rules(R1~R4) · judge(R5) · auditor (evidence_audit)
 │   └── synthesis/         # [E] evaluator · report_gen · pdf_export
-│       └── templates/     # 프롬프트/보고서 템플릿 (report.md.j2)
+│       └── templates/     # 보고서 템플릿 (report.md.j2)
 ├── tests/                 # 모듈별 단위 테스트 + mock_data.py
 ├── tasks/                 # 역할별 개발 가이드 · 공통 규칙
+├── docs/                  # 구현 계획·명세 문서
+├── KV_cache_최적화_기술_평가_설계서_최종.md   # 설계서
 ├── main.py                # 실행 스크립트 (non-interactive)
 ├── app.py                 # Streamlit 대시보드
 ├── final_evaluation_report.md / .pdf   # 평가 결과 (실행 시 생성, git 제외)
@@ -143,7 +145,7 @@ TAVILY_API_KEY=
 | `LANGCHAIN_ENDPOINT` | 선택 | `https://api.smith.langchain.com` | **LangSmith 엔드포인트 URL**: 트레이싱 데이터를 수신하는 LangSmith 서버 주소. |
 | `LANGCHAIN_PROJECT` | 선택 | `RAG-PROJECT` | **LangSmith 프로젝트명**: LangSmith 대시보드에서 트레이스를 그룹화하여 확인할 프로젝트 이름. |
 | `HF_TOKEN` | 선택 | `hf_...` | **Hugging Face Token**: RAG 임베딩 모델(`intfloat/e5-small-v2`) 다운로드 속도 향상 및 Hugging Face API Rate Limit 완화용. |
-| `TAVILY_API_KEY` | 선택 (권장) | `tvly-...` | **Tavily Search API Key**: 시장성 조사(`market_research`) 및 이해관계자 리서치(`stakeholder_research`) 노드의 실시간 웹 검색에 사용됩니다. (미설정 시 안전한 내장 Fallback 데이터로 동작) |
+| `TAVILY_API_KEY` | 선택 (권장) | `tvly-...` | **Tavily Search API Key**: 시장성 조사(`market_research`) 및 이해관계자 리서치(`stakeholder_research`) 노드의 실시간 웹 검색에 사용됩니다. (미설정 시 검색 결과 없이 진행하며, 해당 Claim은 `insufficient`로 처리) |
 
 ### 2. 설치 및 테스트
 ```bash
@@ -176,19 +178,19 @@ python -m src.rag.benchmark     # 임베딩 모델 Hit@5 · MRR 측정
 | **강건호** | 담당 D | 2단계 Fast-Fail 검증 엔진 (`src/audit/**`) | • **2단계 검증 파이프라인 구축**: 규칙 기반 4대 룰(형식·출처·신뢰도) + LLM 심사(`gpt-4o`)<br/>• **오류 피드백 및 라우팅**: 검증 미달 Claim 대상 피드백 생성 및 재시도(최대 2회) 라우팅 연계<br/>• **환각 차단**: 출처 누락 및 사실 왜곡을 필터링하여 보고서 신뢰도 확보 |
 | **김효민** | 담당 C | 이해관계자 리서치 엔진 (`src/research/stakeholder.py`) | • **4대 액터 분석**: 서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자별 다각적 영향도 분석<br/>• **구조화 데이터 생성**: 기술 계열별 Benefit·Concern·Barrier·Evidence 정밀 구조화<br/>• **이해관계자 Claim 도출**: STK-01~08 정량/정성 Claim 및 출처 연계 |
 | **윤영민** | 담당 A | 시스템 아키텍처 & LangGraph 오케스트레이션 (`src/state.py`, `src/graph.py`, `main.py`, `app.py`) | • **LangGraph 오케스트레이션**: 병렬 RAG/리서치 실행 및 조건부 Fast-Fail 피드백 루프 설계<br/>• **State 계약 관리**: 14개 State 필드 분리 및 에이전트 간 데이터 충돌 방지 구조 확립<br/>• **UI 및 산출물 파이프라인**: Streamlit 웹 대시보드(`app.py`) 및 PDF 보고서 자동 내보내기 구현 |
-| **전경호** | 담당 C | 외부 웹 시장성 조사 엔진 (`src/research/market.py`, `src/research/client.py`) | • **실시간 시장성 조사**: Tavily Search 연동을 통한 최신 시장 동향 및 도입 장벽 데이터 수집<br/>• **자연어 쿼리 최적화**: 기술별 세부 카테고리 질의 생성 및 시장성 Claim(MKT-01~04) 정제<br/>• **안정성 보장**: API 실패 및 키 미제공 상황에 대응하는 견고한 Fallback 로직 구축 |
+| **전경호** | 담당 C | 외부 웹 시장성 조사 엔진 (`src/research/market.py`, `src/research/client.py`) | • **실시간 시장성 조사**: Tavily Search 연동을 통한 최신 시장 동향 및 도입 장벽 데이터 수집<br/>• **자연어 쿼리 최적화**: 기술별 세부 카테고리 질의 생성 및 시장성 Claim(MKT-01~06, MAT-A01~02) 정제<br/>• **안정성 보장**: API 실패 및 키 미제공 상황에 대응하는 견고한 Fallback 로직 구축 |
 | **정은희** | 담당 E | 다관점 종합 & 보고서 생성 파이프라인 (`src/synthesis/**`) | • **TRL 이원화 종합 평가**: 개별 기술 TRL과 계열 산업 TRL을 분리 분석하는 프레임워크 구축<br/>• **보고서 템플릿 엔진**: Jinja2 기반 마크다운 템플릿 설계, 본문 Citation 번호와 References 자동 연동<br/>• **보고서 정제 및 윤문**: LLM(`gpt-4o`)을 활용한 논리적 흐름 정제 및 문체 통일 |
-| **최지윤** | 담당 B | 논문 분석 Agentic RAG 및 임베딩 벤치마크 (`src/rag/**`) | • **Agentic RAG 구축**: KIVI 및 CXL-PNM 논문 원문 PDF 파싱, 청킹 및 FAISS 인덱싱<br/>• **임베딩 벤치마크**: 임베딩 모델 정량 평가(`bge-small-en-v1.5` vs `e5-small-v2`, 20개 질의) 수행 및 최적 모델(`intfloat/e5-small-v2`) 채택<br/>• **논문 근거 추출**: 2.6배 압축 및 3.1배 효율 등 정량 지표 Claim 및 원문 Evidence 추출 |
+| **최지윤** | 담당 B | 논문 분석 Agentic RAG 및 임베딩 벤치마크 (`src/rag/**`) | • **Agentic RAG 구축**: KIVI 및 CXL-PNM 논문 원문 PDF 파싱, 청킹 및 FAISS 인덱싱<br/>• **임베딩 벤치마크**: 임베딩 모델 정량 평가(`bge-small-en-v1.5` vs `e5-small-v2`, 20개 질의) 수행 및 최적 모델(`intfloat/e5-small-v2`) 채택<br/>• **논문 근거 추출**: KIVI 2.6× peak memory 절감(모델 가중치 포함) 등 정량 지표 Claim 및 원문 Evidence 추출 |
 
 ### 평가 보고서의 핵심 포인트
 | 이름 (가나다순) | 담당 | 평가 보고서 핵심 포인트 (Key Takeaway) | 비고 |
 | :--- | :---: | :--- | :--- |
 | **강건호** | 담당 D | • 엄격한 Fast-Fail 2단계 검증(Rule + LLM Judge)을 통해 환각(Hallucination) 및 출처 없는 주장을 사전 차단하여 보고서의 신뢰도와 객관성을 극대화함.<br/>• 수치 왜곡 방지 및 Claim-Evidence 일치성 검증으로 학술 논문/웹 출처에 기반한 사실 검증 체계 확립. | Fast-Fail 검증 |
-| **김효민** | 담당 C | • CSP, 엔터프라이즈 운영자, H/W 벤더 등 다각적 이해관계자(Stakeholder) 관점의 분석 반영.<br/>• KIVI의 제로 CAPEX 즉시 도입 가치와 CXL-PNM의 인프라 전환 비용 및 생태계 종속성 이슈를 정밀 대조. | 이해관계자 리서치 |
+| **김효민** | 담당 C | • 서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자 4대 Actor × 기술 계열(KV Quantization / CXL Memory Expansion) 관점의 분석 반영.<br/>• KIVI는 기존 GPU·HBM에서 소프트웨어만으로 적용 가능한 반면 정확도·운영 위험이, CXL-PNM은 새 인프라 도입 비용·지연·호환성이 도입 장벽으로 나타남을 대조. | 이해관계자 리서치 |
 | **윤영민** | 담당 A | • SW 양자화(KIVI)와 HW 메모리 확장(CXL-PNM)의 상호 배타적 경쟁이 아닌 '하이브리드 결합 가능성'을 도출.<br/>• Fast-Fail 피드백 루프와 TRL 이원화 체계를 결합한 안정적 엔드투엔드 파이프라인 완성. | 오케스트레이션 |
 | **전경호** | 담당 C | • 글로벌 데이터센터 현장 관점에서의 최신 시장 동향 및 배포 장벽(Latency 오버헤드, CXL 상용화 성숙도) 발굴.<br/>• 단기적 실용성(SW 압축)과 장기적 메모리 풀링(HW 확장)의 시장 수용 주기 차이를 규명. | 웹 시장성 조사 |
 | **정은희** | 담당 E | • 개별 기술 TRL과 계열 산업 TRL을 분리하는 TRL 이원화 평가를 통해 시뮬레이션 지표와 실증 기술의 성숙도 간극을 체계적으로 조명.<br/>• 학술·시장·검증 데이터를 통합한 고품질 기술 평가 보고서 템플릿 완성. | 다관점 종합 보고서 |
-| **최지윤** | 담당 B | • E5 임베딩 기반 논문 Agentic RAG를 통해 Llama-2-70B 2.6배 절감(KIVI) 및 3.1배 에너지 효율(CXL-PNM) 등 핵심 정량 데이터를 논문 원문으로부터 오차 없이 추출·제공. | Agentic RAG |
+| **최지윤** | 담당 B | • E5 임베딩 기반 논문 Agentic RAG를 통해 KIVI 2.6× peak memory 절감(모델 가중치 포함), 최대 4× 배치 확장 등 핵심 정량 데이터를 논문 원문으로부터 오차 없이 추출·제공. | Agentic RAG |
 
 ### Lessons Learned
 | 이름 (가나다순) | 담당 | 잘된 점 (Keep) | 아쉬웠던 점 및 시도해볼 점 (Problem / Try) | 핵심 배운 점 (Lesson Learned) |
