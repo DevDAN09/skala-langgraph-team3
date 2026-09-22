@@ -39,12 +39,12 @@ def evaluate_embedding(model_name: str, eval_queries: list[dict]) -> dict[str, f
     return {"hit_at_5": float(np.mean(hits)), "mrr": float(np.mean(reciprocal_ranks))}
 
 
-def prepare_queries(model_name: str, query_path: Path = DATA_DIR / "eval_queries.json") -> list[dict]:
+def prepare_queries(query_path: Path = DATA_DIR / "eval_queries.json") -> list[dict]:
     """Ground each target in an actual indexed PDF chunk, rather than canned text."""
     from transformers import AutoTokenizer
     from src.rag.indexer import chunk_pages, load_papers
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(SMALL_MODELS[0])
     chunks = chunk_pages(load_papers(), lambda text: len(tokenizer.encode(text)))
     rows = json.loads(query_path.read_text())
     if len(rows) != 20:
@@ -63,12 +63,13 @@ def prepare_queries(model_name: str, query_path: Path = DATA_DIR / "eval_queries
 
 def main() -> None:
     results = {}
+    eval_queries = prepare_queries()
     for name in SMALL_MODELS:
-        results[name] = evaluate_embedding(name, prepare_queries(name))
+        results[name] = evaluate_embedding(name, eval_queries)
         print(f"{name}: Hit@5={results[name]['hit_at_5']:.3f}, MRR={results[name]['mrr']:.3f}")
     eligible = [name for name in SMALL_MODELS if results[name]["hit_at_5"] >= 0.8]
     if not eligible:
-        results[LARGE_MODEL] = evaluate_embedding(LARGE_MODEL, prepare_queries(LARGE_MODEL))
+        results[LARGE_MODEL] = evaluate_embedding(LARGE_MODEL, eval_queries)
         print(f"{LARGE_MODEL}: Hit@5={results[LARGE_MODEL]['hit_at_5']:.3f}, "
               f"MRR={results[LARGE_MODEL]['mrr']:.3f}")
         eligible = [LARGE_MODEL] if results[LARGE_MODEL]["hit_at_5"] >= 0.8 else []

@@ -1,9 +1,8 @@
 """Paper only Agentic RAG: retrieve, check sufficiency, rewrite, and ground."""
-import re
-
 from langchain_core.documents import Document
 
-from src.config import DEFAULT_LLM_MODEL, EMBEDDING_MODEL, FAISS_INDEX_DIR
+from src.config import DEFAULT_LLM_MODEL, EMBEDDING_MODEL
+from src.rag.indexer import FAISS_INDEX_DIR
 from src.state import Claim, Evidence, OverallState, Source
 
 # Six cloud serving axes for each technology, plus paper research maturity.
@@ -16,12 +15,12 @@ AXES = (
     ("DOM-06", "CXL-PNM", "throughput_latency", "What simulated throughput or latency does CXL-PNM report?"),
     ("DOM-07", "KIVI", "accuracy", "What accuracy degradation or limitations does KIVI acknowledge?"),
     ("DOM-08", "CXL-PNM", "accuracy", "What accuracy or retrieval limitations does CXL-PNM acknowledge?"),
-    ("DOM-09", "KIVI", "infrastructure", "What GPU software or kernel changes does KIVI require?"),
-    ("DOM-10", "CXL-PNM", "infrastructure", "What CXL hardware and PNM components does the design require?"),
+    ("DOM-09", "KIVI", "infrastructure", "What is KIVI's key and value quantization mechanism and its GPU kernel requirements?"),
+    ("DOM-10", "CXL-PNM", "infrastructure", "What is the CXL-PNM KV cache management mechanism and its required hardware?"),
     ("DOM-11", "KIVI", "operational_complexity", "What residual cache or quantization settings does KIVI require?"),
     ("DOM-12", "CXL-PNM", "operational_complexity", "What GPU and PNM coordination does the design require?"),
-    ("MAT-R01", "KIVI", "research", "What experimental evaluation of KIVI is described in the paper?"),
-    ("MAT-R02", "CXL-PNM", "research", "What simulation or research prototype evaluation is described?"),
+    ("MAT-R01", "KIVI", "research", "What experimental conditions are used to evaluate KIVI, including model, context, and hardware?"),
+    ("MAT-R02", "CXL-PNM", "research", "What experimental conditions are used in the CXL-PNM simulation, including model, context, and hardware?"),
 )
 AXIS_BY_ID = {row[0]: row for row in AXES}
 SOURCES: dict[str, Source] = {
@@ -63,17 +62,6 @@ def _ask(llm, prompt: str) -> str:
         return ""
 
 
-def _numeric_context_present(quote: str) -> bool:
-    if not re.search(r"\d+(?:\.\d+)?\s*(?:×|x|%)", quote):
-        return True
-    return all(re.search(pattern, quote, flags=re.IGNORECASE) for pattern in (
-        r"\b(?:\d+B|Llama|Falcon|Mistral)\b",
-        r"(?:\d+[kKmM]?\s*tokens?|context length)",
-        r"(?:GPU|A100|H100|7nm|ASIC|CXL)",
-        r"(?:simulation|measured|real workload|experiment)",
-    ))
-
-
 def _grounded_quote(query: str, tech: str, db, llm) -> tuple[str, Document | None]:
     for attempt in range(3):
         try:
@@ -93,8 +81,7 @@ def _grounded_quote(query: str, tech: str, db, llm) -> tuple[str, Document | Non
                          "or recommend anything. If context for a number (model size, context "
                          "length, hardware, measurement method) is missing, answer INSUFFICIENT.\n"
                          f"Question: {query}\nPassage: {doc.page_content}")
-            if quote and quote != "INSUFFICIENT" and quote in doc.page_content \
-                    and _numeric_context_present(quote):
+            if quote and quote != "INSUFFICIENT" and quote in doc.page_content:
                 return quote, doc
         if attempt < 2:
             rewritten = _ask(llm, "Rewrite this English paper search query using technical "
@@ -153,7 +140,10 @@ def paper_analysis_node(state: OverallState) -> dict:
                                else "insufficient"})
             continue
         quote, doc = _grounded_quote(query, tech, db, llm) if db and llm else ("", None)
-        claims.append(_claim(axis, quote))
+        claim = _claim(axis, quote)
+        if actions.get(claim_id) == "re_extract" and not quote:
+            claim["status"] = "rejected"
+        claims.append(claim)
         if doc:
             source = SOURCES[tech]
             sources[tech] = source
