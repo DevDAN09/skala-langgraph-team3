@@ -1,6 +1,6 @@
 # LangGraph 1.2.12 Multi-Agent Skeleton Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** Use subagent-driven development (recommended) or executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a robust, non-crashing, and testable multi-agent evaluation system skeleton based on `uv` and `langgraph==1.2.12` for the KV Cache optimization technology assessment project (KIVI vs CXL-PNM).
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.10+, `uv`, `langgraph==1.2.12`, `langchain>=0.3.0`, `langchain-openai>=0.2.0`, `faiss-cpu>=1.8.0`, `sentence-transformers>=3.0.0`, `tavily-python>=0.5.0`, `jinja2>=3.1.4`, `pytest>=8.0.0`.
 
-**Spec:** [`docs/superpowers/specs/2026-09-22-tasks-skeleton-design.md`](../specs/2026-09-22-tasks-skeleton-design.md)
+**Spec:** [`docs/specs/2026-09-22-tasks-skeleton-design.md`](../specs/2026-09-22-tasks-skeleton-design.md)
 
 ## Global Constraints
 

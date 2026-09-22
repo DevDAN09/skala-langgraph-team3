@@ -216,3 +216,72 @@ def test_evidence_audit_node_r5_failure():
     assert result["retry_count"]["paper"] == 1
     assert "claims" in result
     assert result["claims"][0]["status"] == "flagged"
+
+
+def test_evidence_audit_node_r5_stakeholder_routing():
+    state = {
+        **MOCK_STATE,
+        "claims": [
+            {
+                "id": "STK-R5-ERR",
+                "perspective": "stakeholder",
+                "tech": "KIVI",
+                "statement": "Stakeholder unsupported claim",
+                "kind": "fact",
+                "evidence_ids": ["EV-STK-01"],
+                "counter_evidence_ids": [],
+                "counter_searched": True,
+                "status": "ok",
+            }
+        ],
+        "evidence": [
+            {"evidence_id": "EV-STK-01", "source_id": "SRC-01", "snippet": "Unrelated snippet text."}
+        ],
+        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    }
+    with patch("src.audit.judge.judge_claim_consistency", return_value=False):
+        result = evidence_audit_node(state)
+
+    assert len(result["audit"]["issues"]) == 1
+    issue = result["audit"]["issues"][0]
+    assert issue["rule"] == "R5"
+    assert issue["target_agent"] == "stakeholder"
+    assert result["retry_count"]["stakeholder"] == 1
+
+
+def test_evidence_audit_node_unique_retry_count_increment():
+    # Multiple issues targeting the same agent should only increment retry_count once
+    state = {
+        **MOCK_STATE,
+        "claims": [
+            {
+                "id": "DOM-ERR-1",
+                "perspective": "domain",
+                "tech": "KIVI",
+                "statement": "No evidence 1",
+                "kind": "fact",
+                "evidence_ids": [],
+                "counter_evidence_ids": [],
+                "counter_searched": False,
+                "status": "ok",
+            },
+            {
+                "id": "DOM-ERR-2",
+                "perspective": "domain",
+                "tech": "KIVI",
+                "statement": "No evidence 2",
+                "kind": "fact",
+                "evidence_ids": [],
+                "counter_evidence_ids": [],
+                "counter_searched": False,
+                "status": "ok",
+            },
+        ],
+        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    }
+    result = evidence_audit_node(state)
+    assert len(result["audit"]["issues"]) == 2
+    assert all(i["target_agent"] == "paper" for i in result["audit"]["issues"])
+    # Crucial: paper retry count incremented by 1, NOT 2
+    assert result["retry_count"]["paper"] == 1
+

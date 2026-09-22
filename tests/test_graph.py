@@ -97,7 +97,7 @@ def test_route_audit_decision_cascade_market():
         },
         "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     }
-    assert route_audit_decision(state) == "market_research"
+    assert route_audit_decision(state) == ["market_research"]
 
 
 def test_route_audit_decision_stakeholder_only():
@@ -116,7 +116,7 @@ def test_route_audit_decision_stakeholder_only():
         },
         "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     }
-    assert route_audit_decision(state) == "stakeholder_research"
+    assert route_audit_decision(state) == ["stakeholder_research"]
 
 
 def test_route_audit_decision_paper_only():
@@ -135,7 +135,33 @@ def test_route_audit_decision_paper_only():
         },
         "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     }
-    assert route_audit_decision(state) == "paper_analysis"
+    assert route_audit_decision(state) == ["paper_analysis"]
+
+
+def test_route_audit_decision_parallel_market_and_paper():
+    state = {
+        **MOCK_STATE,
+        "audit": {
+            "issues": [
+                {
+                    "target_agent": "market",
+                    "rule": "R3",
+                    "action": "search_counter_evidence",
+                    "claim_id": "MKT-01",
+                    "issue": "",
+                },
+                {
+                    "target_agent": "paper",
+                    "rule": "R1",
+                    "action": "search_evidence",
+                    "claim_id": "DOM-01",
+                    "issue": "",
+                },
+            ]
+        },
+        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    }
+    assert route_audit_decision(state) == ["market_research", "paper_analysis"]
 
 
 def test_route_audit_decision_retries_exhausted():

@@ -25,14 +25,13 @@ def evidence_audit_node(state: OverallState) -> dict:
                         "claim_id": c["id"],
                         "rule": "R5",
                         "issue": "Statement unsupported by evidence snippet",
-                        "target_agent": "paper" if c["perspective"] == "domain" else "market",
+                        "target_agent": "paper" if c["perspective"] == "domain" else ("stakeholder" if c["perspective"] == "stakeholder" else "market"),
                         "action": "re_extract",
                     })
 
     # Update retry count for targeted agents
     retry_count = dict(state.get("retry_count", {"paper": 0, "market": 0, "stakeholder": 0}))
-    for issue in issues:
-        tgt = issue["target_agent"]
+    for tgt in {issue["target_agent"] for issue in issues}:
         retry_count[tgt] = retry_count.get(tgt, 0) + 1
 
     result = {

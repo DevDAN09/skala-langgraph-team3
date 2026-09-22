@@ -18,7 +18,7 @@ def route_after_paper(state: OverallState) -> str:
     return END
 
 
-def route_audit_decision(state: OverallState) -> str:
+def route_audit_decision(state: OverallState) -> list[str] | str:
     """Targeted retry and Cascade Chaining router. Escapes to synthesis when retry_count >= 2."""
     audit = state.get("audit") or {}
     issues = audit.get("issues") or []
@@ -35,18 +35,14 @@ def route_audit_decision(state: OverallState) -> str:
         print("⚠️ [라우터] 재시도 한도(2회) 소진 -> 미해결 항목 격리 후 평가 종합으로 이동")
         return "evaluation_synthesis"
 
-    # Cascade Chaining: market triggers stakeholder chaining
+    ret = []
     if "market" in valid_targets:
-        print("🔁 [라우터] market 위반 감지 -> market 재실행 (Cascade Chaining)")
-        return "market_research"
-    if "stakeholder" in valid_targets:
-        print("🔁 [라우터] stakeholder 단독 위반 -> stakeholder 재실행")
-        return "stakeholder_research"
+        ret.append("market_research")
+    elif "stakeholder" in valid_targets:
+        ret.append("stakeholder_research")
     if "paper" in valid_targets:
-        print("🔁 [라우터] paper 위반 -> paper_analysis 재실행")
-        return "paper_analysis"
-
-    return "evaluation_synthesis"
+        ret.append("paper_analysis")
+    return ret if ret else "evaluation_synthesis"
 
 
 def build_evaluation_graph():

@@ -1,40 +1,7 @@
 """src/state.py - LangGraph Multi-Agent Global State Schema & Reducers"""
 from typing import Annotated, TypedDict, Literal
 
-# 1. Custom Upsert Reducers (멱등성 보장)
-def upsert_claims(existing: list["Claim"], updates: list["Claim"]) -> list["Claim"]:
-    claim_map = {c["id"]: c for c in (existing or [])}
-    for new_c in (updates or []):
-        claim_map[new_c["id"]] = new_c
-    return list(claim_map.values())
-
-def upsert_evidence(existing: list["Evidence"], updates: list["Evidence"]) -> list["Evidence"]:
-    ev_map = {e["evidence_id"]: e for e in (existing or [])}
-    for new_e in (updates or []):
-        ev_map[new_e["evidence_id"]] = new_e
-    return list(ev_map.values())
-
-def union_sources(existing: list["Source"], updates: list["Source"]) -> list["Source"]:
-    src_map = {s["source_id"]: s for s in (existing or [])}
-    url_index = {
-        (s.get("url") or "").strip(): s["source_id"]
-        for s in src_map.values()
-        if (s.get("url") or "").strip()
-    }
-    for new_s in (updates or []):
-        url = (new_s.get("url") or "").strip()
-        if url and url in url_index:
-            canonical_id = url_index[url]
-            if new_s["source_id"] == canonical_id:
-                src_map[canonical_id] = new_s
-            continue
-        sid = new_s["source_id"]
-        src_map[sid] = new_s
-        if url:
-            url_index[url] = sid
-    return list(src_map.values())
-
-# 2. Entity Schemas
+# 1. Entity Schemas
 class Source(TypedDict):
     source_id: str
     title: str
@@ -77,6 +44,39 @@ class TRL(TypedDict):
     fallback_reason: str | None
     research_evidence: list[str]
     adoption_evidence: list[str]
+
+# 2. Custom Upsert Reducers (멱등성 보장)
+def upsert_claims(existing: list[Claim], updates: list[Claim]) -> list[Claim]:
+    claim_map = {c["id"]: c for c in (existing or [])}
+    for new_c in (updates or []):
+        claim_map[new_c["id"]] = new_c
+    return list(claim_map.values())
+
+def upsert_evidence(existing: list[Evidence], updates: list[Evidence]) -> list[Evidence]:
+    ev_map = {e["evidence_id"]: e for e in (existing or [])}
+    for new_e in (updates or []):
+        ev_map[new_e["evidence_id"]] = new_e
+    return list(ev_map.values())
+
+def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]:
+    src_map = {s["source_id"]: s for s in (existing or [])}
+    url_index = {
+        (s.get("url") or "").strip(): s["source_id"]
+        for s in src_map.values()
+        if (s.get("url") or "").strip()
+    }
+    for new_s in (updates or []):
+        url = (new_s.get("url") or "").strip()
+        if url and url in url_index:
+            canonical_id = url_index[url]
+            if new_s["source_id"] == canonical_id:
+                src_map[canonical_id] = new_s
+            continue
+        sid = new_s["source_id"]
+        src_map[sid] = new_s
+        if url:
+            url_index[url] = sid
+    return list(src_map.values())
 
 # 3. Overall State (14개 키)
 class OverallState(TypedDict):
