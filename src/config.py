@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+load_dotenv()
 
 # Project Root
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

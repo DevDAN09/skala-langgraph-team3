@@ -42,3 +42,7 @@ def test_report_generation_sections():
     for sec in required_sections:
         assert sec in report_text
     assert "더 우수하다" not in report_text
+    assert "[DOM-01]" in report_text
+    assert "[MKT-02]" in report_text
+    assert "simulation" in report_text
+    assert "[Tier: T1]" in report_text

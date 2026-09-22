@@ -1,4 +1,4 @@
-# KV Cache 최적화 기술 다관점 평가 보고서 (KIVI vs CXL-PNM)
+# KV Cache 최적화 기술 다관점 평가 보고서 ({{ selected.get('sw', 'KIVI') }} vs {{ selected.get('hw', 'CXL-PNM') }})
 
 > **발행일자**: 2026-09-22  
 > **평가 도메인**: 클라우드 LLM 서빙 인프라  
@@ -10,9 +10,9 @@
 
 본 보고서는 긴 문맥(Long-context) LLM 클라우드 서빙의 핵심 병목인 KV Cache 메모리 확장을 위한 대표적 소프트웨어 알고리즘 기법(KIVI)과 하드웨어 근접 처리 기법(CXL-PNM)의 기술 성숙도, 시장성, 이해관계자 영향 및 도메인 적합성을 다관점에서 종합 비교 분석하였다.
 
-- **KIVI (SW)**: 별도의 하드웨어 교체 없이 2-bit 비대칭 양자화를 통해 KV Cache 메모리를 최대 2.6배 절감하며, 제로 CAPEX로 즉각 도입 가능하다.
-- **CXL-PNM (HW)**: CXL 2.0 메모리 컨트롤러 내 근접 연산(PNM)을 활용하여 GPU 외부 대용량 DRAM으로 KV Cache를 오프로딩함으로써 호스트 버스 병목을 완화한다.
-- **결론**: 두 기술은 상호 배타적인 우열 관계가 아니며, 단기 비용 효율적 서빙에는 KIVI가, 장기적 초대형 메모리 풀링에는 CXL-PNM이 상호 보완적으로 작용한다.
+- **{{ selected.get('sw', 'KIVI') }} (SW)**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
+- **{{ selected.get('hw', 'CXL-PNM') }} (HW)**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
+- **평가 원칙**: 기술별 근거와 워크로드 조건을 대조하며 우열 또는 추천을 판정하지 않습니다.
 
 ---
 
@@ -24,7 +24,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 ## 2. 기술 선정
 
-- **선정 사유**: 소프트웨어 레벨의 대표적 무보정(Tuning-free) 초저비트 양자화 기술인 **KIVI**와, 차세대 메모리 인터커넥트 표준 기반의 **CXL-PNM**을 선정하여 계열별(알고리즘 vs 하드웨어 확장) 특성을 대조함.
+- **선정 사유**: {{ selected.get('rationale', '선정 근거가 제공되지 않았습니다.') }}
 - **평가 원칙**: 특정 기술의 일방적 승패 판정을 배제하고, 워크로드 및 운영 조건별 트레이드오프를 객관적으로 기술함.
 
 ---
@@ -32,14 +32,20 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ## 3. 기술 개요
 
 ### 3.1 KIVI (SW 알고리즘)
-- **메커니즘**: Key 캐시는 채널별(per-channel), Value 캐시는 토큰별(per-token) 비대칭 2-bit FP 양자화 적용.
-- **주요 실험 수치**: Llama-2-70B 기준 최대 2.6배 메모리 절감 (실측 논문 근거).
-- **한계점**: 2-bit 양자화 커널의 고도화 및 하드웨어 가속 미지원 시 약간의 디코딩 레이턴시 오버헤드 존재.
+- **메커니즘**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
+{% for claim in claims if claim.get('tech') == 'KIVI' and claim.get('status') == 'ok' %}
+- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }})
+{% else %}
+- 검증된 KIVI Claim이 없습니다.
+{% endfor %}
 
 ### 3.2 CXL-PNM (HW 가속)
-- **메커니즘**: CXL 2.0 Type 3 메모리 컨트롤러 내부 연산 로직을 탑재하여 Attention 연산의 일부를 메모리 근접 처리.
-- **주요 실험 수치**: 7nm ASIC 사이클 단위 시뮬레이션 기반 3.1배 에너지 효율 향상 (시뮬레이션 근거).
-- **한계점**: 실물 실리콘 ASIC의 대량 양산 및 CXL 2.0 지원 서버 인프라 교체 필요.
+- **메커니즘**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없습니다.') }}
+{% for claim in claims if claim.get('tech') == 'CXL-PNM' and claim.get('status') == 'ok' %}
+- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}{% if claim.get('kind') == 'simulation' %}; simulation{% endif %})
+{% else %}
+- 검증된 CXL-PNM Claim이 없습니다.
+{% endfor %}
 
 ---
 
@@ -49,30 +55,36 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 | 기술 | 개별 기술 성숙도 (tech_trl) | 계열 산업 성숙도 (family_trl) | 평가 신뢰도 | 비고 |
 | :--- | :---: | :---: | :---: | :--- |
-| **KIVI** | {{ trl["KIVI"]["tech_trl"] }} | {{ trl["KIVI"]["family_trl"] }} | {{ trl["KIVI"]["confidence"] }} | 오픈소스 코드 실증 및 프레임워크 통합 단계 |
-| **CXL-PNM** | {{ trl["CXL-PNM"]["tech_trl"] }} | {{ trl["CXL-PNM"]["family_trl"] }} | {{ trl["CXL-PNM"]["confidence"] }} | 학술 시뮬레이션 연구 vs CXL 모듈 상용 양산 |
+| **KIVI** | {{ trl.get("KIVI", {}).get("tech_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("family_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("confidence", "none") }} | 연구: {{ trl.get("KIVI", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("KIVI", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
+| **CXL-PNM** | {{ trl.get("CXL-PNM", {}).get("tech_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("family_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("confidence", "none") }} | 연구: {{ trl.get("CXL-PNM", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("CXL-PNM", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
 
 ### 4.2 시장성 및 생태계
-- **시장 수용도**: {{ market["adoption"] }}
-- **도입 장벽**: {{ market["barriers"] }}
+- **시장 수용도**: {{ market.get("adoption", "검증된 시장 정보가 없습니다.") }}
+- **도입 장벽**: {{ market.get("barriers", "검증된 장벽 정보가 없습니다.") }}
 
 ### 4.3 이해관계자 영향
-- **클라우드 운영자**: {{ stakeholder["cloud_ops"] }}
-- **하드웨어 벤더**: {{ stakeholder["hw_vendors"] }}
+- **클라우드 운영자**: {{ stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없습니다.") }}
+- **하드웨어 벤더**: {{ stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없습니다.") }}
 
 ---
 
 ## 5. 시사점
 
-- **워크로드별 트레이드오프**: 대화형 실시간 서비스 등 빠른 롤아웃이 필요한 워크로드에는 KIVI 소프트웨어 최적화가 적합하며, 초대규모 다중 사용자 배치 서빙에는 CXL 메모리 풀링이 적합함.
-- **결합 가능성**: KIVI로 2-bit 압축된 KV Cache를 CXL 확장 메모리에 적재하여 두 기술의 이점을 동시에 누리는 하이브리드 아키텍처가 유망함.
+- **워크로드별 트레이드오프**: {{ synthesis.get("tradeoffs", "검증된 트레이드오프가 없습니다.") }}
+- **결합 가능성**: {{ synthesis.get("synergy", "검증된 결합 가능성 정보가 없습니다.") }}
 
 ---
 
 ## 6. 한계점 및 Evidence Gap
 
 - **시뮬레이션 수치 한계**: CXL-PNM의 성능 지표는 7nm ASIC 시뮬레이션 결과로 실제 상용 서버 환경의 실측 지표와 차이가 발생할 수 있음.
-- **미확인 Claim(Gap)**: {% if synthesis["evidence_gaps"] %}{{ synthesis["evidence_gaps"] | join(', ') }}{% else %}모든 핵심 평가 항목에 대한 근거 검증 완료{% endif %}.
+{% if synthesis.get("evidence_gaps") %}
+{% for gap in synthesis.get("evidence_gaps", []) %}
+- **[{{ gap.get("id", "Unknown") }}]** {{ gap.get("statement", "근거가 불충분합니다.") }} (상태: `{{ gap.get("status", "Unknown") }}`)
+{% endfor %}
+{% else %}
+- 미확인 Claim이 없습니다.
+{% endif %}
 
 ---
 
@@ -80,4 +92,6 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 {% for s in sources %}
 - [{{ s.source_id }}] {{ s.title }} ({{ s.publisher }}, {{ s.date }}) - {{ s.url }} [Tier: {{ s.source_tier }}]
+{% else %}
+- 검증된 출처가 없습니다.
 {% endfor %}
