@@ -50,12 +50,15 @@ STAKEHOLDER_QUERY_PLAN = [
     },
     {
         "claim_id": "STK-08", "actor": "HW/Memory Supplier", "slot": "memory_vendor", "tech": "KIVI",
-        "support": "GPU vendor inference SDK KV cache quantization support",
+        "support": "{vendor} GPU inference SDK KV cache quantization support",
         "counter": "KV cache quantization hardware support limitation GPU",
     },
 ]
 TECH_ORDER = ("KIVI", "CXL-PNM")
 END_USER_GAP = "인용 가능한 지연/품질 간접 근거 미확인"
+COUNTER_NOT_FOUND = "counter-evidence not found"
+# market.key_vendors는 알파벳순이라 첫 항목이 기술과 무관할 수 있다. 계열별로 쿼리에 넣을 벤더 후보를 정한다.
+VENDOR_PREFERENCE = {"CXL-PNM": ("Samsung", "SK Hynix", "Intel", "CXL Consortium"), "KIVI": ("NVIDIA",)}
 STAKEHOLDER_PLAN_BY_ID = {q["claim_id"]: q for q in STAKEHOLDER_QUERY_PLAN}
 TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
 
@@ -67,9 +70,10 @@ def _pick_result(results: list[dict], exclude_urls: set[str] = frozenset()) -> d
     return min(candidates, key=lambda r: TIER_RANK[classify_tier(r.get("url", ""))])
 
 
-def _fill_vendor(template: str, key_vendors: list[str]) -> str:
-    vendor = key_vendors[0] if key_vendors else "leading vendors"
-    return template.format(vendor=vendor)
+def _fill_vendor(template: str, key_vendors: list[str], tech: str) -> str:
+    """market이 찾은 벤더 중 이 기술 계열에 맞는 벤더로 쿼리를 구체화한다. 없으면 벤더 없이 검색한다."""
+    vendor = next((v for v in VENDOR_PREFERENCE[tech] if v in key_vendors), "")
+    return " ".join(template.format(vendor=vendor).split())
 
 
 def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, sources_pool: list[Source]):
@@ -96,8 +100,8 @@ def _run_stakeholder_query(
     claim_id, tech, actor = item["claim_id"], item["tech"], item["actor"]
     ev_id, src_id = f"EV-{claim_id}", f"SRC-{claim_id}"
 
-    support_query = _fill_vendor(item["support"], key_vendors)
-    counter_query = _fill_vendor(item["counter"], key_vendors)
+    support_query = _fill_vendor(item["support"], key_vendors, tech)
+    counter_query = _fill_vendor(item["counter"], key_vendors, tech)
     support, counter = search_pair(support_query, counter_query)
     support_results = (support or {}).get("results") or []
 
@@ -120,7 +124,7 @@ def _run_stakeholder_query(
     # R5(LLM Judge)는 Evidence.snippet만 보고 statement 정합성을 판정하므로,
     # statement 생성 입력과 저장되는 snippet을 동일한 텍스트로 맞춘다.
     snippet_text = (top.get("content") or "")[:500]
-    statement = summarize_snippet(snippet_text, f"the {actor}'s benefit, concern, or adoption barrier regarding {tech}")
+    statement = summarize_snippet(snippet_text, f"the {actor}'s benefit or adoption status regarding {tech}")
     new_evidence: list[Evidence] = [{
         "evidence_id": ev_id, "source_id": resolved_src_id, "snippet": snippet_text,
     }]
@@ -158,8 +162,9 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
     plan_item = STAKEHOLDER_PLAN_BY_ID.get(claim_id)
 
     if action == "search_counter_evidence" and existing_claim and plan_item:
-        counter_query = _fill_vendor(plan_item["counter"], key_vendors)
-        _, counter = search_pair(_fill_vendor(plan_item["support"], key_vendors), counter_query)
+        tech = plan_item["tech"]
+        counter_query = _fill_vendor(plan_item["counter"], key_vendors, tech)
+        _, counter = search_pair(_fill_vendor(plan_item["support"], key_vendors, tech), counter_query)
         counter_results = (counter or {}).get("results") or [] if counter else []
         if not counter_results:
             # 반대 쿼리를 실행했으면 결과가 없어도 R3 충족. counter-evidence not found는 상태에 영향 없음 (설계 표 11)
@@ -207,23 +212,44 @@ def _family_labels(state: OverallState) -> dict[str, str]:
     return {"KIVI": families.get("sw", "KV Quantization"), "CXL-PNM": families.get("hw", "CXL Memory Expansion")}
 
 
-def _summarize(claims: list[Claim], family_labels: dict[str, str]) -> dict:
-    """STK Claim으로 Actor별 요약 dict를 만든다. 재실행에서도 같은 함수로 슬롯을 다시 계산한다.
-    슬롯은 {tech: statement}. 시장성·이해관계자 근거는 계열 단위라서 문자열 별칭에는 계열명을 붙인다 (설계 3.2)."""
-    ok = {c["id"]: c["statement"] for c in claims if c.get("status") == "ok"}
-    slots: dict[str, dict[str, str]] = {}
+def _detail(item: dict, claim: Claim, snippets: dict[str, str]) -> dict:
+    """Actor 한 칸의 Benefit / Concern / Adoption Barrier / Evidence (설계 3.5).
+    Benefit은 지지 근거 Claim statement, Concern·Barrier는 반대 근거 snippet에서만 뽑는다."""
+    if claim.get("status") != "ok":
+        return {"claim_id": claim["id"], "benefit": "", "concern": "", "barrier": "", "evidence_ids": []}
+    counter = next((snippets[e] for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), "")
+    subject = f"the {item['actor']} regarding {claim['tech']}"
+    # ponytail: 같은 반대 snippet을 초점만 바꿔 두 번 요약한다. Concern·Barrier가 겹치면 Barrier 전용 쿼리 추가 검토.
+    return {
+        "claim_id": claim["id"],
+        "benefit": claim["statement"],
+        "concern": summarize_snippet(counter, f"concerns or risks raised by {subject}") if counter else COUNTER_NOT_FOUND,
+        "barrier": summarize_snippet(counter, f"adoption barriers faced by {subject}") if counter else COUNTER_NOT_FOUND,
+        "evidence_ids": list(claim.get("evidence_ids", [])) + list(claim.get("counter_evidence_ids", [])),
+    }
+
+
+def _summarize(details: dict[str, dict], family_labels: dict[str, str]) -> dict:
+    """claim_id별 detail로 Actor 요약 dict를 만든다. 슬롯은 {tech: detail}.
+    시장성·이해관계자 근거는 계열 단위라서 E 템플릿용 문자열 별칭에는 계열명을 붙인다 (설계 3.2)."""
+    slots: dict[str, dict[str, dict]] = {}
     for q in STAKEHOLDER_QUERY_PLAN:
-        slots.setdefault(q["slot"], {})[q["tech"]] = ok.get(q["claim_id"], "")
-    # End User는 지연/품질 간접 근거가 없으면 기술별로 미확인을 남긴다 (추정 금지).
-    slots["end_user"] = {tech: stmt or END_USER_GAP for tech, stmt in slots["end_user"].items()}
+        d = {"claim_id": q["claim_id"], "benefit": "", "concern": "", "barrier": "", "evidence_ids": [],
+             **details.get(q["claim_id"], {})}
+        # End User는 지연/품질 간접 근거가 없으면 기술별로 미확인을 남긴다 (추정 금지).
+        if q["slot"] == "end_user" and not d["benefit"]:
+            d["benefit"] = END_USER_GAP
+        slots.setdefault(q["slot"], {})[q["tech"]] = d
 
     def by_family(slot: str) -> str:
         return " / ".join(
-            f"[{family_labels[tech]} 계열] {slots[slot][tech] or '근거 미확인'}" for tech in TECH_ORDER
+            f"[{family_labels[tech]} 계열] {slots[slot][tech]['benefit'] or '근거 미확인'}" for tech in TECH_ORDER
         )
 
     actors = list(dict.fromkeys(q["actor"] for q in STAKEHOLDER_QUERY_PLAN))
-    surveyed = list(dict.fromkeys(q["actor"] for q in STAKEHOLDER_QUERY_PLAN if q["claim_id"] in ok))
+    surveyed = [a for a in actors if any(
+        q["actor"] == a and details.get(q["claim_id"], {}).get("benefit") for q in STAKEHOLDER_QUERY_PLAN
+    )]
     return {
         "actors_surveyed": surveyed or actors,
         **slots,
@@ -238,7 +264,7 @@ def stakeholder_research_node(state: OverallState) -> dict:
     print("👥 [이해관계자] 4대 핵심 Actor(서빙 운영자/개발자/End User/공급자) 반응 조사 실행")
 
     market_context = state.get("market") or {}
-    key_vendors = market_context.get("key_vendors") or ["Cloud CSPs", "Hardware Vendors"]
+    key_vendors = market_context.get("key_vendors") or []
 
     audit_issues = (state.get("audit") or {}).get("issues") or []
     my_issues = {i["claim_id"]: i for i in audit_issues if i.get("target_agent") == "stakeholder"}
@@ -256,10 +282,18 @@ def stakeholder_research_node(state: OverallState) -> dict:
             claims.append(claim)
             evidence.extend(new_ev)
             sources.extend(new_src)
-        # 재실행: 자기 claim만 upsert. 요약 dict는 Overwrite 키라 기존 값을 펼친 뒤 STK Claim 기준으로 슬롯을 다시 계산한다.
-        merged = {c["id"]: c for c in state.get("claims", []) if c.get("id", "").startswith("STK-")}
-        merged.update({c["id"]: c for c in claims})
-        stakeholder = {**(state.get("stakeholder") or {}), **_summarize(list(merged.values()), _family_labels(state))}
+        # 재실행: 자기 claim만 upsert. 요약 dict는 Overwrite 키라 기존 슬롯을 그대로 두고 재실행한 Claim 칸만 다시 계산한다.
+        prev = state.get("stakeholder") or {}
+        details = {
+            q["claim_id"]: prev[q["slot"]][q["tech"]]
+            for q in STAKEHOLDER_QUERY_PLAN
+            if isinstance((prev.get(q["slot"]) or {}).get(q["tech"]), dict)
+        }
+        snippets = {e["evidence_id"]: e["snippet"] for e in list(state.get("evidence", [])) + evidence}
+        for claim in claims:
+            if claim["id"] in STAKEHOLDER_PLAN_BY_ID:
+                details[claim["id"]] = _detail(STAKEHOLDER_PLAN_BY_ID[claim["id"]], claim, snippets)
+        stakeholder = {**prev, **_summarize(details, _family_labels(state))}
         return {"stakeholder": stakeholder, "claims": claims, "evidence": evidence, "sources": sources}
 
     # 최초 실행: STK-01~08 (4대 Actor × 기술 계열 2개) 전량 조사
@@ -272,8 +306,10 @@ def stakeholder_research_node(state: OverallState) -> dict:
         evidence.extend(new_ev)
         sources.extend(new_src)
 
+    snippets = {e["evidence_id"]: e["snippet"] for e in evidence}
+    details = {c["id"]: _detail(STAKEHOLDER_PLAN_BY_ID[c["id"]], c, snippets) for c in claims}
     return {
-        "stakeholder": _summarize(claims, _family_labels(state)),
+        "stakeholder": _summarize(details, _family_labels(state)),
         "claims": claims,
         "evidence": evidence,
         "sources": sources,
