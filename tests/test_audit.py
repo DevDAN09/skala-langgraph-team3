@@ -8,6 +8,7 @@ from src.audit import (
     judge_claim_consistency,
     run_llm_judge,
     evidence_audit_node,
+    judge_prompt,
 )
 
 
@@ -339,6 +340,27 @@ def test_judge_decision_schema():
     decision = JudgeDecision(is_grounded=True, reason="Directly supported by snippet.")
     assert decision.is_grounded is True
     assert "supported" in decision.reason
+
+
+def test_judge_prompt_tolerates_lexical_variation_but_rejects_factual_mismatch():
+    """R5 threshold tuning: the Judge prompt must explicitly instruct the LLM not to
+    reject a Claim for mere wording/paraphrase differences, while still requiring a
+    reject on genuine factual mismatches (different numbers/entities/unsupported
+    claims). Guards against re-tightening the prompt back to word-for-word matching.
+    """
+    system_message = judge_prompt.messages[0].prompt.template
+
+    # Must explicitly tolerate surface-level (non-factual) differences
+    for leniency_cue in ("paraphrasing", "synonyms", "word order"):
+        assert leniency_cue in system_message
+
+    # Must still require a reject for substantive factual mismatches
+    for strictness_cue in ("materially different", "contradicted"):
+        assert strictness_cue in system_message
+
+    # No comparative/winner language leaked into the Judge prompt (checklist item)
+    for banned in ("better", "winner", "recommend"):
+        assert banned not in system_message.lower()
 
 
 def test_judge_claim_consistency_fallback():

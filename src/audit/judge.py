@@ -16,9 +16,17 @@ class JudgeDecision(BaseModel):
 judge_prompt = ChatPromptTemplate.from_messages([
     (
         "system",
-        "You are a strict academic fact-checker. "
-        "Determine whether the statement is completely supported by the evidence snippet. "
-        "Do not make assumptions or extrapolate beyond what is explicitly stated in the snippet.",
+        "You are a rigorous but fair academic fact-checker. "
+        "Judge whether the statement is FACTUALLY grounded in the evidence snippet — "
+        "judge substance, not wording.\n\n"
+        "Do NOT mark is_grounded=false for surface-level differences that preserve the "
+        "same fact: paraphrasing, synonyms, word order, unit/format differences "
+        "(e.g. '2.6x' vs '260%' vs 'reduced by more than half'), or minor rounding.\n"
+        "DO mark is_grounded=false when the statement contains a number, entity, or "
+        "claim that is materially different from, absent in, or contradicted by the "
+        "snippet, or when it asserts something the snippet does not state. "
+        "Do not make assumptions or extrapolate beyond what is explicitly stated in the "
+        "snippet.",
     ),
     (
         "human",
