@@ -9,27 +9,35 @@ from src.synthesis.evaluator import evaluation_synthesis_node
 from src.synthesis.report_gen import report_generation_node
 
 
+def _retry_targets(state: OverallState) -> set[str]:
+    """audit.issues의 target_agent 중 재시도 한도(2회)가 남은 관점만 반환한다."""
+    issues = (state.get("audit") or {}).get("issues") or []
+    retry_count = state.get("retry_count") or {}
+    return {
+        issue["target_agent"]
+        for issue in issues
+        if "target_agent" in issue and retry_count.get(issue["target_agent"], 0) < 2
+    }
+
+
 def route_after_paper(state: OverallState) -> str:
-    """Initial run closes branch to END. Only retries with paper issues route to audit."""
-    audit = state.get("audit") or {}
-    issues = audit.get("issues") or []
-    if any(issue.get("target_agent") == "paper" for issue in issues):
+    """첫 실행은 END. paper 재시도는 market/stakeholder가 함께 재실행되지 않을 때만 검증으로 보낸다.
+    함께 재실행되면 stakeholder → evidence_audit 엣지가 검증을 한 번만 연다 (안티패턴 7)."""
+    targets = _retry_targets(state)
+    if "paper" in targets and not targets & {"market", "stakeholder"}:
         return "evidence_audit"
     return END
 
 
 def route_audit_decision(state: OverallState) -> list[str] | str:
     """Targeted retry and Cascade Chaining router. Escapes to synthesis when retry_count >= 2."""
-    audit = state.get("audit") or {}
-    issues = audit.get("issues") or []
-    retry_count = state.get("retry_count") or {"paper": 0, "market": 0, "stakeholder": 0}
+    issues = (state.get("audit") or {}).get("issues") or []
 
     if not issues:
         print("✅ [라우터] 검증 통과 -> 평가 종합으로 이동")
         return "evaluation_synthesis"
 
-    targets = set(issue["target_agent"] for issue in issues if "target_agent" in issue)
-    valid_targets = [t for t in targets if retry_count.get(t, 0) < 2]
+    valid_targets = _retry_targets(state)
 
     if not valid_targets:
         print("⚠️ [라우터] 재시도 한도(2회) 소진 -> 미해결 항목 격리 후 평가 종합으로 이동")
