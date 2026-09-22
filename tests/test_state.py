@@ -11,6 +11,7 @@ from src.state import (
     TRL,
 )
 import src.config as config
+from pathlib import Path
 
 
 def test_upsert_claims_idempotent():
@@ -178,6 +179,7 @@ def test_config_exports():
     assert hasattr(config, "DATA_DIR")
     assert hasattr(config, "PAPERS_DIR")
     assert hasattr(config, "FAISS_INDEX_DIR")
+    assert Path(config.FAISS_INDEX_DIR) == config.PROJECT_ROOT / "data" / "faiss_index"
     assert hasattr(config, "REPORT_OUTPUT_PATH")
     assert config.DEFAULT_LLM_MODEL == "gpt-4o-mini"
     assert config.JUDGE_LLM_MODEL == "gpt-4o"
