@@ -80,12 +80,12 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ### 4.4 도메인 6대 축 적합성
 | 평가 축 | 검증 결과 |
 | :--- | :--- |
-| 메모리 점유량 | {{ domain.get("memory_footprint", "근거 미확인") }} |
-| 대역폭·전송 | {{ domain.get("bandwidth_transfer", "근거 미확인") }} |
-| 처리량·응답 지연 | {{ domain.get("latency_impact", "근거 미확인") }} |
-| 정확도 | {{ domain.get("accuracy", "근거 미확인") }} |
-| 인프라 변경 | {{ domain.get("infrastructure_change", "근거 미확인") }} |
-| 운영 복잡도 | {{ domain.get("operational_complexity", "근거 미확인") }} |
+| 메모리 점유량 | {{ domain_axis_value(domain, "memory_footprint") }} |
+| 대역폭·전송 | {{ domain_axis_value(domain, "bandwidth_transfer") }} |
+| 처리량·응답 지연 | {{ domain_axis_value(domain, "throughput_latency") }} |
+| 정확도 | {{ domain_axis_value(domain, "accuracy") }} |
+| 인프라 변경 | {{ domain_axis_value(domain, "infrastructure") }} |
+| 운영 복잡도 | {{ domain_axis_value(domain, "operational_complexity") }} |
 
 ---
 

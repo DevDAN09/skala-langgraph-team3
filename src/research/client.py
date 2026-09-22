@@ -168,8 +168,8 @@ def _clip_to_sentence(text: str, limit: int = 220) -> str:
 def summarize_snippet(content: str, focus: str) -> str:
     """검색 스니펫에서 중립적인 factual 한 문장 statement를 만든다.
 
-    승패 판정/비교 문구를 금지하는 프롬프트로 LLM을 시도하고, 키가 없거나
-    호출이 실패하면 원문을 문장 경계에서 잘라 그대로 반환한다 (숫자 창작 금지, Graceful Degradation).
+    승패 판정/비교 문구를 금지하는 프롬프트로 LLM을 시도한다. 요약에 실패하면
+    원문을 보고서에 노출하지 않고 빈 문자열을 반환해 호출부가 insufficient로 처리한다.
     """
     text = (content or "").strip()
     if not text:
@@ -198,8 +198,8 @@ def summarize_snippet(content: str, focus: str) -> str:
         resp = llm.invoke(prompt)
         summarized = (getattr(resp, "content", "") or "").strip()
         if not summarized or summarized.strip(' .').upper() == "NONE":
-            return _clip_to_sentence(text)
-        return summarized
+            return ""
+        return summarized if len(summarized) >= 20 and "\n" not in summarized else ""
     except Exception as e:
-        print(f"⚠️ [경고/Fallback] statement 요약 LLM 호출 실패, 원문 인용으로 대체: {e}")
-        return _clip_to_sentence(text)
+        print(f"⚠️ [경고/Fallback] statement 요약 LLM 호출 실패, 근거 미확인 처리: {e}")
+        return ""

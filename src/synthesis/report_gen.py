@@ -5,11 +5,33 @@ from langchain_openai import ChatOpenAI
 from src.state import OverallState
 from src.config import OPENAI_API_KEY, POLISHING_LLM_MODEL
 
+
+_DOMAIN_FIELD_ALIASES = {
+    "memory_footprint": ("memory_footprint",),
+    "bandwidth_transfer": ("bandwidth_transfer",),
+    "throughput_latency": ("throughput_latency", "latency_impact"),
+    "accuracy": ("accuracy",),
+    "infrastructure": ("infrastructure", "infrastructure_change", "infra_change"),
+    "operational_complexity": ("operational_complexity",),
+}
+
+
+def domain_axis_value(domain: dict, field: str) -> str:
+    """Format per-technology domain data for one Markdown table cell."""
+    value = next((domain.get(key) for key in _DOMAIN_FIELD_ALIASES[field] if domain.get(key) is not None), None)
+    if not isinstance(value, dict):
+        return str(value or "공개 근거 미확인").replace("corpus 내 근거 미확인", "공개 근거 미확인")
+    return "<br>".join(
+        f"**{tech}**: {str(value.get(tech) or '공개 근거 미확인').replace('corpus 내 근거 미확인', '공개 근거 미확인')}"
+        for tech in ("KIVI", "CXL-PNM")
+    )
+
 def report_generation_node(state: OverallState) -> dict:
     """Renders the final report for the orchestration layer to persist."""
     print("📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링 실행")
     templates_dir = Path(__file__).parent / "templates"
     env = Environment(loader=FileSystemLoader(str(templates_dir)))
+    env.globals["domain_axis_value"] = domain_axis_value
     template = env.get_template("report.md.j2")
 
     rendered = template.render(

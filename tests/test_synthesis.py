@@ -4,6 +4,15 @@ from src.synthesis.evaluator import evaluate_trl, evaluation_synthesis_node
 import src.synthesis.report_gen as report_gen
 from src.synthesis.report_gen import report_generation_node
 
+
+def test_domain_axis_value_formats_dict_and_normalizes_internal_fallback():
+    rendered = report_gen.domain_axis_value(
+        {"memory_footprint": {"KIVI": "2.6x 감소", "CXL-PNM": "corpus 내 근거 미확인"}},
+        "memory_footprint",
+    )
+    assert rendered == "**KIVI**: 2.6x 감소<br>**CXL-PNM**: 공개 근거 미확인"
+    assert "{" not in rendered
+
 def test_evaluate_trl_dual():
     kivi_trl = evaluate_trl("KIVI", MOCK_STATE["claims"])
     assert kivi_trl["tech_trl"] == "5-6"
