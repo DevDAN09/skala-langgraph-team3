@@ -68,9 +68,9 @@ def test_report_generation_sections(monkeypatch):
     assert "[1]" in report_text
     assert "[4]" in report_text
     assert "simulation" in report_text
-    assert "저자 미상(2024). KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache. *ICML*." in report_text
-    assert "Samsung Semiconductor(2024)." in report_text
-    assert "[1] 저자 미상(2024)." in report_text
+    assert "기관 또는 작성자 미상(2024). KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache. *ICML*." in report_text
+    assert "Samsung Semiconductor(발행일 미상)." in report_text
+    assert "[1] 기관 또는 작성자 미상(2024)." in report_text
     assert "특허 :" not in report_text
     assert "논문 :" not in report_text
     assert "기타 (웹페이지) :" not in report_text

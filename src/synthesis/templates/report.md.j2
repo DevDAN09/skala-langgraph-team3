@@ -130,12 +130,14 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ## REFERENCE
 
 {% for s in sources if s.get('source_id') in refs.source_ids %}
-{% if s.source_type == 'patent' %}
-[{{ loop.index }}] {{ s.get('applicant', s.publisher) }}({{ s.date }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
-{% elif s.source_type == 'paper' %}
-[{{ loop.index }}] {{ s.get('authors') or '저자 미상' }}({{ s.date }}). {{ s.title }}. *{{ s.get('venue', s.publisher) }}*{% if s.get('volume') %}, {{ s.get('volume') }}{% if s.get('issue') %}({{ s.get('issue') }}){% endif %}{% endif %}{% if s.get('pages') %}, {{ s.get('pages') }}{% endif %}.
+{% if s.get('source_type') == 'patent' %}
+[{{ loop.index }}] {{ s.get('applicant', s.publisher) }}({{ s.date|citation_date('month') }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
+{% elif s.get('source_type') == 'paper' %}
+[{{ loop.index }}] {{ s|citation_author(false) }}({{ s.date|citation_date('year') }}). {{ s.title }}. *{{ s.get('venue', s.publisher) }}*{% if s.get('volume') %}, {{ s.get('volume') }}{% if s.get('issue') %}({{ s.get('issue') }}){% endif %}{% endif %}{% if s.get('pages') %}, {{ s.get('pages') }}{% endif %}.
+{% elif s.get('source_type') == 'web' %}
+[{{ loop.index }}] {{ s|citation_author }}({{ s.date|citation_date('day') }}). *{{ s.title }}*. {{ s|citation_site_name }}, {{ s.url }}
 {% else %}
-[{{ loop.index }}] {{ s.get('authors', s.publisher) }}({{ s.date }}). *{{ s.title }}*. {{ s.get('site_name', s.publisher) }}, {{ s.url }}
+[{{ loop.index }}] {{ s|citation_author }}(발행일 미상). *{{ s.title }}*. {{ s|citation_site_name }}, {{ s.url }}
 {% endif %}
 {% else %}
 - 검증된 출처가 없다.
