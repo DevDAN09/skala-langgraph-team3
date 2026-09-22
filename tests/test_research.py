@@ -166,7 +166,9 @@ def test_market_to_stakeholder_url_dedup_chain_keeps_evidence_linked():
     assert len(shared_url_sources) == 1, "같은 URL이 union_sources 이후에도 여러 Source로 남아있다"
 
 
-def test_market_retry_only_patches_flagged_claim_and_keeps_market_key_frozen():
+def test_market_retry_only_patches_flagged_claim_and_keeps_market_key_frozen(monkeypatch):
+    import src.research.market as mkt
+    monkeypatch.setattr(mkt, "rewrite_query", lambda q, reason="": q)
     state = {
         **INITIAL_INPUT_STATE,
         "audit": {"issues": [{
@@ -179,7 +181,9 @@ def test_market_retry_only_patches_flagged_claim_and_keeps_market_key_frozen():
     assert "market" not in res  # Overwrite 리듀서 보호: 재실행에서 market 요약을 지우면 안 됨
 
 
-def test_stakeholder_retry_only_patches_flagged_claim():
+def test_stakeholder_retry_only_patches_flagged_claim(monkeypatch):
+    import src.research.stakeholder as stk
+    monkeypatch.setattr(stk, "rewrite_query", lambda q, reason="": q)
     state = {
         **INITIAL_INPUT_STATE,
         "audit": {"issues": [{
@@ -290,6 +294,9 @@ def test_stakeholder_records_counter_evidence_not_found(monkeypatch):
     """반대 쿼리 결과가 없으면 Concern·Barrier에 counter-evidence not found를 기록한다 (설계 표 11)."""
     import src.research.stakeholder as stk
     monkeypatch.setattr(stk, "search_pair", _fake_search(counter=False))
+    # 검증 대상은 반대 근거 처리다. 지지 근거 요약까지 실제 LLM 판정에 맡기면, 더미 본문이
+    # "관련 내용 없음"으로 판정돼 Claim이 insufficient가 되면서 Concern·Barrier까지 가지 못한다.
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: "Benefit statement.")
     text = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]["framework_developer"]
     assert "Concern: counter-evidence not found | Barrier: counter-evidence not found" in text
 
@@ -361,6 +368,7 @@ def test_stakeholder_search_evidence_retry_skips_previous_url(monkeypatch):
         {"url": "https://www.zdnet.com/b", "title": "b", "content": "Second article."},
     ]
     monkeypatch.setattr(stk, "search_pair", lambda s, c: ({"results": results}, None))
+    monkeypatch.setattr(stk, "rewrite_query", lambda q, reason="": q)
     old_src = {"source_id": "SRC-STK-01", "title": "a", "publisher": "Web", "date": "n.d.",
                "url": "https://www.theregister.com/a", "source_type": "web", "source_tier": "T3"}
     state = _retry_state(
@@ -477,6 +485,128 @@ def test_stakeholder_without_search_results_is_insufficient(monkeypatch):
     assert {c["status"] for c in res["claims"]} == {"insufficient"}
     assert all(c["statement"] == "" for c in res["claims"])
     assert res["sources"] == []
+
+
+def _fake_llm_module(reply):
+    import types
+
+    class FakeLLM:
+        def __init__(self, **kwargs):
+            pass
+
+        def invoke(self, prompt):
+            return types.SimpleNamespace(content=reply)
+
+    return types.SimpleNamespace(ChatOpenAI=FakeLLM)
+
+
+def test_summarize_snippet_returns_empty_when_llm_finds_nothing(monkeypatch):
+    """LLM이 '관련 내용 없음'(NONE)이라고 판정하면 원문을 잘라 statement로 쓰지 않는다.
+
+    예전에는 여기서 원문을 인용해, 검색 리스팅 페이지의 저자 목록이나 로그인·네비게이션
+    메뉴가 Claim statement와 보고서 '도입 장벽'으로 승격됐다.
+    """
+    import sys
+    import src.research.client as client
+
+    monkeypatch.setattr(client, "OPENAI_API_KEY", "dummy-key")
+    monkeypatch.setitem(sys.modules, "langchain_openai", _fake_llm_module("NONE"))
+    boilerplate = "가입 로그인 알 수 없는 사용자 ## 코딩 레벨 업 코딩 튜토리얼 및 뉴스."
+    assert client.summarize_snippet(boilerplate, "KIVI adoption") == ""
+
+
+def test_summarize_snippet_quotes_source_when_llm_unavailable(monkeypatch):
+    """LLM 자체를 못 쓰면(키 없음) 판정이 없었던 것이므로 기존처럼 원문 인용으로 버틴다."""
+    import src.research.client as client
+
+    monkeypatch.setattr(client, "OPENAI_API_KEY", "")
+    assert client.summarize_snippet("vLLM ships KV cache quantization.", "focus") != ""
+
+
+def test_rewrite_query_returns_original_without_llm(monkeypatch):
+    """키가 없으면 재작성을 포기하고 원본 질의를 그대로 쓴다 (Graceful Degradation)."""
+    import src.research.client as client
+
+    monkeypatch.setattr(client, "OPENAI_API_KEY", "")
+    assert client.rewrite_query("who ships CXL memory?") == "who ships CXL memory?"
+
+
+def test_market_skips_result_without_usable_statement(monkeypatch):
+    """검색 1위가 본문 없는 리스팅 페이지면 다음 후보로 넘어간다 (예전에는 results[0]만 썼다)."""
+    import src.research.market as mkt
+
+    results = [
+        {"url": "https://www.theregister.com/listing", "title": "listing", "content": "Sign up Log in"},
+        {"url": "https://www.zdnet.com/article", "title": "article", "content": "vLLM ships KV cache quantization."},
+    ]
+    monkeypatch.setattr(mkt, "search_pair", lambda s, c, **kw: ({"results": results}, None))
+    monkeypatch.setattr(mkt, "summarize_snippet",
+                        lambda text, focus: "" if "Sign up" in text else "Usable statement.")
+    res = market_research_node(INITIAL_INPUT_STATE)
+
+    claim = next(c for c in res["claims"] if c["id"] == "MKT-01")
+    ev = next(e for e in res["evidence"] if e["evidence_id"] == "EV-MKT-01")
+    src = {s["source_id"]: s for s in res["sources"]}[ev["source_id"]]
+    assert claim["statement"] == "Usable statement."
+    assert claim["status"] == "ok"
+    assert src["url"] == "https://www.zdnet.com/article"
+
+
+def test_market_leaves_claim_insufficient_instead_of_quoting_boilerplate(monkeypatch):
+    """후보가 전부 쓸 수 없으면 statement를 비우고 insufficient로 남긴다. 요약 dict에도 원문이 새지 않는다."""
+    import src.research.market as mkt
+
+    results = [{"url": "https://www.theregister.com/listing", "title": "l", "content": "Sign up Log in"}]
+    monkeypatch.setattr(mkt, "search_pair", lambda s, c, **kw: ({"results": results}, None))
+    monkeypatch.setattr(mkt, "summarize_snippet", lambda text, focus: "")
+    res = market_research_node(INITIAL_INPUT_STATE)
+
+    claim = next(c for c in res["claims"] if c["id"] == "MKT-01")
+    assert claim["statement"] == ""
+    assert claim["status"] == "insufficient"
+    assert all("Sign up" not in res["market"][axis]
+               for axis in ("adoption", "deployment", "ecosystem", "barriers"))
+
+
+def test_market_search_evidence_retry_rewrites_query_and_skips_previous_url(monkeypatch):
+    """재검색은 질의를 다시 쓰고 직전 근거 URL을 제외한다.
+
+    같은 질의를 그대로 다시 던지면 같은 결과가 돌아와 재시도 한도(2회)만 소진한다.
+    """
+    import src.research.market as mkt
+
+    recorded = []
+    results = [
+        {"url": "https://www.theregister.com/a", "title": "a", "content": "First article."},
+        {"url": "https://www.zdnet.com/b", "title": "b", "content": "Second article."},
+    ]
+
+    def fake_search(support_query, counter_query, **kwargs):
+        recorded.extend([support_query, counter_query])
+        return {"results": results}, None
+
+    monkeypatch.setattr(mkt, "search_pair", fake_search)
+    monkeypatch.setattr(mkt, "summarize_snippet", lambda text, focus: "Restated from the new source.")
+    monkeypatch.setattr(mkt, "rewrite_query", lambda q, reason="": f"rewritten: {q}")
+
+    old_src = {"source_id": "SRC-MKT-01", "title": "a", "publisher": "Web", "date": "n.d.",
+               "url": "https://www.theregister.com/a", "source_type": "web", "source_tier": "T3"}
+    state = {
+        **INITIAL_INPUT_STATE,
+        "claims": [{"id": "MKT-01", "perspective": "market", "tech": "KIVI", "statement": "old statement",
+                    "kind": "fact", "evidence_ids": ["EV-MKT-01"], "counter_evidence_ids": [],
+                    "counter_searched": True, "status": "flagged"}],
+        "evidence": [{"evidence_id": "EV-MKT-01", "source_id": "SRC-MKT-01", "snippet": "First article."}],
+        "sources": [old_src],
+        "audit": {"issues": [{"claim_id": "MKT-01", "rule": "R2", "issue": "T4 only",
+                              "target_agent": "market", "action": "search_evidence"}]},
+    }
+    res = market_research_node(state)
+
+    assert recorded and all(q.startswith("rewritten: ") for q in recorded)
+    ev = next(e for e in res["evidence"] if e["evidence_id"] == "EV-MKT-01")
+    src = {s["source_id"]: s for s in union_sources([old_src], res["sources"])}[ev["source_id"]]
+    assert src["url"] == "https://www.zdnet.com/b"
 
 
 if __name__ == "__main__":

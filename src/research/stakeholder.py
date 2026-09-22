@@ -4,7 +4,9 @@ from src.research.client import (
     search_pair,
     classify_tier,
     infer_kind,
+    rank_results,
     resolve_source_id,
+    rewrite_query,
     summarize_snippet,
     vendor_label,
 )
@@ -60,14 +62,25 @@ COUNTER_NOT_FOUND = "counter-evidence not found"
 # market.key_vendors는 알파벳순이라 첫 항목이 기술과 무관할 수 있다. 계열별로 쿼리에 넣을 벤더 후보를 정한다.
 VENDOR_PREFERENCE = {"CXL-PNM": ("Samsung", "SK Hynix", "Intel", "CXL Consortium"), "KIVI": ("NVIDIA",)}
 STAKEHOLDER_PLAN_BY_ID = {q["claim_id"]: q for q in STAKEHOLDER_QUERY_PLAN}
-TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
+SNIPPET_LIMIT = 500
 
 
-def _pick_result(results: list[dict], exclude_urls: set[str] = frozenset()) -> dict:
-    """T1~T3 결과를 먼저 고른다 (R2: T4 단독 근거 금지). 재검색 때는 직전 근거 URL을 뺀다.
-    제외하고 남는 결과가 없으면 원래 목록에서 고른다."""
-    candidates = [r for r in results if (r.get("url") or "") not in exclude_urls] or results
-    return min(candidates, key=lambda r: TIER_RANK[classify_tier(r.get("url", ""))])
+def _select_evidence(results: list[dict], focus: str, exclude_urls: set[str] = frozenset()):
+    """T1~T3 결과를 먼저 고르고(R2: T4 단독 근거 금지), 쓸 만한 statement가 나오는 첫 후보를 쓴다.
+
+    summarize_snippet이 빈 문자열을 주면 그 텍스트에 관련 내용이 없다는 뜻이라(리스팅 페이지,
+    네비게이션 메뉴 등) 다음 후보로 넘어간다. 전부 실패하면 Tier가 가장 높은 후보를 근거로만
+    남기고 statement는 비운다. 재검색 때는 직전 근거 URL을 뺀다.
+    """
+    ranked = rank_results(results, exclude_urls)
+    if not ranked:
+        return None, "", ""
+    for candidate in ranked:
+        snippet_text = (candidate.get("content") or "")[:SNIPPET_LIMIT]
+        statement = summarize_snippet(snippet_text, focus) if snippet_text else ""
+        if statement:
+            return candidate, snippet_text, statement
+    return ranked[0], (ranked[0].get("content") or "")[:SNIPPET_LIMIT], ""
 
 
 def _family_ref(tech: str, labels: dict[str, str]) -> str:
@@ -111,14 +124,19 @@ def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, 
 
 def _run_stakeholder_query(
     item: dict, key_vendors: list[str], sources_pool: list[Source], labels: dict[str, str],
-    exclude_urls: set[str] = frozenset(),
+    exclude_urls: set[str] = frozenset(), queries: tuple[str, str] | None = None,
 ) -> tuple[Claim, list[Evidence], list[Source]]:
-    """Actor별 지지/반대 쿼리를 1회 병행 실행해 Claim + Evidence(+반대 근거) + Source를 만든다."""
+    """Actor별 지지/반대 쿼리를 1회 병행 실행해 Claim + Evidence(+반대 근거) + Source를 만든다.
+
+    queries를 주면 plan의 기본 질의 대신 그것을 쓴다 (재검색용 재작성 질의).
+    """
     claim_id, tech = item["claim_id"], item["tech"]
     ev_id, src_id = f"EV-{claim_id}", f"SRC-{claim_id}"
 
-    support_query = _fill_vendor(item["support"], key_vendors, tech)
-    counter_query = _fill_vendor(item["counter"], key_vendors, tech)
+    support_query, counter_query = queries or (
+        _fill_vendor(item["support"], key_vendors, tech),
+        _fill_vendor(item["counter"], key_vendors, tech),
+    )
     support, counter = search_pair(support_query, counter_query)
     support_results = (support or {}).get("results") or []
 
@@ -131,17 +149,15 @@ def _run_stakeholder_query(
         return claim, [], []
 
     new_sources: list[Source] = []
-    top = _pick_result(support_results, exclude_urls)
+    # R5(LLM Judge)는 Evidence.snippet만 보고 statement 정합성을 판정하므로,
+    # statement 생성 입력과 저장되는 snippet을 동일한 텍스트로 맞춘다.
+    top, snippet_text, statement = _select_evidence(support_results, _benefit_focus(item, labels), exclude_urls)
     url = top.get("url", "")
     tier = classify_tier(url)
     resolved_src_id, new_src = _build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
     if new_src:
         new_sources.append(new_src)
 
-    # R5(LLM Judge)는 Evidence.snippet만 보고 statement 정합성을 판정하므로,
-    # statement 생성 입력과 저장되는 snippet을 동일한 텍스트로 맞춘다.
-    snippet_text = (top.get("content") or "")[:500]
-    statement = summarize_snippet(snippet_text, _benefit_focus(item, labels))
     new_evidence: list[Evidence] = [{
         "evidence_id": ev_id, "source_id": resolved_src_id, "snippet": snippet_text,
     }]
@@ -181,7 +197,10 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
 
     if action == "search_counter_evidence" and existing_claim and plan_item:
         tech = plan_item["tech"]
-        counter_query = _fill_vendor(plan_item["counter"], key_vendors, tech)
+        counter_query = rewrite_query(
+            _fill_vendor(plan_item["counter"], key_vendors, tech),
+            "the previous counter-evidence search returned nothing usable",
+        )
         _, counter = search_pair(_fill_vendor(plan_item["support"], key_vendors, tech), counter_query)
         counter_results = (counter or {}).get("results") or [] if counter else []
         if not counter_results:
@@ -215,12 +234,19 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, key_ve
         return {**existing_claim, "statement": statement, "status": status}, [], []
 
     # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행.
-    # 같은 쿼리는 같은 결과를 돌려주므로 직전 근거 URL은 제외해야 R1/R2 재위반을 피할 수 있다.
+    # 같은 쿼리는 같은 결과를 돌려주므로 직전 근거 URL은 제외하고, 질의 자체도 다시 써서
+    # 다른 출처에 닿게 한다 (URL만 빼면 같은 결과 목록 안에서만 맴돈다).
     if plan_item:
         prev_ev = evidence_by_id.get(((existing_claim or {}).get("evidence_ids") or [None])[0])
         prev_src = sources_by_id.get(prev_ev["source_id"]) if prev_ev else None
         exclude = {prev_src["url"]} if prev_src and prev_src.get("url") else set()
-        return _run_stakeholder_query(plan_item, key_vendors, sources_pool, labels, exclude)
+        tech = plan_item["tech"]
+        reason = "the previous search returned a page with no usable evidence for this claim"
+        queries = (
+            rewrite_query(_fill_vendor(plan_item["support"], key_vendors, tech), reason),
+            rewrite_query(_fill_vendor(plan_item["counter"], key_vendors, tech), reason),
+        )
+        return _run_stakeholder_query(plan_item, key_vendors, sources_pool, labels, exclude, queries)
     if existing_claim:
         return {**existing_claim, "status": "insufficient"}, [], []
     return None, [], []
@@ -238,10 +264,12 @@ def _detail(item: dict, claim: Claim, snippets: dict[str, str], labels: dict[str
         return None
     counter = next((snippets[e] for e in claim.get("counter_evidence_ids", []) if snippets.get(e)), "")
     # ponytail: 같은 반대 snippet을 초점만 바꿔 두 번 요약한다. Concern·Barrier가 겹치면 Barrier 전용 쿼리 추가 검토.
+    # 요약이 비면(=그 snippet에 해당 내용 없음) 빈칸 대신 미확인으로 남긴다. 예전에는 원문이
+    # 그대로 들어가 로그인·네비게이션 메뉴가 Concern/Barrier로 실렸다.
     return {
         "benefit": claim["statement"],
-        "concern": summarize_snippet(counter, _counter_focus("concerns or risks about", item, labels)) if counter else COUNTER_NOT_FOUND,
-        "barrier": summarize_snippet(counter, _counter_focus("adoption barriers of", item, labels)) if counter else COUNTER_NOT_FOUND,
+        "concern": (summarize_snippet(counter, _counter_focus("concerns or risks about", item, labels)) or COUNTER_NOT_FOUND) if counter else COUNTER_NOT_FOUND,
+        "barrier": (summarize_snippet(counter, _counter_focus("adoption barriers of", item, labels)) or COUNTER_NOT_FOUND) if counter else COUNTER_NOT_FOUND,
         "evidence_ids": [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])],
     }
 

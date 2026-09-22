@@ -4,7 +4,9 @@ from src.research.client import (
     search_pair,
     classify_tier,
     infer_kind,
+    rank_results,
     resolve_source_id,
+    rewrite_query,
     summarize_snippet,
     vendor_label,
 )
@@ -133,17 +135,45 @@ def _market_search_pair(support_query: str, counter_query: str) -> tuple[dict, d
     return search_pair(support_query, counter_query, time_range="year")
 
 
-def _run_market_query(item: dict, sources_pool: list[Source]) -> tuple[Claim, list[Evidence], list[Source], str]:
+def _select_evidence(results: list[dict], focus: str, exclude_urls: frozenset[str] = frozenset()):
+    """Tier 순으로 후보를 돌며 쓸 만한 statement가 나오는 첫 결과를 고른다.
+
+    예전에는 results[0] 한 건만 썼다. Tavily 1위가 검색 리스팅·광고 페이지면 본문이 없어
+    statement 자리에 저자 목록이나 로그인 메뉴가 들어갔다. summarize_snippet이 빈 문자열을
+    주면(=그 텍스트에 관련 내용 없음) 다음 후보로 넘어간다.
+
+    전부 실패해도 Tier가 가장 높은 후보를 근거로는 남긴다(statement는 빈 문자열). 근거 없이
+    insufficient로만 두면 D의 R1이 "근거 없음"으로만 보고, 어떤 출처를 확인했는지가 사라진다.
+    """
+    ranked = rank_results(results, exclude_urls)
+    if not ranked:
+        return None, "", ""
+    for candidate in ranked:
+        snippet_text = (candidate.get("content") or "")[:2000]
+        statement = summarize_snippet(snippet_text, focus) if snippet_text else ""
+        if statement:
+            return candidate, snippet_text, statement
+    return ranked[0], (ranked[0].get("content") or "")[:2000], ""
+
+
+def _run_market_query(
+    item: dict,
+    sources_pool: list[Source],
+    exclude_urls: frozenset[str] = frozenset(),
+    queries: tuple[str, str] | None = None,
+) -> tuple[Claim, list[Evidence], list[Source], str]:
     """지지/반대 쿼리를 1회 병행 실행해 Claim + Evidence(+반대 근거) + Source를 만든다.
 
+    queries를 주면 plan의 기본 질의 대신 그것을 쓴다 (재검색용 재작성 질의).
     반환값 마지막 항목은 반대 근거를 한 문장으로 요약한 barrier_statement다
     (없으면 빈 문자열). market dict의 barriers 텍스트 조립에 쓴다.
     """
     claim_id, tech, axis = item["claim_id"], item["tech"], item["axis"]
     ev_id, src_id = f"EV-{claim_id}", f"SRC-{claim_id}"
     focus = AXIS_FOCUS[axis].format(tech=tech)
+    support_query, counter_query = queries or (item["support"], item["counter"])
 
-    support, counter = _market_search_pair(item["support"], item["counter"])
+    support, counter = _market_search_pair(support_query, counter_query)
     support_results = (support or {}).get("results") or []
 
     if not support_results:
@@ -156,18 +186,16 @@ def _run_market_query(item: dict, sources_pool: list[Source]) -> tuple[Claim, li
         return claim, [], [], ""
 
     new_sources: list[Source] = []
-    top = support_results[0]
+    # R5(LLM Judge)는 Evidence.snippet만 보고 statement 정합성을 판정한다.
+    # statement를 만드는 입력과 snippet에 저장하는 텍스트를 반드시 동일하게 맞춰야
+    # snippet 밖의 내용에서 나온 문장이 "근거 불일치"로 오판되지 않는다.
+    top, snippet_text, statement = _select_evidence(support_results, focus, exclude_urls)
     url = top.get("url", "")
     tier = classify_tier(url)
     resolved_src_id, new_src = _build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
     if new_src:
         new_sources.append(new_src)
 
-    # R5(LLM Judge)는 Evidence.snippet만 보고 statement 정합성을 판정한다.
-    # statement를 만드는 입력과 snippet에 저장하는 텍스트를 반드시 동일하게 맞춰야
-    # snippet 밖의 내용에서 나온 문장이 "근거 불일치"로 오판되지 않는다.
-    snippet_text = (top.get("content") or "")[:2000]
-    statement = summarize_snippet(snippet_text, focus)
     new_evidence: list[Evidence] = [{
         "evidence_id": ev_id, "source_id": resolved_src_id, "snippet": snippet_text,
     }]
@@ -176,7 +204,11 @@ def _run_market_query(item: dict, sources_pool: list[Source]) -> tuple[Claim, li
     barrier_statement = ""
     counter_results = (counter or {}).get("results") or [] if counter else []
     if counter_results:
-        c_top = counter_results[0]
+        # market dict의 barriers 문장은 스니펫을 그냥 잘라 붙이지 않고, 같은 summarize_snippet으로
+        # 반대 근거를 한 문장으로 정리한다. 쓸 만한 문장이 안 나오면 barriers에 넣지 않는다.
+        c_top, c_snippet_text, barrier_statement = _select_evidence(
+            counter_results, f"barriers, risks, or limitations affecting {tech} {axis}", exclude_urls
+        )
         c_url = c_top.get("url", "")
         c_tier = classify_tier(c_url)
         c_ev_id, c_src_id = f"{ev_id}-C", f"{src_id}-C"
@@ -185,14 +217,8 @@ def _run_market_query(item: dict, sources_pool: list[Source]) -> tuple[Claim, li
         )
         if new_c_src:
             new_sources.append(new_c_src)
-        c_snippet_text = (c_top.get("content") or "")[:2000]
         new_evidence.append({"evidence_id": c_ev_id, "source_id": resolved_c_src_id, "snippet": c_snippet_text})
         counter_evidence_ids = [c_ev_id]
-        # market dict의 barriers 문장은 이제 스니펫을 그냥 잘라 붙이지 않고, 같은
-        # summarize_snippet으로 반대 근거를 한 문장으로 정리해서 읽기 좋게 만든다.
-        barrier_statement = summarize_snippet(
-            c_snippet_text, f"barriers, risks, or limitations affecting {tech} {axis}"
-        )
     else:
         # 반대 쿼리 결과 없음: counter_searched는 True 유지, claim은 ok 유지 (팀 룰)
         print(f"⚠️ [경고/Fallback] {claim_id}: counter-evidence not found")
@@ -247,6 +273,19 @@ def _build_mat_a_claim(item: dict, claims: list[Claim], evidence: list[Evidence]
     return claim, new_evidence
 
 
+def _previous_urls(existing_claim: Claim | None, evidence_by_id: dict, sources_by_id: dict) -> frozenset[str]:
+    """이 Claim이 직전에 근거로 쓴 URL. 재검색에서 같은 출처를 다시 채택하지 않도록 제외한다."""
+    claim = existing_claim or {}
+    ev_ids = [*(claim.get("evidence_ids") or []), *(claim.get("counter_evidence_ids") or [])]
+    urls = set()
+    for ev_id in ev_ids:
+        ev = evidence_by_id.get(ev_id)
+        src = sources_by_id.get(ev["source_id"]) if ev else None
+        if src and (src.get("url") or "").strip():
+            urls.add(src["url"].strip())
+    return frozenset(urls)
+
+
 def _handle_retry(claim_id: str, action: str | None, state: OverallState, sources_pool: list[Source]):
     """재실행: 자기 target_agent 이슈의 claim_id만, action이 지시한 만큼만 고친다."""
     claims_by_id = {c["id"]: c for c in state.get("claims", []) if c.get("id") == claim_id}
@@ -254,21 +293,28 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, source
     sources_by_id = {s["source_id"]: s for s in state.get("sources", [])}
     existing_claim = claims_by_id.get(claim_id)
     plan_item = MARKET_PLAN_BY_ID.get(claim_id)
+    exclude_urls = _previous_urls(existing_claim, evidence_by_id, sources_by_id)
 
     if action == "search_counter_evidence" and existing_claim and plan_item:
-        _, counter = _market_search_pair(plan_item["support"], plan_item["counter"])
+        tech, axis = plan_item["tech"], plan_item["axis"]
+        counter_query = rewrite_query(
+            plan_item["counter"], "the previous counter-evidence search returned nothing usable"
+        )
+        _, counter = _market_search_pair(plan_item["support"], counter_query)
         counter_results = (counter or {}).get("results") or [] if counter else []
         if not counter_results:
             print(f"⚠️ [경고/Fallback] {claim_id}: 재실행에도 counter-evidence not found")
             return {**existing_claim, "counter_searched": True}, [], []
-        c_top = counter_results[0]
+        c_top, c_snippet, _c_statement = _select_evidence(
+            counter_results, f"barriers, risks, or limitations affecting {tech} {axis}", exclude_urls
+        )
         c_url = c_top.get("url", "")
         c_ev_id, c_src_id = f"EV-{claim_id}-C", f"SRC-{claim_id}-C"
         resolved_c_src_id, new_c_src = _build_source(
             c_url, c_top.get("title", ""), c_top.get("published_date", ""), classify_tier(c_url), c_src_id, sources_pool
         )
         new_sources = [new_c_src] if new_c_src else []
-        new_evidence = [{"evidence_id": c_ev_id, "source_id": resolved_c_src_id, "snippet": (c_top.get("content") or "")[:2000]}]
+        new_evidence = [{"evidence_id": c_ev_id, "source_id": resolved_c_src_id, "snippet": c_snippet}]
         updated = {**existing_claim, "counter_evidence_ids": [c_ev_id], "counter_searched": True, "status": "ok"}
         return updated, new_evidence, new_sources
 
@@ -287,9 +333,13 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, source
             statement, status = "", "insufficient"
         return {**existing_claim, "statement": statement, "status": status}, [], []
 
-    # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행
+    # search_evidence (기본) 또는 알 수 없는 action: 지지+반대 쿼리를 전부 다시 실행.
+    # 같은 질의를 그대로 다시 던지면 같은 결과가 와서 재시도가 한도만 소진한다.
+    # 질의를 다시 쓰고 직전 근거 URL을 제외해야 다른 출처에 닿는다.
     if plan_item:
-        claim, new_ev, new_src, _barrier = _run_market_query(plan_item, sources_pool)
+        reason = "the previous search returned a page with no usable evidence for this claim"
+        queries = (rewrite_query(plan_item["support"], reason), rewrite_query(plan_item["counter"], reason))
+        claim, new_ev, new_src, _barrier = _run_market_query(plan_item, sources_pool, exclude_urls, queries)
         return claim, new_ev, new_src
 
     # MAT-A처럼 전담 쿼리 플랜이 없는 claim: 새 검색을 만들 수 없으므로 insufficient로 확정
