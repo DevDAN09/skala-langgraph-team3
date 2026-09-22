@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from src.config import OPENAI_API_KEY, JUDGE_LLM_MODEL
 from src.state import Claim, Evidence, AuditIssue
+from src.audit.rules import resolve_target_agent, TERMINAL_CLAIM_STATUSES
 
 
 class JudgeDecision(BaseModel):
@@ -42,6 +43,10 @@ def run_llm_judge(claims: list[Claim], evidence_list: list[Evidence]) -> list[Au
         return issues
 
     for c in claims:
+        # Already finalized (limit exhausted or otherwise settled) -> never re-audit
+        if c.get("status") in TERMINAL_CLAIM_STATUSES:
+            continue
+
         # Skip claims with missing statement or evidence_ids
         if not c.get("statement") or not c.get("evidence_ids"):
             continue
@@ -58,7 +63,7 @@ def run_llm_judge(claims: list[Claim], evidence_list: list[Evidence]) -> list[Au
                     "claim_id": c["id"],
                     "rule": "R5",
                     "issue": f"스니펫과 사실 불일치: {result.reason}",
-                    "target_agent": "paper" if c.get("perspective") == "domain" else ("stakeholder" if c.get("perspective") == "stakeholder" else "market"),
+                    "target_agent": resolve_target_agent(c.get("id"), c.get("perspective")),
                     "action": "re_extract",
                 })
         except Exception as e:
