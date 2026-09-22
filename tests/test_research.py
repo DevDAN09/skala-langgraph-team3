@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from tests.mock_data import INITIAL_INPUT_STATE
 from src.state import union_sources
-from src.research.client import classify_tier, search_pair, infer_kind, resolve_source_id, vendor_label
+from src.research.client import classify_tier, search_pair, infer_kind, resolve_source_id, summarize_snippet, vendor_label
 from src.research.market import market_research_node, MARKET_QUERY_PLAN, MAT_A_PLAN
 from src.research.stakeholder import stakeholder_research_node, STAKEHOLDER_QUERY_PLAN
 
@@ -51,6 +51,11 @@ def test_resolve_source_id_reuses_existing_url():
 
     # URL 없는 경우 항상 proposed_id를 그대로 쓴다
     assert resolve_source_id("", existing, "SRC-STK-03") == "SRC-STK-03"
+
+
+def test_summarize_snippet_does_not_emit_raw_content_without_llm(monkeypatch):
+    monkeypatch.setattr("src.research.client.OPENAI_API_KEY", "")
+    assert summarize_snippet("### Page title\nEngineering\nA", "KIVI adoption") == ""
 
 
 def test_market_node_counter_searched_rule():
