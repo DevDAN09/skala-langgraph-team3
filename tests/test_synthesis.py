@@ -1,6 +1,7 @@
 """tests/test_synthesis.py - Tests for Role E Synthesis Evaluator & Jinja2 Report Generation"""
 from tests.mock_data import MOCK_STATE
 from src.synthesis.evaluator import evaluate_trl, evaluation_synthesis_node
+import src.synthesis.report_gen as report_gen
 from src.synthesis.report_gen import report_generation_node
 
 def test_evaluate_trl_dual():
@@ -23,7 +24,8 @@ def test_evaluate_trl_without_claims_uses_fallback():
     assert result["family_trl"] == "Unknown"
     assert result["confidence"] == "none"
 
-def test_report_generation_sections():
+def test_report_generation_sections(monkeypatch):
+    monkeypatch.setattr(report_gen, "OPENAI_API_KEY", "")
     synth_res = evaluation_synthesis_node(MOCK_STATE)
     merged_state = {**MOCK_STATE, **synth_res}
     report_res = report_generation_node(merged_state)
