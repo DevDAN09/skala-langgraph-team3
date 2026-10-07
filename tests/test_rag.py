@@ -523,3 +523,9 @@ def test_summary_fields_use_matching_paper_questions(monkeypatch):
     assert "limitation" in by_id["DOM-08"].lower()
     assert "experimental conditions" in by_id["MAT-R01"].lower()
     assert "experimental conditions" in by_id["MAT-R02"].lower()
+
+
+def test_strip_paper_citations_removes_paper_internal_reference_numbers():
+    text = "Workloads span 128K–1M tokens [7], InfiniteBench En.Sum [13, 14] and\nLongBench [3-5]."
+    assert agentic_rag.strip_paper_citations(text) == "Workloads span 128K–1M tokens, InfiniteBench En.Sum and LongBench."
+    assert agentic_rag.strip_paper_citations("") == ""

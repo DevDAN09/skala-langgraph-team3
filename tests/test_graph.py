@@ -118,3 +118,33 @@ def test_graph_end_to_end_execution():
     assert final_state["report"]
     assert final_state["quality"]["attempts"] >= 1
     assert final_state["step_count"] <= MAX_STEPS
+
+
+def _cell_claim(cid, perspective, tech, status="ok"):
+    return {"id": cid, "perspective": perspective, "tech": tech, "statement": "s", "kind": "fact",
+            "evidence_ids": [], "counter_evidence_ids": [], "counter_searched": True, "status": status}
+
+
+def test_quality_coverage_is_per_technology_and_accepts_disclosed_gaps():
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [_cell_claim(f"X-{p}-{t}", p, t) for p in ("domain", "maturity", "market", "stakeholder")
+              for t in ("KIVI", "CXL-PNM") if (p, t) != ("market", "KIVI")]
+    claims.append(_cell_claim("MKT-01", "market", "KIVI", status="insufficient"))
+    report = "## SUMMARY\n## 6. 한계점 및 Evidence Gap\n- 없음\n## REFERENCE\n"
+    quality = quality_evaluation_node({**MOCK_STATE, "claims": claims, "report": report})["quality"]
+    assert quality["scores"]["coverage"] is False and quality["uncovered"] == ["KIVI/market"]
+    assert "market" in quality["rework_targets"]
+
+    disclosed = report.replace("- 없음", "- **[MKT-01]** 공개 근거 미확인 (상태: `insufficient`)")
+    quality = quality_evaluation_node({**MOCK_STATE, "claims": claims, "report": disclosed})["quality"]
+    assert quality["scores"]["coverage"] is True and quality["uncovered"] == []
+
+
+def test_quality_format_failures_route_to_report_generation():
+    from src.synthesis.quality import quality_evaluation_node
+    base = {**MOCK_STATE, "claims": []}
+    fenced = quality_evaluation_node({**base, "report": "```markdown\n## SUMMARY\n## REFERENCE\n[1] a\n```"})["quality"]
+    assert "FORMAT_CODE_FENCE" in fenced["failures"]
+    dangling = quality_evaluation_node({**base, "report": "## SUMMARY\n본문 [62]\n## REFERENCE\n[1] a\n"})["quality"]
+    assert "DANGLING_CITATION" in dangling["failures"]
+    assert route_quality({"quality": {"passed": False, "failures": ["DANGLING_CITATION"], "attempts": 1}}) == "report_generation"

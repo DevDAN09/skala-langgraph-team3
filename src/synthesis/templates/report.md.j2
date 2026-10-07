@@ -74,8 +74,10 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 - **도입 장벽**: {{ market.get("barriers", "검증된 장벽 정보가 없다.") }}
 
 ### 4.3 이해관계자 영향
-- **클라우드 운영자**: {{ stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없다.") }}
-- **하드웨어 벤더**: {{ stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없다.") }}
+- **서빙 운영자 (클라우드)**: {{ stakeholder.get("cloud_serving_operator") or stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없다.") }}
+- **프레임워크 개발자**: {{ stakeholder.get("framework_developer", "검증된 이해관계자 정보가 없다.") }}
+- **End User**: {{ stakeholder.get("end_user", "검증된 이해관계자 정보가 없다.") }}
+- **공급자 (HW/메모리 벤더)**: {{ stakeholder.get("memory_vendor") or stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없다.") }}
 
 ### 4.4 도메인 6대 축 적합성
 | 평가 축 | 검증 결과 |

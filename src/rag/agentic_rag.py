@@ -202,6 +202,15 @@ def _mat_r02_evidence(db, llm) -> tuple[str, list[Document]]:
     return quote, used_docs
 
 
+_PAPER_CITATION = re.compile(r"\s*\[\d+(?:\s*[,–-]\s*\d+)*\]")
+
+
+def strip_paper_citations(text: str) -> str:
+    """논문 원문 인용구에 딸려 온 논문 자체의 참고문헌 번호([7], [12, 13], [3-5])를 지우고 줄바꿈을 합친다.
+    보고서의 [n]은 REFERENCE 번호만 가리켜야 하므로, 남겨두면 없는 출처를 인용한 것처럼 보인다."""
+    return " ".join(_PAPER_CITATION.sub("", text or "").split())
+
+
 def _claim(axis, quote: str) -> Claim:
     claim_id, tech, _, _ = axis
     maturity = claim_id.startswith("MAT-")
@@ -255,6 +264,7 @@ def paper_analysis_node(state: OverallState) -> dict:
             doc = mat_docs[0] if mat_docs else None
         else:
             quote, doc = _grounded_quote(query, tech, db, llm) if db and llm else ("", None)
+        quote = strip_paper_citations(quote)
         claim = _claim(axis, quote)
         if mat_docs:
             claim["evidence_ids"] = [f"EV-{claim_id}-{i}" for i in range(1, len(mat_docs) + 1)]
