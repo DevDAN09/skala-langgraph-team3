@@ -235,5 +235,5 @@ else:
     # ----------------- Tab 4: Raw State -----------------
     with tab4:
         st.subheader("🔍 LangGraph OverallState 전체 데이터")
-        st.caption("그래프 전체에서 공유 및 축적된 22개 State 키의 전체 덤프입니다.")
+        st.caption("그래프 전체에서 공유 및 축적된 23개 State 키의 전체 덤프입니다.")
         st.json(state)

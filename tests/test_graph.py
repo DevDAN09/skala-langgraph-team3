@@ -83,7 +83,8 @@ def test_worker_error_isolated_and_returns_to_supervisor(monkeypatch):
     import src.graph as graph_module
     wrapped = graph_module._supervised(lambda state: (_ for _ in ()).throw(RuntimeError("boom")), "paper")
     result = wrapped(INITIAL_INPUT_STATE)
-    assert result["node_status"]["paper"] == "failed"
+    assert result["node_status"]["paper"] == "pending"
+    assert result["node_attempts"]["paper"] == 1
     assert "paper: boom" in result["last_error"]
 
 

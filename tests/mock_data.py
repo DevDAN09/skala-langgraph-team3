@@ -25,6 +25,7 @@ INITIAL_INPUT_STATE = {
     "last_audited_step": -1,
     "last_decision": {},
     "last_error": None,
+    "node_attempts": {"paper": 0, "market": 0, "stakeholder": 0},
     "trl": {},
     "synthesis": {},
     "report": "",
@@ -176,6 +177,7 @@ MOCK_STATE = {
     "last_audited_step": -1,
     "last_decision": {},
     "last_error": None,
+    "node_attempts": {"paper": 0, "market": 0, "stakeholder": 0},
     "trl": {
         "KIVI": {
             "tech_trl": "5-6",

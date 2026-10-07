@@ -101,6 +101,7 @@ class OverallState(TypedDict):
     last_audited_step: int
     last_decision: dict
     last_error: str | None
+    node_attempts: dict[str, int]
     trl: dict[str, TRL]
     synthesis: dict
     report: str

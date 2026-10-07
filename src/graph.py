@@ -17,8 +17,10 @@ def _supervised(node, agent: str):
             result = node(state)
         except Exception as error:
             status = dict(state.get("node_status") or {})
-            status[agent] = "failed"
-            return {"node_status": status, "last_error": f"{agent}: {error}"}
+            attempts = dict(state.get("node_attempts") or {})
+            attempts[agent] = attempts.get(agent, 0) + 1
+            status[agent] = "pending" if attempts[agent] <= 1 else "failed"
+            return {"node_status": status, "node_attempts": attempts, "last_error": f"{agent}: {error}"}
         status = dict(state.get("node_status") or {})
         status[agent] = "complete"
         return {**result, "node_status": status}
