@@ -84,9 +84,17 @@
 
 
 ## Architecture
-![Architecture](docs/images/architecture.png)
+![Architecture](docs/images/architecture_overview.png)
 
-> `build_evaluation_graph().get_graph().draw_mermaid_png()`로 실제 코드에서 생성한 그래프 (`docs/images/architecture.png`). 실선은 고정 엣지, 점선은 조건부 분기다.
+> 모든 노드는 작업 후 Supervisor로 돌아오고, 다음 노드는 Supervisor만 정한다. 노드끼리 직접 연결된 엣지는 없다. 원본: `docs/images/architecture_overview.svg`
+
+<details>
+<summary>코드에서 자동 생성한 그래프 (<code>build_evaluation_graph().get_graph().draw_mermaid_png()</code>)</summary>
+
+![LangGraph](docs/images/architecture.png)
+
+실선은 고정 엣지, 점선은 조건부 분기다.
+</details>
 
 | 엣지 | 종류 | 결정 주체 |
 | :--- | :--- | :--- |
