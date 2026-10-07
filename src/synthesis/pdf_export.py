@@ -1,6 +1,4 @@
 """src/synthesis/pdf_export.py - Markdown to PDF conversion utility with Korean font support"""
-import os
-import sys
 from pathlib import Path
 from typing import Optional
 

@@ -1,6 +1,5 @@
 """app.py - Streamlit Interactive Dashboard for LangGraph Multi-Agent Evaluation"""
 import time
-import json
 import streamlit as st
 from pathlib import Path
 

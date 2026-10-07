@@ -250,3 +250,20 @@ def rewrite_query(query: str, reason: str = "") -> str:
     except Exception as e:
         print(f"⚠️ [경고/Fallback] 쿼리 재작성 실패, 원본 질의 재사용: {e}")
         return text
+
+
+def build_source(url: str, title: str, date: str, tier: str, proposed_id: str, sources_pool: list[Source]):
+    """URL 중복이면 기존 source_id를 재사용(신규 Source 미생성), 아니면 새 Source를 만든다."""
+    resolved_id = resolve_source_id(url, sources_pool, proposed_id)
+    if resolved_id != proposed_id:
+        return resolved_id, None
+    new_source: Source = {
+        "source_id": proposed_id,
+        "title": title or "Untitled",
+        "publisher": vendor_label(url) or "Web",
+        "date": date or "n.d.",
+        "url": url,
+        "source_type": "web",
+        "source_tier": tier,
+    }
+    return proposed_id, new_source

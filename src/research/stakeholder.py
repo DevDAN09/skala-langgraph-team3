@@ -1,14 +1,13 @@
 """src/research/stakeholder.py - Stakeholder research node, chained from market context."""
 from src.state import OverallState, Claim, Evidence, Source
 from src.research.client import (
+    build_source,
     search_pair,
     classify_tier,
     infer_kind,
     rank_results,
-    resolve_source_id,
     rewrite_query,
     summarize_snippet,
-    vendor_label,
     _clip_to_sentence,
 )
 
@@ -110,23 +109,6 @@ def _fill_vendor(template: str, key_vendors: list[str], tech: str) -> str:
     return " ".join(template.format(vendor=vendor).split())
 
 
-def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, sources_pool: list[Source]):
-    """URL 중복이면 기존 source_id를 재사용(신규 Source 미생성), 아니면 새 Source를 만든다."""
-    resolved_id = resolve_source_id(url, sources_pool, proposed_id)
-    if resolved_id != proposed_id:
-        return resolved_id, None
-    new_source: Source = {
-        "source_id": proposed_id,
-        "title": title or "Untitled",
-        "publisher": vendor_label(url) or "Web",
-        "date": date or "n.d.",
-        "url": url,
-        "source_type": "web",
-        "source_tier": tier,
-    }
-    return proposed_id, new_source
-
-
 def _counter_evidence(counter_results: list[dict], ev_id: str, src_id: str, sources_pool: list[Source]):
     """반대 검색 결과 최대 2건을 Evidence로 만든다. 1건째(-C)는 Concern, 2건째(-C2)는 Barrier 요약에 쓴다.
     Claim.counter_evidence_ids에는 1건째만 넣어 Claim 스키마·기존 표기와 맞춘다."""
@@ -134,7 +116,7 @@ def _counter_evidence(counter_results: list[dict], ev_id: str, src_id: str, sour
     new_sources: list[Source] = []
     for suffix, result in zip(("-C", "-C2"), counter_results[:2]):
         url = result.get("url", "")
-        resolved_id, new_src = _build_source(
+        resolved_id, new_src = build_source(
             url, result.get("title", ""), result.get("published_date", ""), classify_tier(url),
             f"{src_id}{suffix}", sources_pool + new_sources,
         )
@@ -179,7 +161,7 @@ def _run_stakeholder_query(
     top, snippet_text, statement = _select_evidence(support_results, _benefit_focus(item, labels), exclude_urls)
     url = top.get("url", "")
     tier = classify_tier(url)
-    resolved_src_id, new_src = _build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
+    resolved_src_id, new_src = build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
     if new_src:
         new_sources.append(new_src)
 
