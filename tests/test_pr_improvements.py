@@ -1,6 +1,7 @@
 """개선 작업별 회귀 테스트. 커밋마다 해당 작업 테스트를 추가한다."""
 from langgraph.graph import END
 
+from src.audit.auditor import build_supervisor_decision
 from src.graph import MAX_QUALITY_ROUNDS, route_quality
 from src.quality.quality_eval import check_groundedness, quality_eval_node
 from tests.mock_data import INITIAL_INPUT_STATE
@@ -59,6 +60,39 @@ def test_route_quality_rewrites_until_cap():
     assert route_quality({"quality": {"passed": False}, "quality_round": 1}) == "report_generation"
     assert route_quality({"quality": {"passed": True}, "quality_round": 1}) == END
     assert route_quality({"quality": {"passed": False}, "quality_round": MAX_QUALITY_ROUNDS}) == END
+
+
+def _issue(agent="market"):
+    return {
+        "claim_id": "MKT-01",
+        "rule": "R1",
+        "issue": "missing evidence",
+        "target_agent": agent,
+        "action": "search_evidence",
+    }
+
+
+def test_market_rework_marks_stakeholder_stale_and_defers_it():
+    state = {
+        **INITIAL_INPUT_STATE,
+        "tech_sw": {"name": "KIVI"},
+        "market": {"vendors": ["A"]},
+        "stakeholder": {"actors": ["cloud"]},
+        "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"},
+    }
+    decision, _, extra = build_supervisor_decision(state, [_issue()])
+    assert decision["rework"] == ["market"]
+    assert "stakeholder" not in decision["collect"]
+    assert extra["node_status"]["stakeholder"] == "stale"
+
+    refreshed = {
+        **state,
+        "node_status": {"paper": "complete", "market": "complete", "stakeholder": "stale"},
+        "retry_count": {"paper": 0, "market": 1, "stakeholder": 0},
+    }
+    decision2, _, _ = build_supervisor_decision(refreshed, [])
+    assert decision2["collect"] == ["stakeholder"]
+    assert decision2["rework"] == []
 
 
 def test_groundedness_requires_citation():

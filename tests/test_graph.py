@@ -150,8 +150,10 @@ def test_flow_rework_does_not_call_other_workers(monkeypatch):
     assert calls[0] == "evidence_audit"
     assert sorted(calls[1:3]) == ["market_research", "paper_analysis"]
     assert calls[3] == "evidence_audit"
-    assert sorted(calls[4:6]) == ["market_research", "stakeholder_research"]
-    assert calls[6:] == ["evidence_audit", "evaluation_synthesis", "report_generation", "quality_eval"]
+    assert calls[4] == "market_research"
+    assert calls[5] == "evidence_audit"
+    assert calls[6] == "stakeholder_research"
+    assert calls[7:] == ["evidence_audit", "evaluation_synthesis", "report_generation", "quality_eval"]
 
 
 def test_worker_exception_retries_twice_then_skips(monkeypatch):

@@ -73,12 +73,22 @@ def build_supervisor_decision(state: OverallState, issues: list[AuditIssue]) -> 
         else:
             closed[issue["claim_id"]] = issue
 
+    # market 재수집 전에 stakeholder를 돌리면 이전 벤더 컨텍스트를 본다. 이 턴은 stale만 남기고 다음 감사에서 갱신한다.
+    defer_stakeholder = "market" in rework_agents and status.get("stakeholder") != "skipped"
+    if defer_stakeholder:
+        if "stakeholder" in rework_agents:
+            rework_agents.remove("stakeholder")
+            retry["stakeholder"] = max(0, retry.get("stakeholder", 0) - 1)
+        status["stakeholder"] = status_updates["stakeholder"] = "stale"
+
     def needs_collect(agent: str) -> bool:
-        return (
-            not collected[agent]
-            and status.get(agent) not in {"skipped", "failed"}
-            and agent not in rework_agents
-        )
+        if status.get(agent) in {"skipped", "failed"} or agent in rework_agents:
+            return False
+        if agent == "stakeholder" and defer_stakeholder:
+            return False
+        if status.get(agent) == "stale":
+            return True
+        return not collected[agent]
 
     collect = []
     if needs_collect("paper"):
