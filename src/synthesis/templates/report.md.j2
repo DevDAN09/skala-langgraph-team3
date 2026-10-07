@@ -1,135 +1,166 @@
-# KV Cache 최적화 기술 다관점 평가 보고서 ({{ selected.get('sw', 'KIVI') }} vs {{ selected.get('hw', 'CXL-PNM') }})
-
-{% set refs = namespace(numbers={}, source_ids=[]) %}
-{% for claim in claims if claim.get('status') == 'ok' %}
-{% for item in evidence if item.get('evidence_id') in claim.get('evidence_ids', []) %}
-{% if item.get('source_id') not in refs.source_ids %}{% set _ = refs.source_ids.append(item.get('source_id')) %}{% endif %}
-{% endfor %}
-{% endfor %}
-{% for source in sources if source.get('source_id') in refs.source_ids %}{% set _ = refs.numbers.update({source.get('source_id'): loop.index}) %}{% endfor %}
+{#- 표현 규칙: (A) 검증된 사실 = status ok Claim + [Claim ID] + 인용 번호, (B) Evidence Gap = 6장, (C) 종합 해석 = "종합 해석" 표기, 인용 번호 없음. -#}
+{%- macro claim_line(item) -%}
+**[{{ item.id }}]** {{ item.statement }}{% if item.kind %} ({{ item.kind }}){% endif %}{{ cite(item.ev) }}
+{%- endmacro -%}
+{%- set sw = selected.get('sw', 'KIVI') -%}
+{%- set hw = selected.get('hw', 'CXL-PNM') -%}
+# KV Cache 최적화 기술 다관점 평가 보고서 ({{ sw }} vs {{ hw }})
 
 > **발행일자**: {{ issued_on }}<br>
-> **평가 도메인**: 클라우드 LLM 서빙 인프라  
-> **평가 대상**: KIVI (SW/알고리즘 2-bit 양자화) vs CXL-PNM (HW/CXL 근접 처리 가속)  
+> **평가 도메인**: 클라우드 LLM 서빙 인프라<br>
+> **평가 대상**: KIVI (SW/알고리즘 2-bit 양자화) vs CXL-PNM (HW/CXL 근접 처리 가속)
 
 ---
 
 ## SUMMARY
 
-본 보고서는 긴 문맥(Long-context) LLM 클라우드 서빙의 핵심 병목인 KV Cache 메모리 확장을 위한 대표적 소프트웨어 알고리즘 기법(KIVI)과 하드웨어 근접 처리 기법(CXL-PNM)의 기술 성숙도, 시장성, 이해관계자 영향 및 도메인 적합성을 다관점에서 종합 비교 분석하였다.
+- **평가 목적**: 클라우드 LLM 서빙의 KV Cache 메모리 병목을 다루는 SW 기법(KIVI)과 HW 기법(CXL-PNM)을 기술 성숙도·시장성·이해관계자·도메인 4관점에서 비교한다.
+{% for tech, label in [("KIVI", "SW"), ("CXL-PNM", "HW")] %}
+{% set items = overview.get(tech, []) %}
+- **{{ tech }} ({{ label }})**: {% if items %}{{ claim_line(items[0]) }}{% else %}검증된 메커니즘 Claim이 없다.{% endif %}
 
-- **{{ selected.get('sw', 'KIVI') }} (SW)**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없다.') }}
-- **{{ selected.get('hw', 'CXL-PNM') }} (HW)**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없다.') }}
-- **평가 원칙**: 기술별 근거와 워크로드 조건을 대조하며 우열 또는 추천을 판정하지 않는다.
+{% endfor %}
+- **성숙도 단계**: KIVI는 tech_trl {{ trl.get("KIVI", {}).get("tech_trl", "Unknown") }} / family_trl {{ trl.get("KIVI", {}).get("family_trl", "Unknown") }}, CXL-PNM은 tech_trl {{ trl.get("CXL-PNM", {}).get("tech_trl", "Unknown") }} / family_trl {{ trl.get("CXL-PNM", {}).get("family_trl", "Unknown") }}이다(4.1 참조).
+- **종합 해석(대표 trade-off)**: {{ synthesis.get("tradeoffs", "검증된 트레이드오프가 없다.") }} (5.2 참조)
+- **평가 원칙**: 특정 기술의 우열 또는 추천을 판정하지 않고, 근거가 부족한 항목은 6장 한계점으로 남긴다.
 
 ---
 
 ## 1. 분석 배경
 
-LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 차지하는 GPU HBM 메모리 점유율이 기하급수적으로 증가하며, 이는 서빙 시스템의 최대 동시 배치 크기와 처리량을 제약하는 결정적 병목이다. 본 평가는 클라우드 서빙 환경에서의 실질적 도입 타당성을 검증하기 위해 수행되었다.
+LLM 추론에서 KV Cache는 문맥 길이와 동시 요청 수에 비례해 커지며, GPU HBM 용량을 점유해 서빙 시스템의 동시 배치 크기와 처리량을 제약한다. 본 평가는 이 병목에 대한 두 접근의 클라우드 서빙 도입 타당성을 공개 근거로 검토한다.
 
-- **해석 원칙**: 성능 수치는 모델 크기·문맥 길이·하드웨어·실측/시뮬레이션 조건이 같을 때만 직접 대조하며, 조건이 다르면 각 근거의 맥락을 보존한다.
-- **범위**: 대규모 동시 요청과 장문맥 추론이 발생하는 클라우드 LLM 서빙을 다루며, 온디바이스 환경은 한계점에서만 다룬다.
+- **범위**: 대규모 동시 요청과 장문맥 추론이 발생하는 클라우드 LLM 서빙을 다룬다. 온디바이스 환경과 미래 시장 규모 예측은 범위 밖이다.
+- **해석 원칙**: 성능 수치는 모델·문맥 길이·하드웨어·실측/시뮬레이션 조건이 같을 때만 직접 대조하며, 조건이 다르면 각 근거의 맥락을 보존한다.
 
 ---
 
 ## 2. 기술 선정
 
-- **선정 사유**: KIVI와 CXL-PNM은 모두 클라우드 LLM 서빙의 KV cache 메모리 병목을 해결하지만, KIVI는 데이터를 2bit로 압축하는 소프트웨어 방식, CXL-PNM은 저장 공간과 연산 위치를 확장하는 하드웨어 방식으로 접근법이 뚜렷하게 대비된다. 또한 두 기술 모두 KV cache를 직접 다루는 정식 학회 게재 연구로 원문 분석이 가능하며, 기술 성숙도·시장성·이해관계자·도메인 적합성 측면에서 서로 다른 장단점과 트레이드오프를 비교하기 적합하다는 점에서 최종 평가 대상으로 선정하였다.
-- **평가 원칙**: 특정 기술의 일방적 승패 판정을 배제하고, 워크로드 및 운영 조건별 트레이드오프를 객관적으로 기술한다.
+- **선정 사유**: 두 기술 모두 클라우드 LLM 서빙의 KV Cache 메모리 병목을 다루지만, KIVI는 데이터를 2bit로 압축하는 소프트웨어 방식, CXL-PNM은 저장 공간과 연산 위치를 확장하는 하드웨어 방식으로 접근법이 대비된다.
+- **원문 분석 가능성**: 두 기술 모두 KV Cache를 직접 다루는 학회 게재 논문이 있어 원문 기반 Claim 추출이 가능하다.
 
 ---
 
 ## 3. 기술 개요
 
-### 3.1 KIVI (SW 알고리즘)
-- **메커니즘**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없다.') }}
-{% for claim in claims if claim.get('tech') == 'KIVI' and claim.get('status') == 'ok' %}
-- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}){{ claim_reference_numbers(claim, evidence, refs.numbers) }}
+기술별로 이해에 필요한 대표 Claim만 제시한다(우선순위: 메커니즘 → 메모리 효과 → 성능 → 정확도). 나머지 축은 4.4에서 다룬다.
+
+{% for tech, title in [("KIVI", "3.1 KIVI (SW 알고리즘)"), ("CXL-PNM", "3.2 CXL-PNM (HW 가속)")] %}
+### {{ title }}
+
+{% for item in overview.get(tech, []) %}
+- {% if item.axis %}*{{ item.axis }}*: {% endif %}{{ claim_line(item) }}
 {% else %}
-- 검증된 KIVI Claim이 없다.
+- 검증된 {{ tech }} Claim이 없다.
 {% endfor %}
 
-### 3.2 CXL-PNM (HW 가속)
-- **메커니즘**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없다.') }}
-{% for claim in claims if claim.get('tech') == 'CXL-PNM' and claim.get('status') == 'ok' %}
-- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({% if claim.get('kind') == 'simulation' %}시뮬레이션{% else %}{{ claim.get('kind') }}{% endif %}){{ claim_reference_numbers(claim, evidence, refs.numbers) }}
-{% else %}
-- 검증된 CXL-PNM Claim이 없다.
 {% endfor %}
-
 ---
 
 ## 4. 관점별 평가
 
 ### 4.1 기술 성숙도 (TRL 이원화)
 
-| 기술 | 개별 기술 성숙도 (tech_trl) | 계열 생태계 성숙도 (family_trl) | 신뢰도 | 근거 Claim |
-| :--- | :---: | :---: | :---: | :--- |
-| **KIVI** | {{ trl.get("KIVI", {}).get("tech_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("family_trl", "Unknown") }} | {{ trl.get("KIVI", {}).get("confidence", "none") }} | 연구: {{ trl.get("KIVI", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("KIVI", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
-| **CXL-PNM** | {{ trl.get("CXL-PNM", {}).get("tech_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("family_trl", "Unknown") }} | {{ trl.get("CXL-PNM", {}).get("confidence", "none") }} | 연구: {{ trl.get("CXL-PNM", {}).get("research_evidence", [])|join(', ') or '-' }} / 채택: {{ trl.get("CXL-PNM", {}).get("adoption_evidence", [])|join(', ') or '-' }} |
+tech_trl은 개별 기술의 원문 연구 단계, family_trl은 기술 계열의 생태계 채택 단계를 뜻하며 두 값을 같은 척도로 비교하지 않는다.
+
+| 기술 | tech_trl | family_trl | 신뢰도 | 연구 근거 Claim | 채택 근거 Claim |
+| :--- | :---: | :---: | :---: | :--- | :--- |
+{% for tech in ["KIVI", "CXL-PNM"] %}
+| **{{ tech }}** | {{ trl.get(tech, {}).get("tech_trl", "Unknown") }} | {{ trl.get(tech, {}).get("family_trl", "Unknown") }} | {{ trl.get(tech, {}).get("confidence", "none") }} | {{ trl_basis[tech].research_evidence }} | {{ trl_basis[tech].adoption_evidence }} |
+{% endfor %}
 
 ### 4.2 시장성 및 생태계
-- **시장 수용도**: {{ market.get("adoption", "검증된 시장 정보가 없다.") }}
-- **도입 장벽**: {{ market.get("barriers", "검증된 장벽 정보가 없다.") }}
+
+{% for group in market_view.groups %}
+- **{{ group.label }}**
+{% for item in group["items"] %}
+  - {{ item.tech }}: {{ claim_line(item) }}
+{% else %}
+  - 인용 가능한 공개 근거 미확인
+{% endfor %}
+{% endfor %}
+{% if market_view.maturity %}
+- **채택 성숙도 종합**
+{% for item in market_view.maturity %}
+  - {{ item.tech }}: {{ claim_line(item) }}
+{% endfor %}
+{% endif %}
+- **배포 장벽** (반대 근거 검색 요약, Claim 단위 출처 매핑이 보존되지 않아 인용 번호를 붙이지 않는다)
+{% for barrier in market_view.barriers %}
+  - {{ barrier }}
+{% else %}
+  - 반대 근거 미확인
+{% endfor %}
 
 ### 4.3 이해관계자 영향
-- **클라우드 운영자**: {{ stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없다.") }}
-- **하드웨어 벤더**: {{ stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없다.") }}
+
+이점은 지지 근거 Claim, 우려·장벽은 해당 Claim의 반대 근거에서 가져온다.
+
+{% for actor in actors %}
+- **{{ actor.label }}**
+{% for row in actor.rows %}
+{% if row.gap %}
+  - {{ row.tech }}({{ row.family }} 계열) [{{ row.id }}]: {{ row.gap }}
+{% else %}
+  - {{ row.tech }}({{ row.family }} 계열) [{{ row.id }}]: 이점: {{ row.benefit }}{% if row.kind %} ({{ row.kind }}){% endif %}{{ cite(row.benefit_ev) }} / 우려: {{ row.concern }}{{ cite(row.concern_ev) }} / 장벽: {{ row.barrier }}{{ cite(row.barrier_ev) }}
+{% endif %}
+{% endfor %}
+{% endfor %}
 
 ### 4.4 도메인 6대 축 적합성
+
 | 평가 축 | 검증 결과 |
 | :--- | :--- |
-| 메모리 점유량 | {{ domain_axis_value(domain, "memory_footprint") }} |
-| 대역폭·전송 | {{ domain_axis_value(domain, "bandwidth_transfer") }} |
-| 처리량·응답 지연 | {{ domain_axis_value(domain, "throughput_latency") }} |
-| 정확도 | {{ domain_axis_value(domain, "accuracy") }} |
-| 인프라 변경 | {{ domain_axis_value(domain, "infrastructure") }} |
-| 운영 복잡도 | {{ domain_axis_value(domain, "operational_complexity") }} |
+{% for row in domain_rows %}
+| {{ row.label }} | {% for cell in row.cells %}{% if not loop.first %}<br>{% endif %}{% if cell.tech %}**{{ cell.tech }}**: {% endif %}{% if cell.shown %}3장 [{{ cell.id }}] 참조{{ cite(cell.ev) }}{% elif cell.id %}{{ cell.text }} [{{ cell.id }}]{{ cite(cell.ev) }}{% else %}{{ cell.text }}{% endif %}{% endfor %} |
+{% endfor %}
 
 ---
 
 ## 5. 시사점
 
-### 5.1 관점별 평가가 엇갈리는 지점
-{{ synthesis.get("disagreement", "검증된 근거에서 관점별 해석 차이가 확인되지 않았다.") }}
+5장의 문장은 4장의 검증된 Claim을 종합한 **종합 해석**이며, 새 사실 Claim이 아니다.
 
-### 5.2 원문 근거와 외부 생태계의 구분
-{{ synthesis.get("research_vs_adoption", "개별 기술의 원문 근거와 계열 생태계의 채택 근거는 분리하여 해석한다.") }}
+### 5.1 관점 간 해석 차이
+종합 해석: {{ synthesis.get("disagreement", "검증된 근거에서 관점별 해석 차이가 확인되지 않았다.") }}{% if trl_basis %} (참고: 4.1 TRL 근거 Claim){% endif %}
 
-### 5.3 워크로드별 트레이드오프
-- **워크로드별 트레이드오프**: {{ synthesis.get("tradeoffs", "검증된 트레이드오프가 없다.") }}
 
-### 5.4 결합 가능성
-- **결합 가능성**: {{ synthesis.get("synergy", "검증된 결합 가능성 정보가 없다.") }}
+### 5.2 워크로드·인프라 trade-off
+종합 해석: {{ synthesis.get("tradeoffs", "검증된 트레이드오프가 없다.") }}{% if tradeoff_basis %} (참고 Claim: {{ tradeoff_basis|join(', ') }}){% endif %}
 
-### 5.5 종합 의견
+
+### 5.3 결합 가능성
+분석적 제안: {{ synthesis.get("synergy", "검증된 결합 가능성 정보가 없다.") }} 이는 구조적 병행 가능성에 대한 해석이며, 본 평가에서 결합 구현 자체를 검증한 것은 아니다.
+
+### 5.4 종합 의견
 {{ synthesis.get("overall_opinion", "특정 기술의 우열을 결론내리지 않고, 관점별 근거와 제약을 함께 해석한다.") }}
 
 ---
 
 ## 6. 한계점 및 Evidence Gap
 
-- **시뮬레이션 수치 한계**: CXL-PNM의 성능 지표는 7nm ASIC 시뮬레이션 결과로 실제 상용 서버 환경의 실측 지표와 차이가 발생할 수 있음.
-{% if synthesis.get("evidence_gaps") %}
-{% for gap in synthesis.get("evidence_gaps", []) %}
-- **[{{ gap.get("id", "Unknown") }}]** {{ gap.get("statement") or (gap.get("perspective", "해당") ~ " 관점의 세부 주장이 생성되지 않아 추가 근거 수집이 필요하다.") }} (상태: `{{ gap.get("status", "Unknown") }}`)
-{% endfor %}
+### 6.1 미확인 근거 (Evidence Gap)
+
+{% for group in gap_groups %}
+- **{{ group.label }}**: {{ group["items"]|join(', ') }}
 {% else %}
 - 미확인 Claim이 없다.
-{% endif %}
+{% endfor %}
 
 ### 6.2 분석 범위와 해석 제약
-- 공개 논문·공식 웹 자료에 기반한 추정이며, 비공개 구현·배포 현황은 포함하지 않는다.
-- CXL-PNM 성능 수치는 simulation 결과로, 실측 환경의 결과와 동일시하지 않는다.
-- 온디바이스 환경과 미래 시장 규모 예측은 분석 범위 밖이다.
-- 외부 조사는 지지·반대 근거를 함께 확인하며, 반대 근거가 없을 때에도 이를 임의의 상충으로 만들지 않아 확증편향을 방지합니다.
+
+- 공개 논문·공식 웹 자료에 기반한 평가이며, 비공개 구현·배포 현황은 포함하지 않는다.
+{% if has_simulation %}
+- 시뮬레이션으로 표시된 수치는 원문의 simulation 결과로, 실측 환경의 결과와 동일시하지 않는다.
+{% endif %}
+- 외부 조사는 지지·반대 근거를 함께 확인하며, 반대 근거가 없을 때에도 이를 임의의 상충으로 만들지 않아 확증편향을 방지한다.
 
 ---
 
 ## REFERENCE
 
-{% for s in sources if s.get('source_id') in refs.source_ids %}
+{% for s in cited_sources %}
 {% if s.get('source_type') == 'patent' %}
 [{{ loop.index }}] {{ s.get('applicant', s.publisher) }}({{ s.date|citation_date('month') }}). *{{ s.title }}*, {{ s.get('patent_number', s.source_id) }}, {{ s.url }}
 {% elif s.get('source_type') == 'paper' %}
@@ -139,6 +170,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 {% else %}
 [{{ loop.index }}] {{ s|citation_author }}(발행일 미상). *{{ s.title }}*. {{ s|citation_site_name }}, {{ s.url }}
 {% endif %}
+
 {% else %}
 - 검증된 출처가 없다.
 {% endfor %}
