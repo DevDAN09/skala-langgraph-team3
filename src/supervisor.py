@@ -33,9 +33,9 @@ def _post_research_decision(state: OverallState) -> dict:
     failures = set(quality.get("failures") or [])
     if failures and not failures - DATA_QUALITY_FAILURES:
         return _decision("END", "quality_research_exhausted")
-    status = dict(status)
-    status.update({"report": "stale", "quality": "stale"})
-    return _decision("report_generation", "quality_report_rewrite", node_status=status)
+    # #70: 보고서는 템플릿 + 필드 번역이라 같은 State로 다시 만들면 같은 결과가 나온다.
+    # 재수집 대상이 없는 미달(서술·형식 포함)은 재작성 대신 결과를 남기고 종료한다.
+    return _decision("END", "quality_writing_exhausted")
 
 
 def _issues(state: OverallState) -> list[dict]:

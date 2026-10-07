@@ -279,7 +279,7 @@ def test_compiled_graph_quality_research_rework_returns_through_supervisor(monke
     assert final["quality"]["passed"] is True and final["step_count"] <= MAX_STEPS
 
 
-def test_compiled_graph_quality_report_rewrite_returns_through_supervisor(monkeypatch):
+def test_compiled_graph_quality_writing_failure_stops_without_rewrite(monkeypatch):
     import src.graph as graph_module
 
     calls = []
@@ -309,44 +309,31 @@ def test_compiled_graph_quality_report_rewrite_returns_through_supervisor(monkey
         lambda state: calls.append("report")
         or {"report": "# SUMMARY\n# REFERENCE"},
     )
-
-    outcomes = iter(
-        (
-            {
-                "quality": {
-                    "passed": False,
-                    "failures": ["neutrality"],
-                    "rework_targets": [],
-                    "exhausted_targets": [],
-                    "attempts": 1,
-                }
-            },
-            {
-                "quality": {
-                    "passed": True,
-                    "failures": [],
-                    "rework_targets": [],
-                    "exhausted_targets": [],
-                    "attempts": 2,
-                }
-            },
-        )
-    )
     monkeypatch.setattr(
         graph_module,
         "quality_evaluation_node",
-        lambda state: calls.append("quality") or next(outcomes),
+        lambda state: calls.append("quality")
+        or {
+            "quality": {
+                "passed": False,
+                "failures": ["neutrality"],
+                "rework_targets": [],
+                "exhausted_targets": [],
+                "attempts": 1,
+            }
+        },
     )
 
     final = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
 
-    assert calls.count("report") == 2
-    assert calls.count("quality") == 2
-    assert final["quality"]["passed"] is True
+    # 서술·형식 미달은 재작성하지 않고 종료 (#70)
+    assert calls.count("report") == 1
+    assert calls.count("quality") == 1
+    assert final["quality"]["passed"] is False
     assert final["next_agent"] == "END"
 
 
-def test_supervisor_routes_quality_writing_failure_through_report(monkeypatch):
+def test_supervisor_routes_quality_writing_failure_to_end(monkeypatch):
     import src.supervisor as supervisor
 
     monkeypatch.setattr(
@@ -375,9 +362,8 @@ def test_supervisor_routes_quality_writing_failure_through_report(monkeypatch):
 
     result = supervisor_node(state)
 
-    assert result["next_agent"] == "report_generation"
-    assert result["last_decision"]["reason"] == "quality_report_rewrite"
-    assert result["node_status"]["quality"] == "stale"
+    assert result["next_agent"] == "END"
+    assert result["last_decision"]["reason"] == "quality_writing_exhausted"
 
 
 def test_supervisor_stops_quality_research_rework_at_retry_limit(monkeypatch):
@@ -496,7 +482,6 @@ def test_quality_routes_data_gap_without_eligible_agent_to_end(monkeypatch):
     }
 
     quality = quality_evaluation_node(state)["quality"]
-
     assert quality["rework_targets"] == []
     assert set(quality["exhausted_targets"]) == {
         "paper",
@@ -508,6 +493,11 @@ def test_quality_routes_data_gap_without_eligible_agent_to_end(monkeypatch):
 
     assert result["next_agent"] == "END"
     assert result["last_decision"]["reason"] == "quality_research_exhausted"
+
+    # 서술 미달이 함께 있어도 재작성하지 않고 종료 (#70)
+    result_writing = supervisor_node({**state, "quality": {**quality, "failures": ["coverage", "REFERENCE"]}})
+    assert result_writing["next_agent"] == "END"
+    assert result_writing["last_decision"]["reason"] == "quality_writing_exhausted"
 
 
 def test_quality_maturity_gap_targets_agent_that_owns_missing_claim():

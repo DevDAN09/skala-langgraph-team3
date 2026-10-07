@@ -223,7 +223,7 @@ def _walk_texts(node: object, apply=None) -> list[str]:
             if key in _TRANSLATE_KEYS and isinstance(value, str):
                 found.append(value)
                 if apply: node[key] = apply(value)
-            elif key == "barriers" and isinstance(value, list):
+            elif key == "barriers" and isinstance(value, list) and all(isinstance(item, str) for item in value):
                 found.extend(value)
                 if apply: node[key] = [apply(item) for item in value]
             else:
@@ -350,14 +350,21 @@ def _domain_rows(domain: dict, verified: list[dict], shown_ids: set[str], citati
     return rows
 
 
-def _market_view(market: dict, verified: list[dict], citations: _Citations) -> dict:
+def _market_view(market: dict, verified: list[dict], citations: _Citations, claims: list[dict]) -> dict:
     groups = [
         {"label": label, "items": [_claim_item(c, citations) for c in verified if MARKET_AXIS_BY_ID.get(c.get("id")) in axes]}
         for label, axes in _MARKET_GROUPS
     ]
     maturity = [_claim_item(c, citations) for c in verified if str(c.get("id", "")).startswith("MAT-A")]
-    raw_barriers = _one_line(market.get("barriers"))
-    barriers = [] if raw_barriers in {"", COUNTER_NOT_FOUND} else [part.strip() for part in raw_barriers.split(" | ") if part.strip()]
+    claims_by_id = {c.get("id"): c for c in claims}
+    if market.get("barrier_claims"):
+        barriers = [{"text": f"{item['tech']}: {_one_line(item['text'])}",
+                     "ev": citations.use((claims_by_id.get(item["claim_id"]) or {}).get("counter_evidence_ids", []))}
+                    for item in market["barrier_claims"]]
+    else:  # barrier_claims가 없는 이전 State: 출처 매핑 없이 문장만 표시
+        raw_barriers = _one_line(market.get("barriers"))
+        barriers = [] if raw_barriers in {"", COUNTER_NOT_FOUND} else [
+            {"text": part.strip(), "ev": []} for part in raw_barriers.split(" | ") if part.strip()]
     return {"groups": groups, "maturity": maturity, "barriers": barriers}
 
 
@@ -431,7 +438,7 @@ def build_report_view(state: OverallState) -> dict:
     return {
         "overview": overview,
         "domain_rows": _domain_rows(state.get("domain") or {}, verified, shown_ids, citations),
-        "market_view": _market_view(state.get("market") or {}, verified, citations),
+        "market_view": _market_view(state.get("market") or {}, verified, citations, claims),
         "actors": _stakeholder_view(state.get("stakeholder") or {}, claims, families, citations),
         "tradeoff_basis": [c["id"] for c in verified if c.get("perspective") == "domain" and _claim_axis(c) == "infrastructure"],
         "trl_basis": {tech: {key: ", ".join((trl.get(tech) or {}).get(key, [])) or "-" for key in ("research_evidence", "adoption_evidence")} for tech in _TECHS},

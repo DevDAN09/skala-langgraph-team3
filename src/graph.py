@@ -76,5 +76,4 @@ def build_evaluation_graph(checkpointer=None):
             "END": END,
         },
     )
-
     return builder.compile(checkpointer=checkpointer)
