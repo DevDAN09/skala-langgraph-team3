@@ -47,8 +47,8 @@ evaluation_synthesis → report_generation → END
 
 비어 있는 관점은 `collect`다. market이 비어 있으면 stakeholder는 `collect`에 넣지 않는다. market 결과는 State에 남고, stakeholder는 Supervisor가 그 다음에 호출한다. 이것은 워커 간 통신이 아니다.
 
-열린 issue의 지문은 `claim_id|rule|action`이다. 지문이 `dispatched`에 없으면 해당 관점을 `rework`에 넣고 지문을 기록한다. Claim 상태는 `flagged`다. 같은 지문이 재작업 뒤에 다시 있으면 그 Claim을 확정하고 재작업하지 않는다. R5는 `rejected`, 그 외는 `insufficient`다. 횟수 한도가 아니다.
+열린 issue는 해당 관점을 `rework`에 넣는다. 최초 수집은 재시도가 아니다. Supervisor가 재작업을 보낼 때만 `retry_count`를 1 올린다. 관점당 최대 2회다. 한도에 도달한 issue는 R5면 `rejected`, 그 외는 `insufficient`로 확정한다.
 
 `collect`와 `rework`가 모두 없고 필요한 관점이 있으면 `sufficient`다. 확정된 근거 공백이 있어도 보고서는 진행한다. `report_generation`은 Supervisor의 목적지가 아니다.
 
-`retry_count` 키는 기존 State 계약으로 남긴다. Supervisor는 이 값을 쓰지 않는다.
+`retry_count`는 Supervisor만 올린다. 라우터는 이 값을 보지 않고 `supervisor` 판단만 읽는다.
