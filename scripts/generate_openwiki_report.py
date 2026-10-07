@@ -1,0 +1,1252 @@
+"""Generate publication-quality OpenWiki comprehensive technical report using ReportMaker design system.
+
+Outputs:
+- docs/openwiki_report.html
+- docs/openwiki_report.pdf
+- openwiki_report.pdf (root copy)
+"""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DOCS_DIR = REPO_ROOT / "docs"
+HTML_OUTPUT = DOCS_DIR / "openwiki_report.html"
+PDF_OUTPUT_DOCS = DOCS_DIR / "openwiki_report.pdf"
+PDF_OUTPUT_ROOT = REPO_ROOT / "openwiki_report.pdf"
+CSS_SOURCE = Path("/Users/yeongmin-yun/.gemini/config/skills/report-maker/assets/report.css")
+CSS_DEST = DOCS_DIR / "report.css"
+
+HTML_CONTENT = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKALA Multi-Agent Evaluation Framework - OpenWiki Technical White Paper</title>
+  <link rel="stylesheet" href="./report.css">
+  <style>
+    /* ReportMaker Custom Fine-tuning for Strict 10-Page A4 Budget */
+    .toc-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .toc-group {
+      margin-bottom: 2px;
+    }
+    .toc-chapter-title {
+      font-size: 7.6pt !important;
+      padding: 2px 8px !important;
+      margin-bottom: 2px !important;
+    }
+    .toc-item {
+      padding: 1.5px 8px !important;
+    }
+    .toc-item-title {
+      font-size: 7.5pt !important;
+      max-width: 88% !important;
+    }
+    .toc-page-num {
+      font-size: 7.2pt !important;
+      padding: 0.5px 6px !important;
+    }
+    .metric-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .metric-box {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 7px 10px;
+      text-align: center;
+    }
+    .metric-val {
+      font-size: 13pt;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1.15;
+    }
+    .metric-label {
+      font-size: 6.8pt;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    .code-card {
+      margin: 5px 0 !important;
+    }
+    .code-card-body {
+      padding: 6px 10px !important;
+      font-size: 7.0pt !important;
+      line-height: 1.4 !important;
+    }
+    .report-table {
+      margin: 5px 0 !important;
+      font-size: 7.4pt !important;
+    }
+    .report-table th, .report-table td {
+      padding: 4.5px 7px !important;
+    }
+    .callout-box {
+      margin: 5px 0 !important;
+      padding: 7px 11px !important;
+      font-size: 7.7pt !important;
+      line-height: 1.45 !important;
+    }
+    .section-heading {
+      margin: 5px 0 5px 0 !important;
+      font-size: 12.5pt !important;
+    }
+    .subsection-heading {
+      margin: 5px 0 3px 0 !important;
+      font-size: 9.2pt !important;
+    }
+    .css-flowchart {
+      margin: 5px 0 !important;
+      padding: 6px 8px !important;
+      gap: 5px !important;
+    }
+    .flow-node {
+      padding: 4px 7px !important;
+      font-size: 7.1pt !important;
+      min-width: 65px !important;
+    }
+    .flow-gate {
+      padding: 4px 7px !important;
+      font-size: 6.9pt !important;
+      min-width: 58px !important;
+    }
+    .flow-step-num {
+      font-size: 6.0pt !important;
+    }
+    .card {
+      padding: 7px 9px !important;
+    }
+    .card-title {
+      font-size: 8.3pt !important;
+      margin-bottom: 2px !important;
+    }
+    .card-desc {
+      font-size: 7.3pt !important;
+      line-height: 1.38 !important;
+    }
+    .trouble-case-card {
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      background: #ffffff;
+      padding: 6px 9px;
+      margin-bottom: 6px;
+    }
+    .trouble-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .trouble-title {
+      font-size: 8.0pt;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .trouble-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      font-size: 7.0pt;
+    }
+    .step-box {
+      background: #f8fafc;
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 4px 5px;
+    }
+    .step-box-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 2px;
+      font-size: 6.6pt;
+      text-transform: uppercase;
+    }
+    .arch-compare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 5px 0;
+    }
+    p {
+      margin-bottom: 5px !important;
+      font-size: 8.0pt !important;
+      line-height: 1.5 !important;
+    }
+    ul, ol {
+      margin: 3px 0 5px 16px !important;
+      font-size: 7.8pt !important;
+      line-height: 1.45 !important;
+    }
+    li {
+      margin-bottom: 2px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================================
+       PAGE 1: DARK COVER PAGE
+       ====================================================================== -->
+  <div class="page cover-page" id="page-1">
+    <div class="cover-header">
+      <div class="cover-logo">
+        <svg viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="6" width="28" height="28" rx="6" fill="#6c4dff" fill-opacity="0.25" stroke="#2ee6c9" stroke-width="2"/>
+          <circle cx="16" cy="20" r="5" fill="#2ee6c9"/>
+          <path d="M30 20 H44" stroke="#2ee6c9" stroke-width="2" stroke-dasharray="2 2"/>
+          <circle cx="50" cy="20" r="4" fill="#6c4dff"/>
+          <text x="64" y="24" fill="#ffffff" font-family="'Pretendard Variable', sans-serif" font-weight="800" font-size="15" letter-spacing="1">SKALA CORE</text>
+          <text x="64" y="34" fill="#8b93b5" font-family="'Pretendard Variable', sans-serif" font-weight="600" font-size="8" letter-spacing="1.5">EVALUATION SYSTEM</text>
+        </svg>
+      </div>
+      <div class="cover-meta">
+        DOC-ID: SKALA-LG-2026-OPENWIKI &nbsp;|&nbsp; CLASS: TECHNICAL SPEC &nbsp;|&nbsp; VER: 1.0.0 &nbsp;|&nbsp; 2026-10-07
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <div class="category-pill">
+        <span class="dot"></span> OPENWIKI COMPLETE TECHNICAL SPECIFICATION
+      </div>
+      <div class="cover-title-group">
+        <h1 class="cover-title">
+          KV-Cache 최적화 기술 비교 평가<br>
+          OpenWiki 종합 기술 백서
+        </h1>
+        <div class="cover-subtitle">
+          KIVI(SW) vs CXL-PNM(HW) · LangGraph 오케스트레이션 · 2단계 Fast-Fail 검증 · Dual TRL 프레임워크
+        </div>
+        <div class="gradient-accent-bar"></div>
+        <p class="cover-desc">
+          본 백서는 대규모 언어 모델(LLM) 서빙 환경의 핵심 메모리 병목인 KV 캐시를 최적화하는 대표 기술 KIVI(소프트웨어 비대칭 2-bit 양자화)와 CXL-PNM(하드웨어 CXL 근접 연산 가속)을 객관적·체계적으로 비교 분석하기 위해 구축된 LangGraph 기반 멀티 에이전트 평가 시스템의 OpenWiki 증거 기반 인덱스를 집대성한 종합 아키텍처 명세서입니다.
+        </p>
+        <div class="cover-tags">
+          <span class="tag-pill">LangGraph 1.2.12</span>
+          <span class="tag-pill">StateGraph</span>
+          <span class="tag-pill">Agentic RAG</span>
+          <span class="tag-pill">FAISS</span>
+          <span class="tag-pill">Tavily Search</span>
+          <span class="tag-pill">Fast-Fail Audit</span>
+          <span class="tag-pill">Dual TRL</span>
+          <span class="tag-pill">KIVI</span>
+          <span class="tag-pill">CXL-PNM</span>
+          <span class="tag-pill">xhtml2pdf</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <div class="authors-block">
+        <div class="authors-label">PREPARED BY &amp; SYSTEM ARCHITECTURE</div>
+        <div class="authors-names">SKALA 4기 판교 9반 3팀 (강건호, 김효민, 윤영민, 전경호, 정은희, 최지윤)</div>
+      </div>
+      <div class="slogan-block">
+        "Rigorous Evidence-Based Multi-Agent Evaluation Without Confirmation Bias."
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 2: TOC & EXECUTIVE SUMMARY
+       ====================================================================== -->
+  <div class="page" id="page-2">
+    <div class="page-content">
+      <div class="page-category">EXECUTIVE SUMMARY &amp; TABLE OF CONTENTS</div>
+      <h2 class="section-heading">
+        <span class="num-badge">00</span> 총괄 요약 및 인터랙티브 목차
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">
+          ■ 멀티 에이전트 평가 프레임워크 핵심 설계 철학
+        </div>
+        본 시스템은 단순히 LLM의 생성 능력에 의존하지 않고, <strong>논문 원문 Agentic RAG(학술 증거)</strong>와 <strong>Tavily 실시간 웹 검색(시장 및 4대 이해관계자)</strong>을 병렬 교차 수집한 뒤, <strong>2단계 Fast-Fail 근거 검증기(규칙 R1~R4 및 LLM 판사 R5)</strong>를 통해 편향과 환각을 원천 차단합니다. 최종적으로 기술 준비도(TRL)를 개별 기술과 생태계 차원으로 이원화하여 산출하는 엔터프라이즈급 평가 파이프라인을 제공합니다.
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-purple">
+          <div class="card-title">Agentic Evidence Pipeline (Part I &amp; II)</div>
+          <div class="card-desc">
+            KIVI 및 CXL-PNM 원문 논문 토큰 바운딩 청킹, FAISS 로컬 벡터 색인, 20개 질의 임베딩 벤치마크, 지지/반박 쌍 검색 기반 시장성 및 4대 액터(운영자·개발자·유저·공급자) 다각도 리서치.
+          </div>
+        </div>
+        <div class="card card-mint">
+          <div class="card-title">Audit, Synthesis &amp; Delivery (Part III &amp; IV)</div>
+          <div class="card-desc">
+            결정론적 정적 4대 규칙과 LLM 판사(gpt-4o)의 이중 필터링, 에이전트당 최대 2회 표적 재시도, Dual TRL(연구 vs 도입) 산출, Jinja2 마크다운 조립 및 한글 지원 PDF 자동 내보내기.
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-grid-4">
+        <div class="metric-box">
+          <div class="metric-val">14개</div>
+          <div class="metric-label">전역 State 계약 키</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">6개</div>
+          <div class="metric-label">오케스트레이션 노드</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">2단계</div>
+          <div class="metric-label">Fast-Fail 품질 감사</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">Hit@5 0.80</div>
+          <div class="metric-label">E5 임베딩 벤치마크</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading">
+        <span class="square-marker">■</span> Interactive Table of Contents
+      </h3>
+
+      <div class="toc-container">
+        <div class="toc-group">
+          <div class="toc-chapter-title">PART I. FOUNDATION &amp; RUNTIME ORCHESTRATION</div>
+          <a href="#page-3" class="toc-item">
+            <span class="toc-item-title">01. 프로젝트 개요 및 런타임 환경 구축 (quickstart.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 03</span>
+          </a>
+          <a href="#page-4" class="toc-item">
+            <span class="toc-item-title">02. LangGraph 런타임 오케스트레이션 및 토폴로지 (orchestration.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 04</span>
+          </a>
+        </div>
+
+        <div class="toc-group">
+          <div class="toc-chapter-title">PART II. STATE SCHEMA &amp; RETRIEVAL INTEGRATIONS</div>
+          <a href="#page-5" class="toc-item">
+            <span class="toc-item-title">03. 상태 스키마 및 2단계 출처 보증 계약 (state-and-evidence.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 05</span>
+          </a>
+          <a href="#page-6" class="toc-item">
+            <span class="toc-item-title">04. 논문 Agentic RAG 및 임베딩 벤치마크 (paper-rag.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 06</span>
+          </a>
+        </div>
+
+        <div class="toc-group">
+          <div class="toc-chapter-title">PART III. WEB RESEARCH &amp; QUALITY AUDIT</div>
+          <a href="#page-7" class="toc-item">
+            <span class="toc-item-title">05. Tavily 시장성 및 4대 이해관계자 웹 리서치 (web-research.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 07</span>
+          </a>
+          <a href="#page-8" class="toc-item">
+            <span class="toc-item-title">06. 2단계 Fast-Fail 품질 감사 및 표적 재시도 (evidence-audit.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 08</span>
+          </a>
+        </div>
+
+        <div class="toc-group">
+          <div class="toc-chapter-title">PART IV. SYNTHESIS, OPERATIONS &amp; VERIFICATION</div>
+          <a href="#page-9" class="toc-item">
+            <span class="toc-item-title">07. Dual TRL 성숙도 합성 및 리포트 전달 체계 (synthesis.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 09</span>
+          </a>
+          <a href="#page-10" class="toc-item">
+            <span class="toc-item-title">08. 테스트 전략, 안전 변경 경계 및 운영 관리 (test-strategy.md)</span>
+            <span class="toc-dots"></span>
+            <span class="toc-page-num">P. 10</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; OPENWIKI COMPREHENSIVE WHITE PAPER</span>
+      <span class="page-number">2 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 3: CHAPTER 1 - QUICKSTART & SETUP
+       ====================================================================== -->
+  <div class="page" id="page-3">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 01 &nbsp;|&nbsp; QUICKSTART &amp; ENVIRONMENT SETUP</div>
+      <h2 class="section-heading">
+        <span class="num-badge">01</span> 프로젝트 개요 및 런타임 환경 구축
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ 평가 대상 기술 선정 배경 및 무승자 원칙</div>
+        본 시스템은 동일한 클라우드 LLM 서빙 KV 캐시 병목에 대해 대칭적인 해법을 제시하는 <strong>KIVI</strong>(소프트웨어 비대칭 2-bit 양자화, ICML 2024)와 <strong>CXL-PNM</strong>(하드웨어 CXL 메모리 내 근접 연산, PACT 2025)을 비교 평가합니다. 시스템은 특정 기술을 우열로 재단하지 않고, 워크로드 조건(배치 크기, 문맥 길이, 인프라 비용)에 따른 장단점과 미검증 증거 공백(Evidence Gap)을 충실히 밝힙니다.
+      </div>
+
+      <div class="css-flowchart">
+        <div class="flow-step">
+          <div class="flow-step-num">Step 01</div>
+          <div class="flow-node">Python uv 설치</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Step 02</div>
+          <div class="flow-node">.env 자격증명</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Step 03</div>
+          <div class="flow-node">논문 PDF 주입</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Step 04</div>
+          <div class="flow-node active">FAISS 색인 구축</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Step 05</div>
+          <div class="flow-node mint">파이프라인 실행</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 런타임 설치 및 환경 변수 계약</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">환경 변수</th>
+            <th style="width: 15%;">필수 여부</th>
+            <th style="width: 20%;">기본/예시 값</th>
+            <th>역할 및 미설정 시 Fallback 동작</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>OPENAI_API_KEY</code></td>
+            <td><span class="badge-select">권장</span></td>
+            <td><code>sk-...</code></td>
+            <td>R5 LLM 판사(gpt-4o), 보고서 정제(gpt-4o), RAG 질의 요약에 사용. 미설정 시 Mock/Fallback 전환.</td>
+          </tr>
+          <tr>
+            <td><code>TAVILY_API_KEY</code></td>
+            <td><span class="badge-select">권장</span></td>
+            <td><code>tvly-...</code></td>
+            <td>시장성 및 4대 액터 웹 실시간 검색. 미설정 시 검색 없이 진행되며 관련 주장은 <code>insufficient</code>로 격리.</td>
+          </tr>
+          <tr>
+            <td><code>LANGCHAIN_TRACING_V2</code></td>
+            <td><span class="badge-gray">선택</span></td>
+            <td><code>true</code></td>
+            <td>LangSmith 멀티 에이전트 실행 추적 및 노드 간 State 전이 모니터링 활성화.</td>
+          </tr>
+          <tr>
+            <td><code>HF_TOKEN</code></td>
+            <td><span class="badge-gray">선택</span></td>
+            <td><code>hf_...</code></td>
+            <td>HuggingFace 임베딩 모델(intfloat/e5-small-v2) 다운로드 속도 향상 및 Rate Limit 완화.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 주요 실행 및 운영 명령어</h3>
+      <div class="code-card">
+        <div class="code-card-header">
+          <span class="code-card-title">TERMINAL &nbsp;|&nbsp; EXECUTION CONTRACTS</span>
+          <span class="code-badge">BASH</span>
+        </div>
+        <div class="code-card-body">
+<pre><span class="code-comment"># 1. 의존성 설치 및 가상환경 활성화 (Python 3.10+)</span>
+uv venv &amp;&amp; <span class="code-keyword">source</span> .venv/bin/activate &amp;&amp; uv pip install -r requirements.txt
+
+<span class="code-comment"># 2. 논문 PDF 색인 구축 및 임베딩 벤치마크 평가 (Hit@5, MRR)</span>
+python -m src.rag.indexer     <span class="code-comment"># data/papers/*.pdf -> data/faiss_index/</span>
+python -m src.rag.benchmark   <span class="code-comment"># data/eval_queries.json 기반 평가 및 채택</span>
+
+<span class="code-comment"># 3. CLI 배치 파이프라인 실행 (최종 평가 보고서 Markdown 및 PDF 생성)</span>
+python main.py                <span class="code-comment"># final_evaluation_report.md 및 .pdf 산출</span>
+
+<span class="code-comment"># 4. Streamlit 인터랙티브 대시보드 실행 (선택 설치)</span>
+uv pip install streamlit &amp;&amp; streamlit run app.py</pre>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 01: QUICKSTART</span>
+      <span class="page-number">3 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 4: CHAPTER 2 - ORCHESTRATION & TOPOLOGY
+       ====================================================================== -->
+  <div class="page" id="page-4">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 02 &nbsp;|&nbsp; ARCHITECTURE &amp; RUNTIME ORCHESTRATION</div>
+      <h2 class="section-heading">
+        <span class="num-badge">02</span> LangGraph 런타임 오케스트레이션 및 토폴로지
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ StateGraph 기반 6개 노드 파이프라인과 타깃 피드백 제어</div>
+        런타임 그래프는 <code>OverallState</code>를 공유하는 LangGraph <code>StateGraph</code>로 조립됩니다. 두 개의 초기 병렬 브랜치(논문 RAG와 시장 리서치)로 시작하며, 시장 결과 컨텍스트가 이해관계자 노드로 순차 체이닝된 후, <code>evidence_audit</code>에서 팬인(Fan-in)되어 엄격한 품질 감사를 거칩니다.
+      </div>
+
+      <div class="css-flowchart">
+        <div class="flow-step">
+          <div class="flow-step-num">Fan-out</div>
+          <div class="flow-node">paper_analysis</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Fan-out</div>
+          <div class="flow-node">market_research</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Chaining</div>
+          <div class="flow-node">stakeholder_res</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Fan-in Gate</div>
+          <div class="flow-gate">evidence_audit</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Synthesis</div>
+          <div class="flow-node mint">eval_synthesis</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Render</div>
+          <div class="flow-node active">report_gen</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 6대 전용 노드 역할 및 State 소유권 계약</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">노드 명칭</th>
+            <th style="width: 14%;">담당</th>
+            <th style="width: 28%;">전담 출력 State 키</th>
+            <th>주요 역할 및 동작 메커니즘</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>paper_analysis</code></td>
+            <td>담당 B</td>
+            <td><code>tech_sw, tech_hw, domain, claims</code></td>
+            <td>KIVI/CXL-PNM 논문 원문 RAG 검색, 수치·메커니즘 추출, 연구 TRL 근거 기록.</td>
+          </tr>
+          <tr>
+            <td><code>market_research</code></td>
+            <td>담당 C</td>
+            <td><code>market, claims, sources</code></td>
+            <td>기술 계열별 채택·배포·생태계·도입장벽 웹 조사, 채택 TRL(MAT-A) 근거 기록.</td>
+          </tr>
+          <tr>
+            <td><code>stakeholder_research</code></td>
+            <td>담당 C</td>
+            <td><code>stakeholder, claims, sources</code></td>
+            <td>시장 컨텍스트(key_vendors)를 체이닝하여 4대 액터 영향도 및 지지/반박 조사.</td>
+          </tr>
+          <tr>
+            <td><code>evidence_audit</code></td>
+            <td>담당 D</td>
+            <td><code>audit, retry_count, claims.status</code></td>
+            <td>정적 4대 룰 및 LLM 판사 사실성 검증, 결함 에이전트 표적 피드백(최대 2회).</td>
+          </tr>
+          <tr>
+            <td><code>evaluation_synthesis</code></td>
+            <td>담당 E</td>
+            <td><code>trl, synthesis</code></td>
+            <td>검증 완료된 Claim 기반 개별 기술 TRL과 계열 산업 TRL 이원화 도출.</td>
+          </tr>
+          <tr>
+            <td><code>report_generation</code></td>
+            <td>담당 E</td>
+            <td><code>report</code></td>
+            <td>Jinja2 템플릿 골격 조립, 인용 번호 부여 및 엄격한 윤문(Strict Grounding).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 감사 팬인 및 조건부 표적 라우팅 불변식</h3>
+      <ul>
+        <li><strong>시장-이해관계자 종속성 보존</strong>: <code>market</code> 이슈 발생 시 <code>market_research</code>로 라우팅되며, 일반 엣지를 통해 <code>stakeholder_research</code>가 반드시 연쇄 재실행되어 컨텍스트 최신성을 유지합니다.</li>
+        <li><strong>논문 단독 재시도 단축 경로</strong>: 논문 단독 이슈 시 <code>paper_analysis</code> 실행 후 즉시 <code>evidence_audit</code>으로 복귀하며, 타 에이전트와 동시 재시도 시에는 중복 감사를 방지하기 위해 단일 팬인 경로로 통합됩니다.</li>
+        <li><strong>루프 수렴 및 무한 루프 차단</strong>: 이슈가 없거나, 모든 관련 에이전트의 <code>retry_count</code>가 상한선(2회)에 도달하면 무조건 <code>evaluation_synthesis</code>로 전이하여 안전하게 종료합니다.</li>
+      </ul>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 02: ORCHESTRATION</span>
+      <span class="page-number">4 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 5: CHAPTER 3 - STATE & EVIDENCE CONTRACT
+       ====================================================================== -->
+  <div class="page" id="page-5">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 03 &nbsp;|&nbsp; STATE SCHEMA &amp; EVIDENCE CONTRACT</div>
+      <h2 class="section-heading">
+        <span class="num-badge">03</span> 상태 스키마 및 2단계 출처 보증(Provenance) 계약
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ OverallState 14개 필드와 2단계 데이터 출처 모델</div>
+        파이프라인 전체가 공유하는 <code>OverallState</code>는 14개의 전역 키로 구성됩니다. 단순한 결과 저장을 넘어 <strong>Claim(주장) → Evidence(스니펫) → Source(원천 출처)</strong>로 이어지는 엄격한 2단계 출처 보증 모델을 구현하여 모든 평가 수치와 주장의 출처를 역추적할 수 있습니다.
+      </div>
+
+      <div class="arch-compare-row">
+        <div class="card card-purple">
+          <div class="card-title">OverallState 14개 전역 키 구조</div>
+          <div class="card-desc">
+            • <code>selected</code>: 비교 대상 기술군 정의<br>
+            • <code>tech_sw, tech_hw, domain</code>: 논문 분석 메트릭<br>
+            • <code>market</code>: 시장 도입·생태계·벤더 요약<br>
+            • <code>stakeholder</code>: 4대 액터 분석 요약<br>
+            • <code>claims, evidence, sources</code>: 리듀서 적용 컬렉션<br>
+            • <code>audit, retry_count</code>: 감사 결함 및 재시도 상태<br>
+            • <code>trl, synthesis, report</code>: 최종 평가 산출물
+          </div>
+        </div>
+        <div class="card card-mint">
+          <div class="card-title">2단계 출처 추적 (Provenance Model)</div>
+          <div class="card-desc">
+            • <strong>Claim</strong>: 고유 ID(DOM-*, MKT-*, STK-*), 유형(fact, vendor_claim, simulation), 상태(ok, flagged, insufficient, rejected)<br>
+            • <strong>Evidence</strong>: <code>evidence_id</code>, <code>source_id</code>, 원문 텍스트 스니펫<br>
+            • <strong>Source</strong>: <code>source_id</code>, URL, 신뢰도 등급(T1~T4), 제목, 날짜<br>
+            • <strong>핵심 이점</strong>: 출처 신뢰 등급 감사 및 참고문헌 자동 링크
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 멱등적 커스텀 리듀서(Reducer) 동작 원리</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">리듀서 함수</th>
+            <th style="width: 20%;">적용 필드</th>
+            <th style="width: 20%;">식별 기준</th>
+            <th>멱등성 보장 및 병합 정책</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>upsert_claims</code></td>
+            <td><code>state["claims"]</code></td>
+            <td><code>claim.id</code></td>
+            <td>동일 Claim ID 유입 시 기존 레코드를 완전히 대체(Replace). 신규 ID는 추가. 재시도 시 멱등성 유지.</td>
+          </tr>
+          <tr>
+            <td><code>upsert_evidence</code></td>
+            <td><code>state["evidence"]</code></td>
+            <td><code>evidence_id</code></td>
+            <td>동일 Evidence ID 유입 시 최신 정제 스니펫으로 대체. 중복 축적 방지.</td>
+          </tr>
+          <tr>
+            <td><code>union_sources</code></td>
+            <td><code>state["sources"]</code></td>
+            <td><code>url</code> 정규화</td>
+            <td>동일 URL 유입 시 기존 canonical source_id를 보존하고 중복 제거. Evidence의 외래키 참조 무결성 유지.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> Claim ID 소유권 및 라우팅 규칙</h3>
+      <ul>
+        <li><code>DOM-*</code> 및 <code>MAT-R*</code> (연구 성숙도): <code>paper_analysis</code> 노드가 단독 소유하며, 논문 원문 근거만 허용.</li>
+        <li><code>MKT-*</code> 및 <code>MAT-A*</code> (채택 성숙도): <code>market_research</code> 노드가 소유하며, 시장 검색 결과에서 MAT-A 파생.</li>
+        <li><code>STK-01 ~ STK-08</code>: <code>stakeholder_research</code> 노드가 소유하며, 4대 액터 × 2개 기술 계열을 매핑.</li>
+        <li><strong>참조 무결성 보장</strong>: 조사 노드는 <code>resolve_source_id</code>를 사전 호출하여 이미 존재하는 동일 URL의 canonical ID를 재사용함으로써 <code>union_sources</code> 시 발생하는 외래키 단절을 원천 방지합니다.</li>
+      </ul>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 03: STATE CONTRACT</span>
+      <span class="page-number">5 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 6: CHAPTER 4 - PAPER RAG & BENCHMARK
+       ====================================================================== -->
+  <div class="page" id="page-4">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 04 &nbsp;|&nbsp; PAPER CORPUS, FAISS &amp; AGENTIC RAG</div>
+      <h2 class="section-heading">
+        <span class="num-badge">04</span> 논문 Agentic RAG 파이프라인 및 임베딩 벤치마크
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ 정밀 청킹, 충분성 게이트 및 모델 벤치마크</div>
+        논문 증거 수집은 KIVI와 CXL-PNM 신뢰 PDF 원문으로부터 출발합니다. 400~480 토큰 경계의 섹션 인지형 청킹과 FAISS 로컬 벡터 색인을 구축하고, 20개 코퍼스 질의 벤치마크를 통해 <code>Hit@5 &ge; 0.8</code>을 충족하는 최적 임베딩 모델(intfloat/e5-small-v2)을 채택했습니다.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">섹션 인지형 청킹 (Section-aware Chunking)</div>
+          <div class="card-desc">
+            • <code>PyPDFLoader</code> 기반 논문 파싱 및 기술 태깅<br>
+            • Abstract, 번호 매겨진 섹션, References 경계 복원<br>
+            • 헤더, 페이지 번호, arXiv 각주, KIVI 소속 각주 제거<br>
+            • 400~480 토큰 경계 유지 및 72 토큰 연속 오버랩 적용
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Agentic RAG 충분성 게이트 (Sufficiency Gate)</div>
+          <div class="card-desc">
+            • <code>filter={"tech": tech}</code> 메타데이터 기술 격리 검색<br>
+            • 후보 청크별 LLM YES/NO 직접 응답 충분성 판정<br>
+            • <strong>엄격한 제약</strong>: 대역폭 질문에 처리량 수치 연결 금지<br>
+            • 연속 1~3문장 원문 그대로 발췌(Contiguous Quotation)
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 임베딩 모델 정량 벤치마크 평가 결과</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>임베딩 모델 명칭</th>
+            <th class="center">파라미터</th>
+            <th class="center">Hit@5</th>
+            <th class="center">MRR</th>
+            <th class="center">Hit@5 &ge; 0.8</th>
+            <th class="center">최종 결과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>BAAI/bge-small-en-v1.5</code></td>
+            <td class="center">33M</td>
+            <td class="center">0.75</td>
+            <td class="center">0.5480</td>
+            <td class="center"><span class="badge-reject">미달</span></td>
+            <td class="center">탈락</td>
+          </tr>
+          <tr style="background-color: #f0fdf4;">
+            <td><strong>intfloat/e5-small-v2</strong></td>
+            <td class="center"><strong>33M</strong></td>
+            <td class="center"><strong>0.80</strong></td>
+            <td class="center"><strong>0.5955</strong></td>
+            <td class="center"><span class="badge-select">충족</span></td>
+            <td class="center"><strong>최종 채택</strong></td>
+          </tr>
+          <tr>
+            <td><code>BAAI/bge-m3</code></td>
+            <td class="center">568M</td>
+            <td class="center">—</td>
+            <td class="center">—</td>
+            <td class="center">—</td>
+            <td class="center">소형 모델 충족으로 미측정</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 축 보존 쿼리 재작성 및 복수 청크 결합</h3>
+      <div class="code-card">
+        <div class="code-card-header">
+          <span class="code-card-title">SRC/RAG/AGENTIC_RAG.PY &nbsp;|&nbsp; AXIS PRESERVATION &amp; MULTI-CHUNK</span>
+          <span class="code-badge">PYTHON</span>
+        </div>
+        <div class="code-card-body">
+<pre><span class="code-comment"># 1. 평가 축 보존 쿼리 재작성 (최대 2회)</span>
+<span class="code-keyword">def</span> <span class="code-func">_preserves_axis</span>(original_query, rewritten_query, axis_terms):
+    <span class="code-comment"># 재작성 쿼리가 원래 평가 축(대역폭, 메모리 등) 용어를 포함하는지 검증</span>
+    <span class="code-keyword">return</span> any(term <span class="code-keyword">in</span> rewritten_query.lower() <span class="code-keyword">for</span> term <span class="code-keyword">in</span> axis_terms)
+
+<span class="code-comment"># 2. CXL-PNM 연구 성숙도(MAT-R02) 2개 청크 결합 검증</span>
+<span class="code-comment"># 시뮬레이터 환경 청크 + 워크로드/모델 청크를 동시에 확인하여 완전한 실험 조건 확보</span>
+<span class="code-keyword">if</span> match_simulator_chunk <span class="code-keyword">and</span> match_workload_chunk:
+    evidence = join_verbatim_sentences(chunk1, chunk2)
+    claim.kind = <span class="code-string">"simulation"</span>  <span class="code-comment"># 실측이 아닌 사이클 단위 시뮬레이션 명시</span></pre>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 04: PAPER RAG</span>
+      <span class="page-number">6 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 7: CHAPTER 5 - WEB RESEARCH & STAKEHOLDER
+       ====================================================================== -->
+  <div class="page" id="page-7">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 05 &nbsp;|&nbsp; WEB RESEARCH &amp; STAKEHOLDER ANALYSIS</div>
+      <h2 class="section-heading">
+        <span class="num-badge">05</span> Tavily 시장 및 4대 이해관계자 웹 리서치
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ 확증 편향 방지를 위한 지지(Support)·반박(Counter) 쌍 검색</div>
+        외부 웹 리서치 노드는 각 평가 항목마다 <strong>지지 쿼리(최대 3건)</strong>와 <strong>반박 쿼리(최대 2건)</strong>를 반드시 쌍(Pair)으로 실행합니다. 반박 근거가 없는 경우 <code>counter-evidence not found</code>로 명시하며, 결코 인위적인 결론을 지어내지 않습니다.
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-purple">
+          <div class="card-title">출처 신뢰도 4단계 티어링 (Tier 1 ~ Tier 4)</div>
+          <div class="card-desc">
+            • <strong>T1</strong>: 학술 논문 및 공식 표준 (arXiv, IEEE, ACM, CXL Consortium)<br>
+            • <strong>T2</strong>: 주요 하드웨어/클라우드 벤더 도메인 (Samsung, SK Hynix, Intel, NVIDIA)<br>
+            • <strong>T3</strong>: 공신력 있는 일반 웹 언론사 및 테크 퍼블리셔<br>
+            • <strong>T4</strong>: 개인 블로그, 소셜 미디어, 커뮤니티 (단독 근거 채택 엄격 금지)
+          </div>
+        </div>
+        <div class="card card-mint">
+          <div class="card-title">주장 유형(Kind) 보수적 자동 분류</div>
+          <div class="card-desc">
+            • <code>vendor_claim</code>: T2 벤더사 공식 발표 자료 (독립 사실과 엄격 분리)<br>
+            • <code>estimate</code>: CAGR, 전망치, 미래 예측 단어가 포함된 시장 지표<br>
+            • <code>simulation</code>: 하드웨어 논문 내 사이클 단위 시뮬레이션 지표<br>
+            • <code>fact</code>: 객관적 검증이 완료된 학술/산업계 실측 데이터
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 4대 이해관계자(Actor) × 기술 계열 교차 분석 매트릭스</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">이해관계자 (Actor)</th>
+            <th style="width: 39%;">KIVI (소프트웨어 2-bit KV 양자화)</th>
+            <th style="width: 39%;">CXL-PNM (하드웨어 메모리 확장 및 근접연산)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>클라우드 서빙 운영자<br>(Cloud Serving Operator)</strong></td>
+            <td><strong>이점</strong>: 기존 GPU 인프라 그대로 적용, 최대 2.6배 메모리 절감.<br><strong>우려</strong>: 복잡한 양자화 커널 운영 위험 및 장기 문맥 품질 저하.</td>
+            <td><strong>이점</strong>: CXL 풀링으로 메모리 용량 한계 극복, GPU recall 제거.<br><strong>우려</strong>: 신규 하드웨어 도입 비용(CAPEX) 및 상용화 지연.</td>
+          </tr>
+          <tr>
+            <td><strong>프레임워크 개발자<br>(Framework Developer)</strong></td>
+            <td><strong>이점</strong>: vLLM 등 오픈소스 서빙 프레임워크와의 소프트웨어적 통합 용이.<br><strong>우려</strong>: PagedAttention 등 최신 메모리 관리 기법과의 호환성 유지.</td>
+            <td><strong>이점</strong>: 드라이버 레벨 메모리 매핑 지원 시 투명한 확장 가능.<br><strong>우려</strong>: PNM 전용 커스텀 지시어 및 독자 SDK 툴체인 종속성.</td>
+          </tr>
+          <tr>
+            <td><strong>엔드 유저 (End User)</strong></td>
+            <td><strong>이점</strong>: 동시 사용자 수 증가에 따른 토큰 생성 지연 및 비용 완화.<br><strong>우려</strong>: 2-bit 양자화로 인한 미세한 출력 품질/정확도 하락 가능성.</td>
+            <td><strong>이점</strong>: 초대형 문맥 질의 시에도 일관된 응답 속도 및 품질 유지.<br><strong>우려</strong>: 인프라 원가 상승이 최종 서비스 가격에 전가될 위험.</td>
+          </tr>
+          <tr>
+            <td><strong>HW/메모리 공급사<br>(HW/Memory Supplier)</strong></td>
+            <td><strong>시장 관점</strong>: GPU 메모리 부족 문제를 완화하여 기존 HBM 판매를 보완.<br><strong>한계</strong>: 추가적인 메모리 칩 판매 촉진 효과는 제한적.</td>
+            <td><strong>시장 관점</strong>: CXL 기반 DRAM 및 PNM 가속기 신규 고부가가치 시장 창출.<br><strong>장벽</strong>: CXL 2.0/3.0 생태계 성숙도 및 표준 채택 주기 의존.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 시장 컨텍스트 체이닝 및 벤더 주입</h3>
+      <p>
+        <code>market_research</code>에서 추출된 실제 시장 진출 벤더(<code>market["key_vendors"]</code>)는 <code>stakeholder_research</code>의 질의 생성 시 <code>{vendor}</code> 슬롯으로 자동 전달됩니다. CXL-PNM은 Samsung, SK Hynix, Intel을 우선 참조하고, KIVI는 NVIDIA를 참조하여 현실적인 생태계 조사를 보장합니다.
+      </p>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 05: WEB RESEARCH</span>
+      <span class="page-number">7 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 8: CHAPTER 6 - EVIDENCE AUDIT & RETRY
+       ====================================================================== -->
+  <div class="page" id="page-8">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 06 &nbsp;|&nbsp; QUALITY AUDIT &amp; TARGETED RETRY</div>
+      <h2 class="section-heading">
+        <span class="num-badge">06</span> 2단계 Fast-Fail 품질 감사 및 표적 재시도
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ 결정론적 정적 룰(R1~R4)과 LLM 판사(R5)의 이중 필터링 체계</div>
+        증거 감사는 병렬 수집된 연구 데이터와 최종 종합 분석 사이의 <strong>품질 통제 게이트</strong>입니다. 비용과 지연시간을 줄이기 위해 먼저 4대 정적 규칙을 무호출로 실행하여 결함을 걸러내고, 이를 통과한 정상 주장에 대해서만 고비용의 LLM 판사(gpt-4o)를 실행합니다.
+      </div>
+
+      <div class="css-flowchart">
+        <div class="flow-step">
+          <div class="flow-step-num">Step 01</div>
+          <div class="flow-node">정적 규칙 R1~R4</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Fast-Fail?</div>
+          <div class="flow-gate">결함 발견 시 R5 생략</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Step 02</div>
+          <div class="flow-node active">R5 LLM Judge (gpt-4o)</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Evaluation</div>
+          <div class="flow-gate">재시도 한도 &lt; 2회?</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-step-num">Terminal</div>
+          <div class="flow-node mint">종결 상태 확정</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 5대 감사 검증 규칙 명세</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 12%;">규칙 ID</th>
+            <th style="width: 18%;">검증 방식</th>
+            <th style="width: 32%;">검증 조건 및 결함 정의</th>
+            <th style="width: 18%;">발행 조치 (Action)</th>
+            <th>한도 도달 시 상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>R1</strong></td>
+            <td>정적 (Static)</td>
+            <td><code>kind="fact"</code> 주장에 연결된 <code>evidence_ids</code>가 누락됨</td>
+            <td><code>search_evidence</code></td>
+            <td><code>insufficient</code></td>
+          </tr>
+          <tr>
+            <td><strong>R2</strong></td>
+            <td>정적 (Static)</td>
+            <td>인용된 출처가 모두 T4(블로그/SNS)이거나 출처 불명확</td>
+            <td><code>search_evidence</code></td>
+            <td><code>insufficient</code></td>
+          </tr>
+          <tr>
+            <td><strong>R3</strong></td>
+            <td>정적 (Static)</td>
+            <td>시장/이해관계자/MAT-A 주장에 반박 검색이 누락됨</td>
+            <td><code>search_counter_evidence</code></td>
+            <td><code>insufficient</code></td>
+          </tr>
+          <tr>
+            <td><strong>R4</strong></td>
+            <td>정적 (Static)</td>
+            <td>CXL-PNM 논문 시뮬레이션 또는 T2 벤더 수치를 fact로 라벨링</td>
+            <td><code>relabel</code></td>
+            <td><code>insufficient</code></td>
+          </tr>
+          <tr>
+            <td><strong>R5</strong></td>
+            <td>LLM 판사 (gpt-4o)</td>
+            <td>주장 문장과 원문 스니펫 간의 <strong>사실적 불일치/모순</strong></td>
+            <td><code>re_extract</code></td>
+            <td><code>rejected</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 재시도 예산(최대 2회) 및 종결 상태의 분리 원칙</h3>
+      <ul>
+        <li><strong>에이전트 단위 재시도 카운팅</strong>: 한 번의 감사 패스에서 특정 에이전트의 주장이 여러 개 적발되더라도 해당 에이전트의 <code>retry_count</code>는 1회만 증가하여 기회를 보장합니다.</li>
+        <li><strong>근거 불충분(insufficient)과 사실 왜곡(rejected)의 분리</strong>:
+          <ul>
+            <li><code>insufficient</code>: 추가 조사를 통해서도 유의미한 근거를 찾지 못한 상태 (결론에서 제외하고 한계점에 기록).</li>
+            <li><code>rejected</code>: R5 판사 결과 원문 내용과 주장이 정면으로 충돌하여 사실이 아닌 것으로 판명된 상태 (영구 기각).</li>
+          </ul>
+        </li>
+        <li><strong>종결 상태 격리</strong>: 종결된 주장은 차기 감사 루프에서 제외되어 무한 루프 진입을 방지합니다.</li>
+      </ul>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 06: QUALITY AUDIT</span>
+      <span class="page-number">8 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 9: CHAPTER 7 - DUAL TRL SYNTHESIS & REPORT
+       ====================================================================== -->
+  <div class="page" id="page-9">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 07 &nbsp;|&nbsp; DUAL TRL SYNTHESIS &amp; REPORT DELIVERY</div>
+      <h2 class="section-heading">
+        <span class="num-badge">07</span> Dual TRL 성숙도 합성 및 리포트 전달 체계
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ 연구 성숙도와 생태계 성숙도를 분리하는 Dual TRL 프레임워크</div>
+        시뮬레이션 중심의 신기술과 오픈소스 기반의 기성 기술을 단순 단일 척도로 평가하면 성숙도의 착시가 발생합니다. 본 시스템은 <strong>개별 기술 자체의 연구 성숙도(tech_trl)</strong>와 <strong>산업 계열의 시장 도입 생태계 성숙도(family_trl)</strong>를 엄격히 분리 산출합니다.
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> Dual TRL 산출 및 신뢰도 판정 매핑 규칙</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">검증된 근거 유형 (Status == 'ok')</th>
+            <th class="center" style="width: 20%;">개별 기술 TRL (tech_trl)</th>
+            <th class="center" style="width: 20%;">계열 생태계 TRL (family_trl)</th>
+            <th>산출 근거 및 의미</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>연구 관점 <code>fact</code> (실측 데이터)</td>
+            <td class="center"><span class="badge-score">TRL 5-6</span></td>
+            <td class="center">—</td>
+            <td>실제 하드웨어/GPU 환경에서 오픈소스 또는 프로토타입 실증 완료.</td>
+          </tr>
+          <tr>
+            <td>연구 관점 <code>simulation</code> (시뮬레이션)</td>
+            <td class="center"><span class="badge-score">TRL 3-4</span></td>
+            <td class="center">—</td>
+            <td>실물 칩이 아닌 사이클 단위 하드웨어 시뮬레이터 연구 검증 단계.</td>
+          </tr>
+          <tr>
+            <td>도입 관점 <code>fact</code> (상용 배포)</td>
+            <td class="center">—</td>
+            <td class="center"><span class="badge-day">TRL 7-8</span></td>
+            <td>산업계 표준 프레임워크 또는 주요 CSP에서 실제 상용 운영 중.</td>
+          </tr>
+          <tr>
+            <td>도입 관점 <code>vendor_claim</code> (벤더 발표)</td>
+            <td class="center">—</td>
+            <td class="center"><span class="badge-day">TRL 6-7</span></td>
+            <td>주요 제조사(Samsung, Intel 등)의 로드맵 발표 및 프로토타입 데모.</td>
+          </tr>
+          <tr>
+            <td>검증된 근거 없음</td>
+            <td class="center"><code>Unknown</code></td>
+            <td class="center"><code>Unknown</code></td>
+            <td>근거 불충분(Insufficient Evidence)으로 신뢰도 'none' 부여.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> KIVI vs CXL-PNM 성숙도 간극 평가 결과</h3>
+      <div class="card-grid">
+        <div class="card card-purple">
+          <div class="card-title">KIVI (SW) &nbsp;|&nbsp; tech: 5-6, family: 7-8 (신뢰도: high)</div>
+          <div class="card-desc">
+            • <strong>연구 성숙도</strong>: 오픈소스(PyTorch/CUDA) 기반 실측 구현 단계(TRL 5-6).<br>
+            • <strong>생태계 성숙도</strong>: KV 양자화 기법은 이미 vLLM, TensorRT-LLM 등에 널리 채택(TRL 7-8).<br>
+            • <strong>핵심 시사점</strong>: 단기 적용성이 뛰어나나 2-bit 극단 양자화 시 정확도 검증 필요.
+          </div>
+        </div>
+        <div class="card card-mint">
+          <div class="card-title">CXL-PNM (HW) &nbsp;|&nbsp; tech: 3-4, family: 7-8 (신뢰도: high)</div>
+          <div class="card-desc">
+            • <strong>연구 성숙도</strong>: 7nm 공정 기반 사이클 단위 시뮬레이션 연구 단계(TRL 3-4).<br>
+            • <strong>생태계 성숙도</strong>: CXL 메모리 풀링 자체는 대형 벤더 주도로 상용화 진입(TRL 7-8).<br>
+            • <strong>핵심 시사점</strong>: 기술과 계열 간의 성숙도 간극이 뚜렷하며, 장기 하이브리드 결합 유망.
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> Jinja2 템플릿 조립 및 한글 지원 PDF 자동 변환</h3>
+      <ul>
+        <li><strong>Jinja2 보고서 조립</strong>: <code>src/synthesis/templates/report.md.j2</code> 템플릿을 통해 본문 Citation 번호와 References 출처 목록을 1:1로 자동 연동합니다.</li>
+        <li><strong>Strict Grounding Polishing</strong>: <code>OPENAI_API_KEY</code> 설정 시 <code>gpt-4o</code>가 문맥을 정제하되, 수치·TRL·주장ID·승자부재 불변식을 절대 훼손하지 않습니다.</li>
+        <li><strong>xhtml2pdf 한글 임베딩</strong>: <code>src/synthesis/pdf_export.py</code>가 프로젝트 내 나눔고딕(NanumGothic) 또는 시스템 폰트를 자동 탐색하여 깨짐 없는 PDF를 생성합니다.</li>
+      </ul>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 07: SYNTHESIS</span>
+      <span class="page-number">9 / 10</span>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       PAGE 10: CHAPTER 8 - TESTING & OPERATIONS
+       ====================================================================== -->
+  <div class="page" id="page-10">
+    <div class="page-content">
+      <div class="page-category">CHAPTER 08 &nbsp;|&nbsp; TESTING STRATEGY &amp; OPERATIONS</div>
+      <h2 class="section-heading">
+        <span class="num-badge">08</span> 테스트 전략, 안전 변경 경계 및 운영 관리
+      </h2>
+
+      <div class="callout-box">
+        <div class="callout-title">■ 모듈 인벤토리가 아닌 시스템 계약(Contract) 중심 테스트 스위트</div>
+        본 시스템의 테스트 스위트는 외부 의존성(Tavily API, OpenAI API)을 모의(Mock) 객체로 격리하여 <strong>100% 오프라인 환경에서도 결정론적 검증이 가능</strong>하도록 설계되었습니다. 변경 작업 시 보호해야 할 불변식을 기준으로 안전 변경 경계를 정의합니다.
+      </div>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 시스템 안전 변경 경계 매트릭스 (Safe Change Matrix)</h3>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width: 20%;">변경 대상 영역</th>
+            <th style="width: 25%;">최우선 검증 테스트 파일</th>
+            <th>보호해야 할 핵심 불변식 (Invariants)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>State 키 및 리듀서</strong></td>
+            <td><code>tests/test_state.py</code></td>
+            <td>14개 키 불변, ID 기준 멱등 병합, URL 기준 출처 중복 제거 및 외래키 보존.</td>
+          </tr>
+          <tr>
+            <td><strong>그래프 라우팅 &amp; 루프</strong></td>
+            <td><code>tests/test_graph.py</code></td>
+            <td>병렬 Fan-out, 단일 감사 Fan-in, 시장→이해관계자 연쇄, 2회 상한 수렴.</td>
+          </tr>
+          <tr>
+            <td><strong>감사 규칙 &amp; 판사</strong></td>
+            <td><code>tests/test_audit.py</code></td>
+            <td>R1~R4 정적 룰 격리, R5 판사 사실성 심사, 종결 상태(insufficient/rejected) 확정.</td>
+          </tr>
+          <tr>
+            <td><strong>논문 RAG 및 청킹</strong></td>
+            <td><code>tests/test_rag.py</code></td>
+            <td>섹션 인지형 청킹 보존, 충분성 게이트, 연속 3문장 원문 발췌, 대역폭 축 보존.</td>
+          </tr>
+          <tr>
+            <td><strong>웹 검색 &amp; 출처</strong></td>
+            <td><code>tests/test_research.py</code></td>
+            <td>T1~T4 티어 분류, 지지/반박 쌍 검색, 4대 액터 슬롯 보존, mock 격리.</td>
+          </tr>
+          <tr>
+            <td><strong>TRL 및 보고서 PDF</strong></td>
+            <td><code>tests/test_synthesis.py</code><br><code>tests/test_pdf_export.py</code></td>
+            <td>Dual TRL 분리 매핑, 승자 부재 원칙, 한글 폰트 탐색 및 유효 PDF 생성.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="subsection-heading"><span class="square-marker">■</span> 현업 운영 트러블슈팅 4단계 가이드</h3>
+      <div class="trouble-case-card">
+        <div class="trouble-header">
+          <span class="trouble-title">CASE 01. 논문 원문 근거 누락 또는 FAISS 인덱스 오류</span>
+          <span class="badge-select">RESOLVED</span>
+        </div>
+        <div class="trouble-steps">
+          <div class="step-box">
+            <div class="step-box-title">1. 증상</div>
+            논문 분석 Claim이 모두 insufficient로 산출됨
+          </div>
+          <div class="step-box">
+            <div class="step-box-title">2. 원인</div>
+            data/papers/ 미존재 또는 로컬 FAISS 인덱스 깨짐
+          </div>
+          <div class="step-box">
+            <div class="step-box-title">3. 조치</div>
+            kivi.pdf, cxl_pnm.pdf 확인 후 색인 재구축 명령 실행
+          </div>
+          <div class="step-box">
+            <div class="step-box-title">4. 검증</div>
+            <code>python -m src.rag.indexer</code> 종료코드 0 확인
+          </div>
+        </div>
+      </div>
+
+      <div class="trouble-case-card">
+        <div class="trouble-header">
+          <span class="trouble-title">CASE 02. PDF 산출물 누락 및 Markdown 폴백 발생</span>
+          <span class="badge-select">RESOLVED</span>
+        </div>
+        <div class="trouble-steps">
+          <div class="step-box">
+            <div class="step-box-title">1. 증상</div>
+            final_evaluation_report.md만 생성되고 PDF 없음
+          </div>
+          <div class="step-box">
+            <div class="step-box-title">2. 원인</div>
+            xhtml2pdf 의존성 부재 또는 한글 폰트 탐색 실패
+          </div>
+          <div class="step-box">
+            <div class="step-box-title">3. 조치</div>
+            data/fonts/NanumGothic.ttf 확인 및 라이브러리 점검
+          </div>
+          <div class="step-box">
+            <div class="step-box-title">4. 검증</div>
+            <code>pytest tests/test_pdf_export.py</code> 통과 확인
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span class="footer-notice">SKALA TECHNICAL SPECIFICATION &nbsp;|&nbsp; CHAPTER 08: TESTING &amp; OPERATIONS</span>
+      <span class="page-number">10 / 10</span>
+    </div>
+  </div>
+
+</body>
+</html>
+"""
+
+
+def main():
+    print("==================================================")
+    print("ReportMaker: Generating OpenWiki Technical Report")
+    print("==================================================")
+
+    # 1. Ensure directories exist
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 2. Ensure report.css exists in docs
+    if not CSS_DEST.exists() and CSS_SOURCE.exists():
+        print(f"[1/4] Copying report.css from {CSS_SOURCE} -> {CSS_DEST}")
+        import shutil
+        shutil.copyfile(CSS_SOURCE, CSS_DEST)
+    else:
+        print(f"[1/4] report.css verified at {CSS_DEST}")
+
+    # 3. Write HTML report
+    print(f"[2/4] Writing HTML report to {HTML_OUTPUT}")
+    with open(HTML_OUTPUT, "w", encoding="utf-8") as f:
+        f.write(HTML_CONTENT)
+
+    # 4. Compile to PDF using headless Chrome
+    chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    if not os.path.exists(chrome_path):
+        print(f"[ERROR] Google Chrome not found at {chrome_path}")
+        sys.exit(1)
+
+    print(f"[3/4] Compiling HTML to PDF via Chrome Headless...")
+    cmd = [
+        chrome_path,
+        "--headless=new",
+        "--disable-gpu",
+        "--no-pdf-header-footer",
+        f"--print-to-pdf={PDF_OUTPUT_DOCS}",
+        f"file://{HTML_OUTPUT.resolve()}"
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        print(f"[ERROR] Chrome PDF compilation failed: {res.stderr}")
+        sys.exit(1)
+
+    # 5. Copy PDF to root
+    print(f"[4/4] Copying PDF to project root: {PDF_OUTPUT_ROOT}")
+    import shutil
+    shutil.copyfile(PDF_OUTPUT_DOCS, PDF_OUTPUT_ROOT)
+
+    size_docs = PDF_OUTPUT_DOCS.stat().st_size
+    size_root = PDF_OUTPUT_ROOT.stat().st_size
+    print(f"SUCCESS: Generated {PDF_OUTPUT_DOCS} ({size_docs:,} bytes)")
+    print(f"SUCCESS: Generated {PDF_OUTPUT_ROOT} ({size_root:,} bytes)")
+    print("==================================================")
+
+
+if __name__ == "__main__":
+    main()

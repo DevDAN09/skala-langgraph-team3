@@ -1,0 +1,1550 @@
+/**
+ * ReportMaker - Common Design System & Component Library
+ *
+ * Version: 1.0.0
+ * Architecture: Standalone CSS3 with Pretendard typography and A4 print fidelity
+ * Target: technical reports, design notes, and engineering specs
+ */
+
+/* ==========================================================================
+   1. Typography & Pretendard CDN Import
+   ========================================================================== */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+
+/* ==========================================================================
+   2. Design Tokens & CSS Variables
+   ========================================================================== */
+:root {
+  /* Brand Primary & Calm Slate-Violet Variants (차분한 보고서 톤) */
+  --primary: #3b4268;
+  --primary-dark: #272a44;
+  --primary-light: #f5f6fa;
+  --primary-subtle: #eaecef;
+  --primary-border: #dcdfe8;
+  --primary-hover: #313757;
+
+  /* Secondary & Status Accents */
+  --mint: #0f9f7a;
+  --mint-light: #e6f9f3;
+  --mint-border: #a7f3d0;
+  --mint-dark: #0b8f7c;
+  --cyan: #2ee6c9;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --amber-border: #fde68a;
+  --amber-dark: #b45309;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --red-border: #fca5a5;
+  --red-dark: #b91c1c;
+
+  /* Dark Theme Tokens (Cover & Code Blocks) */
+  --dark-bg: #0b0f24;
+  --dark-surface: #14172e;
+  --dark-card: #1c2042;
+  --dark-border: #232854;
+  --dark-border-subtle: #2c3258;
+  --dark-text-muted: #8b93b5;
+
+  /* Typography Colors */
+  --text-title: #1a1d3a;
+  --text-body: #3a3f55;
+  --text-muted: #6b7280;
+  --text-sub: #8b93b5;
+  --text-light: #f9f8ff;
+
+  /* Borders & Tables (차분한 슬레이트 네이비 헤더) */
+  --border-light: #e5e7eb;
+  --border-subtle: #eaecef;
+  --table-head: #272b45;
+  --table-head-border: #1d2035;
+  --table-zebra: #fcfcfd;
+  --table-border: #e8ebf2;
+
+  /* Layout & Page Dimensions (A4 Specification) */
+  --page-width: 210mm;
+  --page-height: 297mm;
+  --page-padding: 18mm;
+  --page-padding-top: 18mm;
+  --page-padding-bottom: 18mm;
+  --page-padding-left: 18mm;
+  --page-padding-right: 18mm;
+  --body-bg: #eef0f5;
+  --page-bg: #ffffff;
+
+  /* Font Families */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+  --font-code: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* ==========================================================================
+   3. Base Reset & Typography Foundation
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  background-color: var(--body-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+  font-size: 9pt;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-title);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+p {
+  margin-bottom: 7px;
+  color: var(--text-body);
+  line-height: 1.65;
+  font-size: 8.8pt;
+  word-break: keep-all;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+strong, b {
+  font-weight: 700;
+  color: var(--text-title);
+}
+
+em {
+  font-style: italic;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-code);
+}
+
+:not(pre) > code {
+  background: rgba(135, 131, 120, 0.12);
+  color: #eb5757;
+  border: 1px solid rgba(135, 131, 120, 0.18);
+  padding: 1px 4.5px;
+  margin: 1.5px 1px;
+  border-radius: 3px;
+  font-size: 7.6pt;
+  font-weight: 500;
+  display: inline-block;
+  line-height: 1.25;
+  vertical-align: baseline;
+}
+
+ul, ol {
+  margin: 4px 0 8px 18px;
+  padding: 0;
+  font-size: 8.8pt;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+
+li {
+  margin-bottom: 3px;
+  word-break: keep-all;
+}
+
+li::marker {
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   4. A4 Page Layout & Print Control
+   ========================================================================== */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+/* Screen Mode Layout */
+@media screen {
+  body {
+    background-color: var(--body-bg);
+    padding: 30px 0;
+  }
+
+  .page {
+    width: var(--page-width);
+    min-height: var(--page-height);
+    margin: 0 auto 30px auto;
+    background: var(--page-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    box-sizing: border-box;
+    position: relative;
+    padding: var(--page-padding-top) var(--page-padding-right) var(--page-padding-bottom) var(--page-padding-left);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page.cover-page {
+    padding: 24mm 22mm 20mm 22mm;
+    background: linear-gradient(175deg, #0b0f24 0%, #080b1a 100%);
+  }
+}
+
+/* Print Mode Layout (1:1 A4 Output) */
+@media print {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: var(--page-width);
+    height: var(--page-height);
+    max-height: var(--page-height);
+    margin: 0;
+    padding: var(--page-padding-top) var(--page-padding-right) var(--page-padding-bottom) var(--page-padding-left);
+    box-shadow: none;
+    border-radius: 0;
+    box-sizing: border-box;
+    page-break-after: always;
+    break-after: page;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page:last-child,
+  .page:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .page.cover-page {
+    padding: 24mm 22mm 20mm 22mm;
+    background: linear-gradient(175deg, #0b0f24 0%, #080b1a 100%) !important;
+  }
+
+  /* Prevent page-break clipping inside structural containers */
+  table,
+  .card-grid,
+  .diagram-wrapper,
+  .diagram-figure,
+  .callout-box,
+  .code-card,
+  .css-flowchart,
+  .section-block,
+  .formula-card,
+  .evidence-slot,
+  .question-block,
+  .trouble-case-card,
+  .box-flaw,
+  .box-high-score,
+  .toc-group {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* Page Flex Body Wrapper */
+.page-content {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   5. Cover Page Components (.cover-page)
+   ========================================================================== */
+.cover-page {
+  color: #ffffff;
+  position: relative;
+  justify-content: space-between;
+}
+
+/* Cover Ambient Glow */
+.cover-page::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  right: 5%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(108, 77, 255, 0.18) 0%, rgba(11, 15, 36, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cover-header,
+.cover-body,
+.cover-footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* Cover Header */
+.cover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24mm;
+}
+
+.cover-logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+.cover-logo img,
+.cover-logo svg {
+  width: 120px;
+  height: auto;
+  display: block;
+}
+
+.cover-meta {
+  font-size: 8.8pt;
+  color: var(--dark-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Category Pill */
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(108, 77, 255, 0.22);
+  border: 1px solid rgba(108, 77, 255, 0.45);
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.category-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  display: inline-block;
+}
+
+/* Cover Title Block */
+.cover-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cover-title-group {
+  margin-bottom: 24mm;
+}
+
+.cover-title {
+  font-size: 32pt;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #ffffff;
+  margin-bottom: 14px;
+  letter-spacing: -0.6px;
+  word-break: keep-all;
+}
+
+.cover-subtitle {
+  font-size: 15.5pt;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 14px;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.gradient-accent-bar {
+  height: 3px;
+  width: 60px;
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
+  border-radius: 2px;
+  margin: 14px 0 18px 0;
+}
+
+.cover-desc {
+  font-size: 9.2pt;
+  color: #c9c6ff;
+  line-height: 1.65;
+  max-width: 90%;
+  word-break: keep-all;
+}
+
+/* Cover Tag Pills */
+.cover-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 8.2pt;
+  color: #d1d5db;
+  background: rgba(255, 255, 255, 0.04);
+  letter-spacing: 0.2px;
+}
+
+/* Cover Footer */
+.cover-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 16px;
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.authors-block {
+  font-size: 8.5pt;
+  color: #9ca3af;
+}
+
+.authors-label {
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  margin-bottom: 4px;
+}
+
+.authors-names {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.slogan-block {
+  text-align: right;
+  font-size: 8.5pt;
+  color: #9ca3af;
+  font-style: italic;
+  max-width: 60%;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   6. Inner Page Headers & Number Badges
+   ========================================================================= */
+.page-category {
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15pt;
+  font-weight: 700;
+  color: var(--text-title);
+  margin: 12px 0 10px 0;
+  line-height: 1.3;
+}
+
+.num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 9.5pt;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.subsection-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11pt;
+  font-weight: 700;
+  color: var(--text-title);
+  margin: 12px 0 8px 0;
+  line-height: 1.35;
+}
+
+.square-marker {
+  font-size: 8.5pt;
+  color: var(--primary);
+  display: inline-block;
+  line-height: 1;
+}
+
+.subsubsection-heading {
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: var(--text-title);
+  margin: 10px 0 5px 0;
+}
+
+/* Section Blocks */
+.section-block {
+  margin-bottom: 12px;
+}
+
+/* ==========================================================================
+   7. Card System (.card-grid, .card)
+   ========================================================================== */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.card-grid.grid-3col {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.card {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.card.card-purple {
+  background: var(--primary-light);
+  border-color: var(--primary-border);
+}
+
+.card.card-purple .card-badge {
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 7.5pt;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.card.card-mint {
+  background: var(--mint-light);
+  border-color: var(--mint-border);
+}
+
+.card.card-mint .card-badge {
+  color: var(--mint-dark);
+  font-weight: 700;
+  font-size: 7.5pt;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.card.card-dark {
+  background: var(--dark-surface);
+  border-color: var(--dark-border);
+  color: #ffffff;
+}
+
+.card-badge {
+  display: inline-block;
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.card-title {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--text-title);
+  line-height: 1.35;
+}
+
+.card.card-dark .card-title {
+  color: #ffffff;
+}
+
+.card-desc {
+  font-size: 8.2pt;
+  color: var(--text-body);
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.card.card-dark .card-desc {
+  color: var(--dark-text-muted);
+}
+
+/* ==========================================================================
+   8. Data Tables & Status Badges (.report-table)
+   ========================================================================== */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0 6px 0;
+  font-size: 8.2pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-table thead th {
+  background-color: var(--table-head);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 8.2pt;
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1.5px solid var(--table-head-border);
+  letter-spacing: 0.2px;
+}
+
+.report-table thead th.center {
+  text-align: center;
+}
+
+.report-table thead th.right {
+  text-align: right;
+}
+
+.report-table tbody td {
+  padding: 6px 10px;
+  border: 1px solid var(--table-border);
+  color: var(--text-body);
+  line-height: 1.6;
+  vertical-align: middle;
+  word-break: keep-all;
+}
+
+.report-table tbody td.center {
+  text-align: center;
+}
+
+.report-table tbody td.right {
+  text-align: right;
+}
+
+.report-table tbody tr:nth-child(even) {
+  background-color: var(--table-zebra);
+}
+
+.report-table tbody tr:hover {
+  background-color: #f1edff;
+}
+
+/* Key-Value Table Helper */
+.table-kv td:first-child {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 700;
+  width: 120px;
+}
+
+/* Status Badges */
+.badge-select {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--mint-light);
+  color: var(--mint-dark);
+  border: 1px solid var(--mint-border);
+  line-height: 1.2;
+}
+
+.badge-reject {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-border);
+  line-height: 1.2;
+}
+
+.badge-hold {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--amber-light);
+  color: var(--amber);
+  border: 1px solid var(--amber-border);
+  line-height: 1.2;
+}
+
+.badge-active {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  line-height: 1.2;
+}
+
+.badge-sw {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--primary-subtle);
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-border);
+  line-height: 1.2;
+}
+
+.badge-hw {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--mint-light);
+  color: var(--mint-dark);
+  border: 1px solid var(--mint-border);
+  line-height: 1.2;
+}
+
+.badge-gray {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  line-height: 1.2;
+}
+
+.table-caption {
+  text-align: center;
+  font-size: 7.8pt;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   9. Callout / Notice Box (.callout-box)
+   ========================================================================== */
+.callout-box {
+  background: var(--primary-light);
+  border: 1px solid var(--primary-subtle);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 8.5pt;
+  color: var(--text-body);
+  line-height: 1.6;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.callout-box.callout-mint {
+  background: var(--mint-light);
+  border-color: var(--mint-border);
+}
+
+.callout-box.callout-amber {
+  background: var(--amber-light);
+  border-color: var(--amber-border);
+}
+
+.callout-box.callout-red {
+  background: var(--red-light);
+  border-color: var(--red-border);
+}
+
+.callout-title {
+  font-weight: 700;
+  color: var(--text-title);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8.8pt;
+}
+
+/* ==========================================================================
+   10. Pure CSS Flowchart (.css-flowchart)
+   ========================================================================== */
+.css-flowchart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: #fafaff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.flow-step-num {
+  font-size: 6.8pt;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.flow-node {
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--primary-border);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 8pt;
+  font-weight: 600;
+  color: var(--text-title);
+  box-shadow: 0 2px 6px rgba(108, 77, 255, 0.06);
+  min-width: 80px;
+}
+
+.flow-node.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.flow-node.mint {
+  background: var(--mint-light);
+  border-color: var(--mint);
+  color: var(--mint-dark);
+}
+
+.flow-gate {
+  padding: 8px 12px;
+  background: #fffbe6;
+  border: 1.5px dashed var(--amber);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 7.8pt;
+  font-weight: 700;
+  color: #92400e;
+  min-width: 70px;
+}
+
+.flow-arrow {
+  font-size: 11pt;
+  color: var(--primary);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   11. Diagram Figure & Image Containers (.diagram-wrapper)
+   ========================================================================== */
+.diagram-wrapper,
+.diagram-figure {
+  margin: 12px 0;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.diagram-wrapper img,
+.diagram-wrapper svg,
+.diagram-figure img,
+.diagram-figure svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.diagram-caption {
+  font-size: 7.8pt;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ==========================================================================
+   12. Code & Schema Card (.code-card)
+   ========================================================================== */
+.code-card {
+  background: #000000;
+  border: 1px solid #1a1d29;
+  border-radius: 8px;
+  margin: 10px 0;
+  overflow: hidden;
+  font-family: var(--font-code);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.code-card-header {
+  background: #0d0f17;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1a1d29;
+}
+
+.code-card-title {
+  font-size: 7.8pt;
+  font-weight: 700;
+  color: var(--cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.code-badge {
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 7pt;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.code-card-body {
+  background: #000000;
+  padding: 10px 14px;
+  font-size: 7.8pt;
+  line-height: 1.55;
+  color: #e2e8f0;
+  overflow-x: auto;
+}
+
+.code-card-body pre {
+  background: #000000;
+  margin: 0;
+}
+
+/* Syntax Highlighting Tokens */
+.code-keyword {
+  color: #c9c6ff;
+  font-weight: 600;
+}
+
+.code-type {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.code-string {
+  color: #fcd34d;
+}
+
+.code-comment {
+  color: #6b7289;
+  font-style: italic;
+}
+
+.code-func {
+  color: #93c5fd;
+}
+
+.code-var {
+  color: #e2e8f0;
+}
+
+.code-num {
+  color: #f87171;
+}
+
+/* ==========================================================================
+   13. Page Footer (.page-footer)
+   ========================================================================== */
+.page-footer {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 7.5pt;
+  color: var(--text-muted);
+}
+
+.footer-notice {
+  color: var(--text-muted);
+  font-size: 7.5pt;
+}
+
+.page-number {
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+/* ==========================================================================
+   14. Modern Table of Contents Navigation (.toc-container, .toc-group, etc.)
+   ========================================================================== */
+@media screen {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+.toc-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5px;
+  margin-top: 4px;
+}
+
+.toc-group {
+  margin-bottom: 2px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.toc-chapter-title {
+  font-size: 7.4pt;
+  font-weight: 700;
+  color: var(--primary-dark);
+  padding: 2px 7px;
+  background: #f1f5f9;
+  border-left: 3px solid #3b4268;
+  border-radius: 2px;
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+
+.toc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.toc-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.toc-item:hover .toc-page-num {
+  background: #3b4268;
+  color: #ffffff;
+  border-color: #3b4268;
+}
+
+.toc-item-title {
+  font-size: 7.2pt;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 84%;
+  line-height: 1.35;
+}
+
+.toc-item:hover .toc-item-title {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.toc-dots {
+  flex: 1;
+  border-bottom: 1px dotted #cbd5e1;
+  margin: 0 6px;
+  min-width: 12px;
+  height: 1px;
+}
+
+.toc-page-num {
+  font-size: 7.0pt;
+  font-weight: 700;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  padding: 0.5px 5px;
+  min-width: 32px;
+  text-align: center;
+  line-height: 1.25;
+  transition: all 0.15s ease;
+}
+
+/* ==========================================================================
+   15. Mathematical Typography & Formula Cards (KaTeX & .formula-card)
+   ========================================================================== */
+.katex {
+  font-size: 1.02em !important;
+  text-rendering: auto;
+}
+
+.katex-display {
+  margin: 4px 0 !important;
+  text-align: center;
+}
+
+.katex-display > .katex {
+  font-size: 1.08em !important;
+}
+
+.katex-rendered-wrapper {
+  display: inline;
+}
+
+.formula-card {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin: 6px 0;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.formula-card-title {
+  font-size: 7.2pt;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 3px;
+}
+
+.formula-legend {
+  font-size: 6.8pt;
+  color: #475569;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   16. Key-Value Tables, Compact Tables & Checklist Elements
+   ========================================================================== */
+.table-kv td:first-child {
+  background-color: #ffffff !important;
+  color: var(--primary-dark);
+  font-weight: 700;
+  width: 135px;
+}
+
+.report-table-compact th,
+.report-table-compact td {
+  padding: 4px 6px !important;
+  font-size: 7.3pt !important;
+  line-height: 1.55 !important;
+}
+
+.guide-hint {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 7pt;
+}
+
+.check-box-icon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--primary);
+  border-radius: 3px;
+  background: #ffffff;
+  vertical-align: -1px;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+.check-box-icon.checked {
+  background-color: var(--mint);
+  border-color: var(--mint-dark);
+  position: relative;
+}
+
+.check-box-icon.checked::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 3px;
+  height: 6px;
+  border: solid #ffffff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+/* ==========================================================================
+   17. Extended Status, Day & Score Badges
+   ========================================================================== */
+.badge-score {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: #ffffff !important;
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-border);
+  line-height: 1.2;
+}
+
+.badge-day {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: #ffffff !important;
+  color: var(--mint-dark);
+  border: 1px solid var(--mint-border);
+  line-height: 1.2;
+}
+
+.badge-status-pending {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 7pt;
+  font-weight: 700;
+  background: #ffffff !important;
+  color: var(--amber-dark);
+  border: 1px solid var(--amber-border);
+  line-height: 1.2;
+}
+
+.badge-status-wait {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 7pt;
+  font-weight: 600;
+  background: #ffffff !important;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  line-height: 1.2;
+}
+
+.badge-status-completed {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 7pt;
+  font-weight: 700;
+  background: #ffffff !important;
+  color: var(--mint-dark);
+  border: 1px solid var(--mint-border);
+  line-height: 1.2;
+}
+
+.badge-high-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 7.2pt;
+  font-weight: 800;
+  background-color: #fef08a;
+  color: #854d0e;
+  border: 1px solid #fde047;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   18. Evidence Slot & Placeholder Component System
+   ========================================================================== */
+.evidence-slot {
+  border: 1px solid var(--border-light) !important;
+  border-radius: 6px;
+  background: #ffffff !important;
+  padding: 11px 13px;
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.evidence-slot.pending,
+.evidence-slot.active,
+.evidence-slot.completed {
+  border: 1px solid var(--border-light) !important;
+  background: #ffffff !important;
+}
+
+.slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.slot-title {
+  font-size: 8pt;
+  font-weight: 700;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.slot-guide {
+  font-size: 7.2pt;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.placeholder-box {
+  min-height: 52px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 7.5pt;
+  padding: 8px;
+  text-align: center;
+}
+
+.placeholder-box.code-type {
+  background: #ffffff !important;
+  border: 1px solid var(--border-light) !important;
+  color: #37352f;
+  font-family: var(--font-code);
+  align-items: flex-start;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.evidence-shot {
+  width: 100%;
+  height: auto;
+  border: 1px solid #e7e7e5;
+  border-radius: 4px;
+  display: block;
+  background: #ffffff;
+}
+
+.evidence-shot + .evidence-caption + .evidence-shot {
+  margin-top: 6px;
+}
+
+.evidence-caption {
+  margin-top: 3px;
+  font-size: 6.7pt;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   19. Interactive Engineering Cards (Question Block & Troubleshooting)
+   ========================================================================== */
+.question-block {
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.question-title {
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 3px;
+}
+
+.question-sub {
+  font-size: 7.2pt;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.answer-input-area {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+  padding: 8px 10px;
+  min-height: 48px;
+  font-size: 7.8pt;
+  color: #475569;
+  line-height: 1.65;
+}
+
+.trouble-case-card {
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.trouble-case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.trouble-step-row {
+  display: grid;
+  grid-template-columns: 85px 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 7.5pt;
+  align-items: start;
+}
+
+.trouble-step-tag {
+  font-weight: 700;
+  color: var(--primary);
+  background: #ffffff !important;
+  border: 1px solid var(--primary-border) !important;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-align: center;
+  font-size: 7pt;
+}
+
+.trouble-step-content {
+  background: #ffffff !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 4px;
+  padding: 5px 8px;
+  min-height: 24px;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+/* ==========================================================================
+   20. Feedback & Evaluation Highlights (.box-flaw, .box-high-score)
+   ========================================================================== */
+.box-flaw {
+  background-color: #fff1f2 !important;
+  border: 1.5px solid #f43f5e !important;
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 10px 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.box-high-score {
+  background-color: #fefce8 !important;
+  border: 1.5px solid #eab308 !important;
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 10px 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ==========================================================================
+   21. Clean Surface Unification (White Surface Override)
+   ========================================================================== */
+.callout-box,
+.callout-box.callout-mint,
+.callout-box.callout-amber,
+.callout-box.callout-red {
+  background: #ffffff !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.card,
+.card.card-mint,
+.card.card-purple {
+  background: #ffffff !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.report-table tbody tr {
+  background-color: #ffffff !important;
+}

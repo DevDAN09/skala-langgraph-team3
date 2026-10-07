@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7b2a86365c3c29014ecc883bb498827b6f4b1ddcd623d30151ce8b1fac65cfbe",
+  "claims": [
+    {
+      "id": "claim_20f6c661ed8c43ad98e01291caffcf92",
+      "statement": "The evidence audit runs R1-R4 static validation first and only sends active claims that passed those checks to the R5 judge; claims already marked insufficient or rejected are not re-audited.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L25-L44",
+          "version": "repo-lines-v1:sha256:1b16dea7dc8883498c04980dd510dbb9c7a25f8492e8ed2a8946f7e440527389:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDYxMzhlYmZlMmUwZDFkZGYwYzgzMWJmZDY5ZWJhYjU4OTk4NDg1ODIxYmRiYWZkMjczODcwOWU1YTgzNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNWUwZjYxOTUwZmEyMGE4YWZjNjM0N2FhYTJmM2Q2NWZiYjdjYjJhZjJhMGRhMDBkNmI3NGE1MmFkMzdmNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ZmNkMTJlODk3OGMzZjFhYzZmMmMwMWRiNDMyZGFlOGY3NWM4MzA0ZGFlN2U5YzNlODNjYzM3OTMwZDllYmQifQ"
+        },
+        {
+          "resource": "repo://src/audit/judge.py#L53-L64",
+          "version": "repo-lines-v1:sha256:e45bb354322fd5d5ba6ecd24fc4f7302b6c29417d2d231d0a4dd29cb9bf12ba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyOWUzYjRiNDZmMGM2NjRiY2IxMzM2ZDEzOTJlNWY1ODU3ZmRhMWUzNWUyZjY2OTkxNTQ4ZWJlMWVjZDg2YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWQwNTJjNDRiOTUzZjBkODMyODZhMmRkZGVjMjE4NWU3ZjE4OWRiMGU0ZjUwMmM2ZjA2ZjM0NzU4NDU0YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZmUxZjBlNThlZjE3MTcyM2RhYmQ2YjU5M2M2Y2JlNzQ5ZjMzNzQ3MTRmNTc3Mjk3YWM5YTY3NmU2OTYzYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYzhmYWQ4ZmQ4NmQ3Yzc0Y2ZmNmE3MzkxOGVlMzU1ODBlYjgzZDk4MTk0ZGNhNWUwMTUxMGYyNTNlMTk4NjYifQ"
+        },
+        {
+          "resource": "repo://src/audit/rules.py#L4-L7",
+          "version": "repo-lines-v1:sha256:b2538ad3e0fa18983b6a7e1893405a0bc639fe6a379471dac6bfece64da718c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODRiYTdmMWZlZDk3ZWViZmIyMDdlMjdhMDExYTQ2MjY1NmYyMTAxZDU3ZTEyNzVjN2E1NDM2ZmQ4OTI4MDFhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE3ZmQwMTQ1OTY2NzQ0MzdmNWY0NjM4NDNkNjcwMmU1OTc3ZjViZTkwNWE4MDJkZDM0N2ZhYWMzYTNjY2ZhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWNiODE0ZWYyMzc2NzRkZWMyNmZmOTcyNzgxYTM1ODUxMjI2YzQyMzEyNGM1ZDcxN2Y2ZTllYmY4ZjdlNzlmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2EzNWM0NGVkNjBjZTAzMDIyZjE5MjVhZTI3NmVlYmUzZTNlMmYwNzYxYmRlNWVmZjA1OWQ0MWI3OGUxODM1YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b92e15755e943d882a5f0d619487ed3",
+      "statement": "R1 flags fact claims without evidence IDs, R2 treats claims supported only by T4 or unresolved sources as insufficiently verified, R3 requires counter-evidence searches for market/stakeholder and MAT-A adoption claims, and R4 enforces provenance-appropriate claim kinds for paper simulations and T2 vendor figures.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/rules.py#L39-L122",
+          "version": "repo-lines-v1:sha256:96fe07c78077292b31bf48d287c767874313bc3e889aff57240a026d1f2127b5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZTlkOWFlMmVkZTQxNzFhMTNhYjNmNmM3OWEzMjNmNjRmZWFkMTNhZWE2MmYxMGI0ZWFjYjllMGZjNjEwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NWE3ZDI2OThhMWRjODkzZDg1ODNmMzk0ZjEzYTk4Y2Y1MTY5MGFjZTZhMTU4ZjhlYzZhNmNiZWY0MDIyZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZWJmMDkyZjJiYmQ1Yzk1ZjNkNDk1OGUzMDA3M2QzMzhiMjBkZjFkZjcyYjJjN2UzODQzMGMyODRkMjQ1MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b8a4285493114bcd88758f001f73f56a",
+      "statement": "R5 uses a structured JudgeDecision from a zero-temperature ChatOpenAI judge and rejects material factual differences or unsupported assertions while allowing paraphrases, unit/format differences, and minor rounding.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/judge.py#L10-L37",
+          "version": "repo-lines-v1:sha256:8b02efd349bb0d9bc45d8e053d116275f5097d7c210063a89ab6e39d4ba84138:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NzA0YzgwMDU5YjMwNDZiYjlhYjk0YzAwMmIyZjc4ZTM3OGFhNDFhMjU3NTZmYzEzMTA4NGFhN2RjNzUzMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2M2FhZTM5YWQ1OWZhZjMyZDNhMDQ1OGI4OTM0NmU4ZTg4ZTkxZmRkNDA0NTQwM2E4OGEwNjdlYjU2Mjk5NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5MGIwYTc2NDFhODdjZjQ2ODVlMzVmMThmMzZhZGI3OTU5Mjg1ZjA2YzM3N2IxNjNlOTcwYmNjMmU4NzZmNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMzdlOTI4MTBjMjI4ZjNkYzAwZmU2MDJmNzY4MGIzYWYwNDAzYjNlMTA5YjA3OTJjYjJjYzA5ZDdlMDEzYzAifQ"
+        },
+        {
+          "resource": "repo://src/audit/judge.py#L40-L81",
+          "version": "repo-lines-v1:sha256:3a7259f6b1dbfa66202c2cfdfba402c5f5ef33a94456819361a5bbe7efab0005:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Y2M1ZGYyODk4NWFlZTlkNmRjM2YyMWM0NzlkY2Q0YjU1NmQzYTY0YjJmMTE5NTYzYzQ5ZjIwMmExN2JhOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NWE3ZDI2OThhMWRjODkzZDg1ODNmMzk0ZjEzYTk4Y2Y1MTY5MGFjZTZhMTU4ZjhlYzZhNmNiZWY0MDIyZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMGNhMDZkYWVjMjA2Nzc2ZTdlMjg5ZWZkNjQ5NWZlMDEyODU1NjZiNTk2NjZiNTExZjdhY2FmMGIzNzBkZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2MTBiNGE3MmY1MTg0Y2NmZjFiMjVmYjNlNWRhYTQyMTY1M2Y2Y2JmZTI0ZDVmMzBjMmVjNGRmMzY0NTU2ZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6e67b6a36a9484cbdb2819acde7f262",
+      "statement": "R5 uses the first evidence ID's snippet, skips claims lacking a statement, evidence ID, or non-empty snippet, and gracefully skips judging when the API key, initialization, or invocation is unavailable.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/judge.py#L40-L79",
+          "version": "repo-lines-v1:sha256:9290deb21b58b2d65248ff398d99ae2d080e8be48c2c885cc42c53a7dcd9e9a4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Y2M1ZGYyODk4NWFlZTlkNmRjM2YyMWM0NzlkY2Q0YjU1NmQzYTY0YjJmMTE5NTYzYzQ5ZjIwMmExN2JhOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWQwNTJjNDRiOTUzZjBkODMyODZhMmRkZGVjMjE4NWU3ZjE4OWRiMGU0ZjUwMmM2ZjA2ZjM0NzU4NDU0YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMGNhMDZkYWVjMjA2Nzc2ZTdlMjg5ZWZkNjQ5NWZlMDEyODU1NjZiNTk2NjZiNTExZjdhY2FmMGIzNzBkZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZTVmNGM0Yzc4MWUzOTQ3YjlkMjI2MmZiNTU3YTBhNGFlNDY4MjAwOTQxNjNlYjQwOGMyYzQwYjA3NjUyODYifQ"
+        },
+        {
+          "resource": "repo://src/config.py#L11-L19",
+          "version": "repo-lines-v1:sha256:850781608aae57e76f60916c76393f6c3b18753d3f78fbecb30a66841fb8cfab:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTczOTNlM2M4Y2ZmYzAzYjkyMjljNjI4Y2VlN2U3Y2NiZDg1OTFjNWI5ZmRiMGE4Y2U1OTFlYjJmYTgzZDZmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVhMzliOGZkNjUzYTYxZGJiMDg3M2UzNjcyOTY4YmRmMDQ0YzVkMGQ5NTAyNDY5ODA0MjgzY2NiNTdlNDM1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU4ODgwZjYwMDNjMDZmM2M0NzMyNTMwNzA4ZGMyZjc5YWM2NTU2NzAyZTc0MjI0NjM5NDJkNjg4MDNhYWUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDdkMjE3ZTkzZjg4N2FlZjAxMTJiZTZkZmQxN2YwZWE0M2RjNGIwNWQ0ZTg2YzYwZGE2NjA5MmE3NDBhNjg5ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ea15fa4fb244187942530ae8e5385bc",
+      "statement": "Audit retry counts are per target agent and deduplicated within an audit pass; claims remain flagged below the two-attempt limit, then static-rule issues finalize as insufficient and R5 issues finalize as rejected.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L46-L75",
+          "version": "repo-lines-v1:sha256:72b1a403820c58a527b7add2a3b797d305c50e074471268b3d070be6cf3725ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjN2ZhNzgxNjFkODcwYjVlZTJlNWU0MmFhYjViZjg2NGNkYmUxY2Y0Yjc2NzkyMWU5MGU1Y2RkZGY4MzZjOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZmY4ZjU3OWU1NGE0YjVlYjJkYjc0ZTc1MzJiMzBkOTc1NTEzZmRkY2ViZmQwNDFhOGQwY2IxOTMyZTFjOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODQ0ZTc2NjFlNjQ2MzBiMzljMzZjNzcxYTI1MzZkNmIxOTUzZjY2NGQ5ZTdkMzg0MDdhNWI1ZTcyOTI2MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1MmJiY2EzZGNjMWQyMWEzMDIzYWQxYzg3OWY5NzBkNDA3MGRhNjZhMTVhZWQyMGM5MzZmY2I2ODAzYTFhZDkifQ"
+        },
+        {
+          "resource": "repo://src/audit/auditor.py#L6-L22",
+          "version": "repo-lines-v1:sha256:b0b5c33c43f18e7228d0aebb5a66aa8da178dad01819622e74ecf276d00036fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NjQ0MjAyYzQyNzdiNDQyYjZkODI5ZDE3YWZmOWRlMTg4NTNkYmMzZWI4ODFlOGI0NzI2ZmYzMWUyMmE5OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTFmYmRmMmVmZGY4MWM2NmUxNWUzMzRmMGZkOGRjY2JlZjc1ODQ3OWI4MWE3NzBmMjg0MGNkMGYyYmJjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5OTkxZmJmOGU5NjZlZThkODBjNGM4NzE4OTAwMWE3ZTA4Mzg3ODU3YmNmYTQ0YzU5NmNkZThhNDA4MWY1MGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2da0817a20e64640973d80a020d111a4",
+      "statement": "Claim ID prefixes resolve audit issues to paper, market, or stakeholder agents, with MAT-R and MAT-A disambiguated despite sharing the maturity perspective; unknown IDs fall back to perspective.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/rules.py#L10-L36",
+          "version": "repo-lines-v1:sha256:61ac92da6731cc30a993c36ea4a60591798092bc06705ddaa034295ea8833f7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYWQzYmE0NjUyYTg4MmYyNjg4NmY5MWY2ZDMwNTZhMjA3MTgyMjY1OTlmZDViNzA3YTA4YWQzNzQ1OTMxZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzNmVhZDhiZjZjNjY3M2JlZWQ0N2IyNmIyN2ZjOWI3NjU3ZmYzNGY0MTg2NDI5YjhjZDc5ZGU5NWNiYjkzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZDE4Y2YzMWNkNTJkYWIwY2M2MWUzZTJhZjMzYjkwOTllZmE1YmFjYmVmODFiODQzZmIzMTMzY2YxYzZlZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjOTZlZGQwNTlmZjRkNDAyNDkyZjRjYjU0NzM2MDIwOTQzZjdlMjFhNzNkYTI0YTAyMDBhMDliNTNmOGQ0NjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_faf76ce9bb604c00b4ba42bda16e204c",
+      "statement": "The graph routes only retryable target agents, cascades market retries through stakeholder research, permits paper retries in parallel, avoids duplicate fan-in audits, and routes to evaluation synthesis when no issues remain or all target retries are exhausted.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L12-L53",
+          "version": "repo-lines-v1:sha256:c56c96a4d04435330201e84c6a226d20fdddb76f1374654e0a53e98253970cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTEyODZjYjk3ZTk0Y2JhYTQ1ZmIwN2ExNDMxYjRlNjg4ZGEwYjA5YzVkNWFkYjkzMGUyMTY4MDUwNmRkMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4Y2E4MGZjZmRmODg1YzYxYWE5ODgzYTgxZDQzYWYwODJhMmQ0NjAwMTM2ZDlmZTUxODE5MmM5ODI2ODBhOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L68-L97",
+          "version": "repo-lines-v1:sha256:c713abef9b370d6ef96d3884c2d7e59bdd8c935e319a78b1080e2aac9fa997ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZTA3ZTg2ZGJjNmZjN2UwOGQ1MjQzZDZhZWRhMzI0MjkxZTdlNTRlMjhhZTQ5ZmQwNTBkNTNhNTM1MTFlM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NjNjYWI5YzVjNjc0MzIyZDVlZGVkMzg0NzE2MmJjYWJjMTJiYWIxNDBjZjZhOWNjYzEwYThlNzFjMjNjMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlOTYwMDgzNzZiZjE5MTc3ZGQ0MmM5ZmFhYTdhNzRkODYyODE3ODJkYjIxZGMyMDhkMzFiYmQ1MjI5ZmE5MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyZGQxNzZlZTVjYWE3ZmU4YjUwMzBmOWIwMDc2ODc3NmJkOTNkZjJhMThkNjdjN2JjOGMzODY3NTc5NWVhOWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b84e890a4b8742d49c642635951e955b",
+      "statement": "Research retry nodes apply issue actions only to their targeted Claim IDs and preserve unrelated summary state; market and stakeholder retries rewrite queries or re-extract/relabel as directed, while paper retries restrict extraction axes to the paper's issue IDs.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L218-L263",
+          "version": "repo-lines-v1:sha256:66c28951be4f08d324507c31a7ff68b4703fa9eab243d03dd77eb19d8da83518:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4Nzg0ZDlhYThhNWI4ZmRlMWE5MmU5NDMxNzg1NzY1MzFkM2Y1YTc0N2M5NTQwMGQ2ZDkyMGYwMWM1YTdhNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYWY4YjRjMDBhYzQ3ODIzOWExMzQ3MjI2YTgzMTAyOWYyMTI0NjhmOTFkY2M1Zjg1YmIxYjExZDIwOTZiMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MDExYjUyN2M1YzFmMmE1ZTMzMGZkYzZmOTZlY2Y0YzEzZmE4OTcxNjhmZjhkNTBhYTkyYzJjZDE4ZjE1YTAifQ"
+        },
+        {
+          "resource": "repo://src/research/market.py#L290-L373",
+          "version": "repo-lines-v1:sha256:9ac983263b9bfa6d56c09f11af4daf5ccf1f8ddf5f5123c738940a694e1c1540:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZjMzMTFjYjM3YWY4MGM1ZDgxMGEwODQ1MjI2MTMwZWViNDI0OGJjNjZlYmNhZGEyYjU2ZjgwOTExNDNlYzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmNGYzMjFmYzU3NmNmMDJmZDU1ZjkyYjRlMTNlZGQ4ZjBkOTI4YWMzYjcxMzgwNTA1OThhM2I5OTMzYmMxMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlNzFhOTg5MTA3MTcwNTgxNmYxNTIyMTRiZmExZDMwYTAzZmY3MDgxZDdmZDZiMGFjMWQ4ODYyZjkyZDgyZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0NTZhMmY0ZWQyNjI1ODQwOTZiMzMxMDA1ZmQ1MDNmZTFhZjIyZDE5YmZmMmYyZjg2ZjRlODk0ZjdmNjZjNmQifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L209-L261",
+          "version": "repo-lines-v1:sha256:e05bcea5f09eb6a55e1e89f060bc04705757749f47b683cfcd31e763c6446e47:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5OTFlMDNlZmVmNWEyOWMzZGEyYmVmMjY3OGZiZWQ2ODg5MjExZDdjMjVhZjZmMTMxNTZhY2RiODMzMGUxMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZjBiYTQ1ZjVlNDA0OWU2ZWQ4NjJjYTg3ZmY1OTc3MGU4OTEyMzU1ODBhNWQyZGJkMGM3N2I4NDQzYTA2ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1ZWJkMDBlM2UxZTJlNzZlYmY0ZDBhMmJiNTYyYTZmMTA3OGI1MmU3ZTllZjY1MzA2ZDc2ZmM2MjI2MjMzMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3ZmVjMzdlN2I3NDNkOTFjYTIyYjcyYTg0NTQxMWFmNGM3M2I2YmE1YzgxZGFlMTQ3YjFhM2I0Yzg2YTcxZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_95356d6d1ce24be98f70a9a0f85b321f",
+      "statement": "Evaluation synthesis excludes insufficient and rejected claims from verified TRL inputs and records them as evidence gaps, preserving the distinction between unresolved support and rejected claims.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L34-L56",
+          "version": "repo-lines-v1:sha256:594ab0e1c5d1f037d3f0c52a3c63388ffac0e6d4829a444e44e6eae412a452d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNGY1ZDM2NjNlMWFhYzRhZjZhMjI3MDIyMTNkYmNiMDY0ZDU4OTY0MmFkMjRiMWQ4YmQyOWZjNzA3MzU3NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNzFhMGEzZjY3M2FmOGVkYzFkZmJlMzA3MDZkNTZjZTZjMDA3ZGFmZWQ1ZjQ0MDFlZWRmMmRjNzc3ZTYzYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZDk5MTY5ZGNiYTQzZWYzMmUzNjhkMDYwZDliYmJiMDJmYTc2YzA3MTlmZTM0ZDI1NjY2ZTlhOTY1MjlhNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L4-L31",
+          "version": "repo-lines-v1:sha256:098c157540a2e882ae826f27394bdaf09d2d5ebb21f5e16eb8d3ec2b9e5c1974:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZjJmNjc2YzQ1MDc2OTFkZmYyZGFiMDExZjY1NmJmNDEwMTJlZWNlM2MyNmUzZDU0YzU4NGIzNDRkNWFiOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyYjhiMDhmMTFjNDY3ZTIwYTE2ZWRlNjZlMjkxNWI5Y2IyNDI2N2RlZjk3MzExZDM4NjQ1ZWUyOWM1MmIyYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkYjRhMDY3MjdjZWY3ODliZDlhMmVmYmZlODIwMTdlYTZkYmRjM2FjMTRjOGNjMmZmZmQzNDI3Mzk2ZmJiYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMjEzYjI0OTQxYWJkNWEyODVlZDAyYjE1YTRiM2E1YmQzMDJmMmY5ZWM2MWIyZTA0NGFhMTAyZjY2NDEwNzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cba707e340f043d4aeaa8484ff74cafc",
+      "statement": "Focused audit and graph tests cover the five rules, terminal-status skipping, Claim-ID target routing, retry finalization, fan-in and targeted retry routing, cascade behavior, and exhaustion routing to synthesis.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_audit.py#L15-L47",
+          "version": "repo-lines-v1:sha256:e1263eef1db492b66647d3949940505974116a66f67e43400944cb59efd0a1c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNmQxODJkNjk3YzQzZjlmYWY1YTRlYWM4Y2FjODU3M2FiZmJiZDYzNWZiZmU0ZTIwZWZkMzIxOGE1NzQxOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwODk2NDZlOTY1ZGQ0YzczMmI1ZjExOTM1MDlhMzQwNmEyNDQzMDllMTZmZjFlMjI4NjgzYjkyNzZlYWJhMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyOTc2NTEyYWMxODY2MzY4MDkxNzY4ZjRhZmQ1ZGRmNjA2OWZlMjhkZTRiMjA3OWEyOTEyNDUyNGVkYzE2OWMifQ"
+        },
+        {
+          "resource": "repo://tests/test_audit.py#L217-L257",
+          "version": "repo-lines-v1:sha256:516870555a5e9b8cb26e47ead1ac5f9baca04327a6afb60a3884259aa928909a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNWM4YjlhZGQ3NmQwODRjNWQ3NGNhOWZlNWZmYjY1NzJlZTIyNjE2MDA5NzA5NmZiMGE3NTRiOThlOTc0MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNmUwYjM2YTJlNjYxZTAxNjljNDYxMDZjNjg4YjBkMzE3YjdjNmUyNjBjMzkyMjc5NWU0OGQxNjAwN2E3YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Y2FlNzlmMzI3YWJmODJjNzQ1MGU5ZDkwODkxMzFiYTVhNzIyMzMwZDI2NTRhMjBhYjk5MGVjNzMwNTdiNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwNWI4ZmQwNTJkZGJiZTMxOTk0OTFmZWU5MjBiZWM4NjA3ZWJmMDlmNTJmOTc3YWMwYjUwNmMyYThjNjJiYTgifQ"
+        },
+        {
+          "resource": "repo://tests/test_graph.py#L22-L184",
+          "version": "repo-lines-v1:sha256:e4ae23415080a19c8912c47155a526a7173296ec81a9bbf857eae3756a35ac84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MmM2NjNlZmM4YTU5YWEzZDZmN2RiYmNhN2U0ZWYwOTg2YzM4ZDdhMmI3NTVkYTdjMjNiODIzNzU3YjBlZWNkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjMTc2NjJjYmY2ODFmZTJmOTlkMTIyNTJhOTUxM2UzZjQzMzRmNDQ4NGY3Yzg5NWRlODgxNDkwN2Q3Y2I2YWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNWIzMDQ0NTlmZjJlMjA5MmI2YTYwNjQ3NGExYTQ1YjY2ZmY5MTVlOTk5OWFkZDc2YWEwYThhMGNlZGRhYzZlIn0"
+        },
+        {
+          "resource": "repo://tests/test_graph.py#L239-L286",
+          "version": "repo-lines-v1:sha256:8821960ca546802fc4887d9a97bd1946e844cde049421cb14d320990ab3c6dc3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZTg3NWNjN2M2MmQ5YmQwODE1NzBhY2RlN2NhNzQzZGY0ZDhiMDY0NWVmNjFhYTFlMGJlOWUzMmU3ZDU4ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMDU1MTE5MWYwMTc5ZWRjMTA0Nzc2NGJiMjJiZjE4NjZjMWMzM2Y1NDRkMzhhZjZlMTg1MjZkYzJjY2RhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMzZlMjU1NWQzZDFkODFkOWMwNDc5NDgxODU5ZDI1MjM1NzgzYzNjN2Q0ODc1ZTYxZTJmMmEzZjM0MmY1YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}

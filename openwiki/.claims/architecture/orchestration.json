@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8705f8a1c4b029ecbdb273fadb133c7816db678f002693ee4bbacd91b12af2e2",
+  "claims": [
+    {
+      "id": "claim_a9a887892a4b4a798fe4129878cbb435",
+      "statement": "The compiled LangGraph StateGraph registers six application nodes: paper_analysis, market_research, stakeholder_research, evidence_audit, evaluation_synthesis, and report_generation.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L56-L66",
+          "version": "repo-lines-v1:sha256:2713d7b23af0229b5dd39f61d8b33c3157141e4fe2a55544c12a8d3e73a5b287:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMWJlNGU5ZDAzMTEyNGExOTI4ZDdlM2JhYjc1NmQwYTA3MmU1YmU1ODM5MjZkYzY3YmIwMmFjNmQ4NmEyODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzYTAzN2NlYzY4YTdkMDBkZjkzYWMzNWVhZTcxNGVjOTgwMjdiZjM1OGVkZmMzNWFlMWM5MzE0YmYzNzU3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhN2ZkYjQ2M2MwMGViN2U5Njg0NWFkMWNkNWJkMzgxYjE1OWIzN2M1OWQwMTVlMzIyN2ZjY2RiNTk5MDM5M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyYmJjNDRiOTI5NGUzZTg5NTczOWZjMDM0NWM5YzIzNzkwNGQxNTk1Yzc0N2ZhZTU0NWQ5MTBhODNiYjg0MWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_be069b287ec6429db2637660a43dac17",
+      "statement": "The graph fans out from START to paper_analysis and market_research, chains market_research into stakeholder_research, and uses stakeholder_research as the normal incoming path to evidence_audit before synthesis and report generation.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L68-L76",
+          "version": "repo-lines-v1:sha256:fdae42fa0a1e032c37a0de4bfbce78a34fda66e656804fa552ed747ee1104f09:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdlMDdlODZkYmM2ZmM3ZTA4ZDUyNDNkNmFlZGEzMjQyOTFlN2U1NGUyOGFlNDlmZDA1MGQ1M2E1MzUxMWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQwYTRiMzkxYzNjZTRmYjY4Mzg1OGQ3MWVhNjk5MGY3YmIwNDgzNWZjNTc4MWE0NjcxOTkxMjViOTY3YzJmOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGU5NjAwODM3NmJmMTkxNzdkZDQyYzlmYWFhN2E3NGQ4NjI4MTc4MmRiMjFkYzIwOGQzMWJiZDUyMjlmYTkwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWEzNTlmMmRjMWU3MjBmNjAzZjYwMDU0ZDY1NmRiOWE0M2Y2YTEzMThkZmRlMzNjMjRlOWRjZjg2Njk3NjhjOCJ9"
+        },
+        {
+          "resource": "repo://src/graph.py#L95-L97",
+          "version": "repo-lines-v1:sha256:dede36ce47c18304c9ff347ca74e11aa1ac66f6b8464ce69ce11b0873fed4983:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOThmYmJiZTkwZWY3ODU0YTkwZmZjN2MyZDIwNGE0ZTY2NTQzNDIwZGRiOTI2NmEwZmQ3Y2M2NGQ2MjgxZDMzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg2M2NhYjljNWM2NzQzMjJkNWVkZWQzODQ3MTYyYmNhYmMxMmJhYjE0MGNmNmE5Y2NjMTBhOGU3MWMyM2MwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThmNTkyMDRjMWMzZGYzOWQ0ZjlkNWU3YTk3ZDk3YTg1NTUwMTFjMzRhODYzMjEyNDdhMTcxZDIzOGQ5MWY0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTJkZDE3NmVlNWNhYTdmZThiNTAzMGY5YjAwNzY4Nzc2YmQ5M2RmMmExOGQ2N2M3YmM4YzM4Njc1Nzk1ZWE5YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfc0786bf3bc491dabe4b236ef0d6c62",
+      "statement": "The non-interactive entrypoint initializes the shared state with selected technologies, empty output containers, and per-agent retry counters at zero, then invokes the compiled graph; the Streamlit entrypoint uses the same graph and persists the resulting report.",
+      "evidence": [
+        {
+          "resource": "repo://app.py#L61-L105",
+          "version": "repo-lines-v1:sha256:582292025de48829bdece8547120d22aeb79938459affb10d19985ae0093538f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMzg1MDg0YTEzMWEzMDMwMDVmMGFlODM0Y2M5MDFiNWQ3N2JiNzEwMzdmMGIzYWFmMzc4Nzk5MzM4MzQyNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNjVlNGNhYjAxYTdjNDcwYzNlYjQwMzAwY2I0Zjc5ZGRmM2U0NTNiNzZlOWVjNjJmNDQwNjY3OTQxNjI4YTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMjBmYjJiY2EyZDY2ZDQzYTdlZjNkMDFhZTQ1Nzg2NGIwY2EwMjM1NjUzYjNlY2ZjZjhkZDhlZWRmYzhkMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2NjY5ZDJiOGUzZGVhY2JkMWEwYjM2ZThjNGQ2NTZhZjIwNDBkNjFkZjk4OGMxNTQ5OTg3MWM4ODljM2MxMGMifQ"
+        },
+        {
+          "resource": "repo://main.py#L37-L51",
+          "version": "repo-lines-v1:sha256:0631c3fcfaac3e5c2c9ad11ceccd81ccf0a9d2685585ad7164ca78a06de3de05:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTJiNTk5NzIyODExMjQzOTIyZDJmNzIzNDY4N2NmMzBhZDUwYWYwZDZiZjRhMWU3NDY1OTM1ODQ3NDg1YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNmViNzIzODU5MTM1ZDk1YTgxZmZiNDBjYTg3MWMwMjQzNjQ2NTNkYmFlMzRhZTgzNWQ2YWMxMjk5ODljZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiNTUyNGQxNTk3NWZhMTQ5NDY0NTJmNjI2MDQ3NTI0Y2M5MjY3MGI1NjQ0MjJmNWFkNzEyMWQ5YTlkZDNiODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0Yjc3MTVhZDM4YTEyNGUwMGJlZjAwOWQ2MmE5OTcxMWY3N2E4NGEyNjhkNjJmN2FlMTRjNjMzZjA0YjM2NzgifQ"
+        },
+        {
+          "resource": "repo://main.py#L8-L29",
+          "version": "repo-lines-v1:sha256:16e2c5dc3888845bb774b4f7ee146676301998111339bee881457ee494791cbd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNGMxOWU5ODlkODI4MDJhMzExYWNkOTBiYzVlNDliZWYxNWEyOWIxYzI4NTc1MDJkOGVjMWYwMzUyMmQxZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlM2I5NjVmZjRkMjRhMjc5MmZiNzk4YzA5NzljNzMxOGQ1NTlhMjNkOGI4NzNmMTljZjVmYTA4NDk3ZDg5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZTkxMWQ4MWMyNTNhNWRmYmMwNWUwNDVlMTBiZWY1MjkyODMzM2U0MWViNGEzNTA1OGFlNThmZDU3YThlZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_217ab3afd1884949a19375c8195350a1",
+      "statement": "Evidence audit applies static rules R1 through R4 first and runs the R5 LLM judge only on active claims that were not already flagged, then returns audit issues and state updates.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L25-L45",
+          "version": "repo-lines-v1:sha256:c919a2585f29687db3a574fcd243b3bd28234fdcc0d35ead4bde4fecf178cc43:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDYxMzhlYmZlMmUwZDFkZGYwYzgzMWJmZDY5ZWJhYjU4OTk4NDg1ODIxYmRiYWZkMjczODcwOWU1YTgzNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNmRhMmU2ZmFmYTczYTZlYzNhZGRmYjc0ZjQxNmY2ZTQ0OWQ0OWQwY2VlZTM0MzU2YTNmZmU3NzRkZWU3M2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4b3e2c6a6664165b7ec2ad7e5fa33cc",
+      "statement": "Audit routing is targeted by issue target_agent: market retries route through market_research and its stakeholder edge, stakeholder-only retries route to stakeholder_research, and paper retries route to paper_analysis.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L32-L53",
+          "version": "repo-lines-v1:sha256:003dee602bd87e433985e1d9f5c54dfa5bba76429bf09087091a4b8a9307cd13:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZmRmNGUwZDU1Yjc0ZTc1YTMwZjdiZTkwMWRiNWMwMWJlMTc1ODc0YjhmZTYyMDEzNDdjMmRiNWRhYTNmNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxNDlhYjU4NWE3NDlmNDdjZjI5ZTQ0OThlODA3MmQxYzg5NDFjYTVjODgwZDYzOWQzOTFmMjNlMjY4YmNiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L68-L76",
+          "version": "repo-lines-v1:sha256:fdae42fa0a1e032c37a0de4bfbce78a34fda66e656804fa552ed747ee1104f09:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdlMDdlODZkYmM2ZmM3ZTA4ZDUyNDNkNmFlZGEzMjQyOTFlN2U1NGUyOGFlNDlmZDA1MGQ1M2E1MzUxMWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQwYTRiMzkxYzNjZTRmYjY4Mzg1OGQ3MWVhNjk5MGY3YmIwNDgzNWZjNTc4MWE0NjcxOTkxMjViOTY3YzJmOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGU5NjAwODM3NmJmMTkxNzdkZDQyYzlmYWFhN2E3NGQ4NjI4MTc4MmRiMjFkYzIwOGQzMWJiZDUyMjlmYTkwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWEzNTlmMmRjMWU3MjBmNjAzZjYwMDU0ZDY1NmRiOWE0M2Y2YTEzMThkZmRlMzNjMjRlOWRjZjg2Njk3NjhjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7899752fa70045c7933ee9ef0d6edea8",
+      "statement": "When paper is retried together with market or stakeholder, route_after_paper closes the paper branch so the stakeholder-side path opens the audit once; a paper-only retry routes directly from paper_analysis to evidence_audit.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L23-L29",
+          "version": "repo-lines-v1:sha256:f1de5a6bb5bc1d6fd778bd0c9d7f528dd17cc97e514ccdb98d12c0819b7ce075:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg4M2U3ZTdkMThhMDIwZTFjNjQyMDU1ZmIyY2Q1YTY3NGQ0YTdiYTBlNjIwNGFhYWY1NDRiMjgxNTAyOGY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI1YzQ3MjU5OTBlNzJiMmRhYjRlZDQwOGRiNDRhMzNiMmRlMGMxY2QwNTE0OTI2Njk1NGQ3MGNjYTk4NTg1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZiZDAwOTMxNGJjMjcwODQxNjczNGEwMmFlNWZmMzlhMWU0OGEwNTBiZTkxZjQzYjJmYWE5MjAwMmM2MmJmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QzNTNkMmI3YjBhZGIwOWM3MDc2OTQ5MzEyYTNiMTYzNjkwZDU4ZDBkOGM4NGFjNzAyMzM1ZGUxNDIwNmFiNCJ9"
+        },
+        {
+          "resource": "repo://tests/test_graph.py#L258-L275",
+          "version": "repo-lines-v1:sha256:18e190a1f1ba76cdd10f4e96d40ca24b18731e4ebafee7049e4b8873531bcadb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZWNjNzFjNjcyZjRkOTFkNzAxNzJiZGNmZTA0ZWY0MGNjNGM1ZWZkZDc2ZjRiN2M2YjUyZTJjMjBhNjkzNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiNWQyNTA3YWJmNmM1ODNkYTUwMTQxMjQwNmY5M2ZmZTM0MzdhYzdkOGM2MzViNTJkOTg3MzlhMTc5OTY1OTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4MGJjNzM1MTRlMTgwYjIzZDQ3Nzc4MmMzYjZjZWZiMzNkNzhlNDJjNzI3ZGVlNzE0M2RhZWU0ZDUzZDVlNGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a687622280ae41ecba5404d84a05b67c",
+      "statement": "Retry eligibility is bounded per target agent at two audit attempts, and when the limit is reached the audit node finalizes affected claims as insufficient for R1 through R4 or rejected for R5; if no eligible targets remain, routing proceeds to evaluation_synthesis.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L10-L21",
+          "version": "repo-lines-v1:sha256:7b5a8ddca5b06c5c839823fbde7e60963a2ef6e32d915ac81206fb33c53bede7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjU3ZGI2M2NiNTg0ZjUxZjUzNTE2MDk4M2UxMTYzMzE3ZDA2NTRhMGQ2NzY2MmZlN2UwMjFkNDI4ZjgwNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNGM0MjdhMDU2NTM1MjZjN2JkN2NhZDMxMGRiMTY2NmMxNjY3YzhiOGRiOTYzYmNiMjc0YzQ3YmE1MmI0ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiOWQ0MWY5MmM1YmQ5NzI4ODBiYWQzMmMwNTY4ZWJmMDcyNTZhYTQzMDgzMWRiNWZjMGJhM2Q3MTc5ZDliZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDcifQ"
+        },
+        {
+          "resource": "repo://src/audit/auditor.py#L46-L75",
+          "version": "repo-lines-v1:sha256:72b1a403820c58a527b7add2a3b797d305c50e074471268b3d070be6cf3725ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjN2ZhNzgxNjFkODcwYjVlZTJlNWU0MmFhYjViZjg2NGNkYmUxY2Y0Yjc2NzkyMWU5MGU1Y2RkZGY4MzZjOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZmY4ZjU3OWU1NGE0YjVlYjJkYjc0ZTc1MzJiMzBkOTc1NTEzZmRkY2ViZmQwNDFhOGQwY2IxOTMyZTFjOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODQ0ZTc2NjFlNjQ2MzBiMzljMzZjNzcxYTI1MzZkNmIxOTUzZjY2NGQ5ZTdkMzg0MDdhNWI1ZTcyOTI2MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1MmJiY2EzZGNjMWQyMWEzMDIzYWQxYzg3OWY5NzBkNDA3MGRhNjZhMTVhZWQyMGM5MzZmY2I2ODAzYTFhZDkifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L12-L20",
+          "version": "repo-lines-v1:sha256:033990945348f2247ea7187fd809cc769cb8d43c86d470c8c1b88485f3ecf401:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY1MTI4NmNiOTdlOTRjYmFhNDVmYjA3YTE0MzFiNGU2ODhkYTBiMDljNWQ1YWRiOTMwZTIxNjgwNTA2ZGQyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzhjYTgwZmNmZGY4ODVjNjFhYTk4ODNhODFkNDNhZjA4MmEyZDQ2MDAxMzZkOWZlNTE4MTkyYzk4MjY4MGE5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQwMzIzOGQ3ZjFkMTRhODc4OTViMzlhOTJhMjg3MTMyYjY0ZThjMWRkNDQ3M2I2NWIzYzIwODczY2Q2ZjliNCJ9"
+        },
+        {
+          "resource": "repo://src/graph.py#L40-L53",
+          "version": "repo-lines-v1:sha256:feeb27fbe7932249fb6ad55d34534ac43c216a50561fcaf468540dcca6e4a789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwMGRmNzM3N2U4ZDdlZjk4Y2IyMTkyOWNmODRiMjIyYjliOGM5NTA1YmQzNDIxOGE5M2YxN2JlNDQyZTgyOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MzEwZjI4NTViYTk1MmU3YmUyMjBmNTM4MmFiY2RjZDFjZmE1MzIxOTg1YjkwYjRiODllM2QxZWY1NDJhNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5062199534f54057b0121ae4b17fce01",
+      "statement": "The graph's report completion boundary is report_generation producing the in-memory report field; Markdown persistence and optional PDF conversion occur afterward in main.py or app.py.",
+      "evidence": [
+        {
+          "resource": "repo://app.py#L93-L105",
+          "version": "repo-lines-v1:sha256:9fe58a104959d346f8c190338821e7384579553392a3eee0112ecb563dcfaef1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZjA1YzQ1OGU1NjA3NTE5MDQ5ODFhMWE2OTVjNjI4MGQ0NWNmNWQ2MmIzNjgyMTRmMGEzZGIxNWJkOTAxMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNjVlNGNhYjAxYTdjNDcwYzNlYjQwMzAwY2I0Zjc5ZGRmM2U0NTNiNzZlOWVjNjJmNDQwNjY3OTQxNjI4YTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NzQyYmQ2ZGFlNmNkNjgxMzNmNTgwMGQ4ZmFlYjYzZWM2ZmQ0MDgxMWQ4NGMzZmY2NmE3OGM3ODZhZWI5MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2NjY5ZDJiOGUzZGVhY2JkMWEwYjM2ZThjNGQ2NTZhZjIwNDBkNjFkZjk4OGMxNTQ5OTg3MWM4ODljM2MxMGMifQ"
+        },
+        {
+          "resource": "repo://main.py#L41-L61",
+          "version": "repo-lines-v1:sha256:e9d9199cdaddfa92fcf9b65b01fdca8f4e6db04bcba2d8cdf7930b890465ad42:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiMWYxMzgzODBjMTg3ZDc1ZTA4MzI1NjEwN2Q0NmRlYzQ1NjM3NjJiNjc3ZTNiODgxYjEwZmUyODI3Nzg3YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ODYxZTkxNTY5MDk2YjdjZjQ3ZThiMGQzYzhiZGEwZTIyNTYzZTcyMjFiM2Y3YzY5Y2U0NDZmM2FjYTlkZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3YmRmM2FmZjA3YjIwN2ZlOWNjNjk0MDZiYjQ0OTg2NmI4NzAwY2ExNjZiNjQ1YzdiNDc3ZDM3N2MwY2Q5YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3MzUyODBmM2ZmZmQ1MGI3MTFlZmVkOTBkNzY4ZmJmNTJiMDE1YjQ2ZWYyYmE3ZDEwNTUzM2Y4ZjQyNzEzMmUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L95-L99",
+          "version": "repo-lines-v1:sha256:2be4ad01a4142815bb118870e2a2abb708580df2263ab7fe1528e190ebf4928a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOThmYmJiZTkwZWY3ODU0YTkwZmZjN2MyZDIwNGE0ZTY2NTQzNDIwZGRiOTI2NmEwZmQ3Y2M2NGQ2MjgxZDMzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJjMjNkNDVlMzI3MmQ4MWI0NmU2Mzc3ZDZlM2M5ZjhhMWZlNzQ0OWQyZTFlNzBiMjdjMjI5MTMwMzg3ODhmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThmNTkyMDRjMWMzZGYzOWQ0ZjlkNWU3YTk3ZDk3YTg1NTUwMTFjMzRhODYzMjEyNDdhMTcxZDIzOGQ5MWY0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a733f9f6d42486593088f9e0040ca01",
+      "statement": "State reducers make retries entity-idempotent by upserting claims and evidence by ID and merging sources with URL normalization, allowing a retry to replace an existing claim or evidence record.",
+      "evidence": [
+        {
+          "resource": "repo://src/state.py#L48-L79",
+          "version": "repo-lines-v1:sha256:46617bfa6ec3cd0c2d66fa1991061ad72b6286d74e0c521aa1b6dd42274254c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZDQ5OGM5OGVjZDBlOWYzY2U1NzMwYjNjNWRhMDA4NjY4NDRlNTJjNWZmMjRhMjdlMTU4NTk5ZTA3NjNjY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZTM1MmE1MDBkYTJjMWE0Yzk2OTMwZDBkM2QzMTU3MGU0MTEwMWE5ZDUwOTJiNjc4NjE5MjZiNmE0MGRhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMzdhZGQ5M2IwNWVlOWIyZjUwZDcwNzA2Y2QzNjA3NzExMzNiMmE1MWQwYjVjYjNiOGE5YjFiY2EzZDFiZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNmZkNjEyMDYyODYzZDUzNjc0ZjQzODNhOWNmNmIzMWU0MjgwOWQzMmQwYjRhZDEzM2M0ZTc5NGI4NWU1YjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bbb1a91715224987bf823fc5f0da42eb",
+      "statement": "Focused graph tests cover compilation, first-run and targeted routing, retry exhaustion, combined retry fan-in, and end-to-end report and TRL production.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_graph.py#L239-L286",
+          "version": "repo-lines-v1:sha256:8821960ca546802fc4887d9a97bd1946e844cde049421cb14d320990ab3c6dc3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZTg3NWNjN2M2MmQ5YmQwODE1NzBhY2RlN2NhNzQzZGY0ZDhiMDY0NWVmNjFhYTFlMGJlOWUzMmU3ZDU4ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMDU1MTE5MWYwMTc5ZWRjMTA0Nzc2NGJiMjJiZjE4NjZjMWMzM2Y1NDRkMzhhZjZlMTg1MjZkYzJjY2RhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMzZlMjU1NWQzZDFkODFkOWMwNDc5NDgxODU5ZDI1MjM1NzgzYzNjN2Q0ODc1ZTYxZTJmMmEzZjM0MmY1YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_graph.py#L7-L197",
+          "version": "repo-lines-v1:sha256:0f7a8e8d46b16e414e2188914c4c65beee4cc2364cfa9cd8636c86780a21ca30:eyJzZWxlY3RlZExpbmVDb3VudCI6MTkxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4OTc3N2Y5MGU4ZGEzNDA5MWRkNzE1YjViNmNmYjQ2MGQ2ZGVhNzIzMThjYzgzMjkwOWMwMGY1NWQxZjFiNmZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwOTkxNTU1MjczMTFmNzZmMTY0YmRiZmE1NmE3YjIzZGRiZjk2YmQwOWQyNmQ4MmRjMGFmYmVjZTEyOTczZmFkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1YTMzZWYxMmVjMjgyMDBkMmEyNTg5MmExNjExNDhhZmFlMDI2MzUzYjFiMGZiM2RiZjMxOTYwOGRiYzIyMjJjIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}

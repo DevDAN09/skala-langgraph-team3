@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ffeaa6b5f33683afbc1b9df35571d4d26f5e83382be2fe0861b96bafd1d1b28a",
+  "claims": [
+    {
+      "id": "claim_c3b767e3e9d24a0a831b49bfc3d0c570",
+      "statement": "`main.py` invokes the compiled evaluation graph with `INITIAL_INPUT_STATE`, persists `final_state[\"report\"]` as Markdown, and optionally converts the same report to PDF while retaining Markdown when PDF export is unavailable or fails.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L31-L66",
+          "version": "repo-lines-v1:sha256:58a26355e3aecf208a38949edeeca423cdd6a83cabd2c3461f6556adfcb81ddd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDg2NmUxYmNjNWFiNzZlM2VmNTkwMTJkMGFkMzlhNjg3YWJlMDAyM2I0MzhhY2IxMTMwYTE4ODI1ZTgxOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlNWUzYjBjMjUzMmI1OGVkMTE5MGVmNDJiNjNmMjYxMGIwNmY2YzRjNjEzMWY3Y2I1MGQ1ODQ2ZWUyNTRiNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZGIyNzQxOGM2NGE4YWMyMWFhN2VjNTU5YWYzNzFmYjllMzdiYmZhNDkzYWU5NGE5NzNmYmQ2ZTlkYmU4NjUifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L23-L41",
+          "version": "repo-lines-v1:sha256:b67fa24d86ef57657e398226554b5c106f57ca05501de6fac8fa4ae0614b2f35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZjQyYTg4YjJjOWIyOTA0YmQ1NTAyYjI0NjRiMzJhNWRmOGJhMzYyZDgwYjE1ZmZhMTc2YThmNjUyYjAxYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4OTAzZmViYTM1OTBiMWJkOWEyN2I4OTA0MjBkNjFjZDlmMzEyYjZmMjQ1MzdjMzA3ZTkwODU4YzA0ZGUwYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b592ace4991347f7b0e75067943a09d8",
+      "statement": "The LangGraph assembly fans out from `START` to paper and market research, chains market research into stakeholder research, routes stakeholder output to evidence audit, and connects synthesis to report generation and `END`.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L56-L97",
+          "version": "repo-lines-v1:sha256:734628bd9149a158a774a723ab4098bfa24245d936ebdfda7ec799e74797c894:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMWJlNGU5ZDAzMTEyNGExOTI4ZDdlM2JhYjc1NmQwYTA3MmU1YmU1ODM5MjZkYzY3YmIwMmFjNmQ4NmEyODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NjNjYWI5YzVjNjc0MzIyZDVlZGVkMzg0NzE2MmJjYWJjMTJiYWIxNDBjZjZhOWNjYzEwYThlNzFjMjNjMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhN2ZkYjQ2M2MwMGViN2U5Njg0NWFkMWNkNWJkMzgxYjE1OWIzN2M1OWQwMTVlMzIyN2ZjY2RiNTk5MDM5M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyZGQxNzZlZTVjYWE3ZmU4YjUwMzBmOWIwMDc2ODc3NmJkOTNkZjJhMThkNjdjN2JjOGMzODY3NTc5NWVhOWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58a0e83575454b1bb7135bf508638bb7",
+      "statement": "The paper analysis node performs technology-filtered FAISS retrieval, an LLM sufficiency and quotation gate, bounded axis-preserving query rewrites, and emits `insufficient` claims without evidence when the index or paper LLM is unavailable.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L218-L299",
+          "version": "repo-lines-v1:sha256:302d5464d01b01fb6bbc3298a96c0bfb1d557fe90a5c6e0c3486713609cf0c71:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4Nzg0ZDlhYThhNWI4ZmRlMWE5MmU5NDMxNzg1NzY1MzFkM2Y1YTc0N2M5NTQwMGQ2ZDkyMGYwMWM1YTdhNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L51-L76",
+          "version": "repo-lines-v1:sha256:ee1cfa3fbef6d0b0da6b4e89699babd1bddf1bc95eaea2486c3d432c65f58097:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWI3Yjk0YTZiMDhhNWJjMzM4MmM2ODdlZDlkYjUyMDk1YmQzMjY1ZGU5NDY2ZjE3ZjdiMDM5YTI2ODk5YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYWFhYzdiOTVkNzAzNWMyYTEyY2RjNzMyZTc4YzA3MGQwMDQ4ZDA5Y2I1YzgyNmIxZjdkNmVlZWIxZjY1ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmZWFmNGEwYTQyNzllMGQyM2FhYzY1OTRmOWRmNzMyNWY5MzQ1ZDViZGFiNmZiYzEwM2EzNjcwMzk4NGI3NzYifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L89-L157",
+          "version": "repo-lines-v1:sha256:f22c33d6c7aa2cd1bc3ed5ffc02382ce58bc66d059f825d8f545928104751dd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NDBjZTZkZDM4NWFiZWRmOTJmNTE4MjQyMGU0OTIxZmE5MTgyOTMwYWYyZTg2YmM0YjU1YzAyYmI1MGRmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZjU2YjZjN2RiOGIwZTgxMDUxYWUxMzc0MDIzYmRjZjQ3YzEwNGUxOTQwYjA2MzBkNjE1YmQ5NTU0ZjA1N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZTNlM2Y0NzVjNjVjNDc0YzkxNjZlZGUxZDExNmUyMWUwMWVmMTQ5YzU1OGU0OTAyYjZkNmJhNTlhYmEwZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNzYzZWE0ZjBkZjhmYjk2MGYyZjhjMjNkNzU3MDM0NTI0MTNkMmMyYTIzMWFkNmJkZTk0ZmFlY2IzNjliMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9fbfaf2a8b944578508dc2f7bd2512e",
+      "statement": "Market research evaluates adoption, ecosystem, and deployment with paired support and counter queries, derives adoption-maturity claims from those market claims, and exposes vendor context for downstream stakeholder research.",
+      "evidence": [
+        {
+          "resource": "repo://src/research/market.py#L23-L112",
+          "version": "repo-lines-v1:sha256:dfd893bfaa57b8819fa40014c9a36364294a86b072b4895f834ca51408ae3073:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwYmVlM2JjOTljNmRkY2I4MzNkZWI1ZjY5M2VlNGJkZTYzOTI1NzI2OTU1OWMwZTM0N2UyMDVlMzBiODVhMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyZjQyYzU2YWJjYTE2YjNiNzJkODAyNzRiMTY5YTRmNTIzOWYyOWE4YTFhNTMxMDlmOGNjM2E0NDYxNThjZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MTFmOTJjNTc1MmZiZmYzOTEyMjM3MGY4ZGQyZDIwOGEwZmNjZTQ0YmUxZTM3NzI1ZmI5MWE4YmIwNzA3YTUifQ"
+        },
+        {
+          "resource": "repo://src/research/market.py#L375-L425",
+          "version": "repo-lines-v1:sha256:62f50d67ff84af7872fcd39f05b4530e42d636bcf8e519df8a2959c1b950954b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDE5OTI0YzJkMGQyZDk5ZWFhMDJhY2VmMjZiNTgzNWU2NGVlOThmM2Q4NDBlMmI2Mjc2NmZjOWIxOTdmNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZTRjMWRmOTI2MGUwMjA3OWZmNDdjYzFlOTQzYjJjZDBhMTU2MmZkODhhNDBlMjEwZWJhZTEzYTRhMzljMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L349-L379",
+          "version": "repo-lines-v1:sha256:0317e5f5851f62673b67a7564de61657df1e245a638c859e6f390e8baf0da1f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Mzc2ZDcxNDczOTlmNGEzMTQxMWNhNDFmMjM3MTQ0MWEzZGVkYTA2MmI1Y2Y0OGZiMmQ1OTE4YjZmYmRmZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlY2Q3OWM4NDNjNTBmOGUxOWU1ZDk4MGMwOWQ1MzM2YWI2NmQwMTNmMDIwN2U0NzM1OWVlMTcwMDJhMWMxNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNDY4YWQwYWJkNWRmODYyMGJiOTRiZGZmZTg1ZjQyMTEwZWNkYThhZjc2NGE0ZDVjM2JhMDZiYWE1Zjc3M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYmU5MTQzMWIyODkwYzU4ZWRiYjU5YTIwYzNkNDFiZWM0M2UxZWM0ZmVhMDUxM2U4OGI3ZDJiMjFiM2IzMjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b30b8243a929462d91219622a9947f92",
+      "statement": "Missing `TAVILY_API_KEY` or a failed Tavily call yields empty search results rather than fabricated sources, allowing market and stakeholder nodes to mark unsupported claims `insufficient`; absent counter results are recorded as not found rather than treated as contradiction.",
+      "evidence": [
+        {
+          "resource": "repo://src/research/client.py#L19-L41",
+          "version": "repo-lines-v1:sha256:28600718eaf470853dc45f2be47d6df2aa47a34ad64989155129d7245678a52e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3MGZiMDNiZTVmZTQ5MGQyZjc2MjdiN2Q4NTMyZGE3Nzg0OTMyNWU3Njc2YjJkNTkxYjM5OTRkOTI5N2ZjMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODFjMDllOTI3Mzk4ZDgzNDRkMTczMTAzMzI1ZjI5MzllM2QyYjYyYTE5Y2Q1YjI3N2FjMjk5MzlkMzYzOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OWU3Njk4YmFjMzlkNGUyNWFlMTcyZThiNjE0MWU4OTgyMmZkMThmMTU4NmJmODUxOTE5Njc1NWJmY2Q5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYmQ5ZDRjZGYwMjNlNDZiYmM4ODVkZTc2MTZlMmI0NGY1N2M1YjkwMmI3OWMxMWUxMGFmZjIyNGEzZjg1OTMifQ"
+        },
+        {
+          "resource": "repo://src/research/client.py#L61-L83",
+          "version": "repo-lines-v1:sha256:5ed8398a2f277fbf45c21ef20627eb037287425e2f021be1d8ec1d8053c158da:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzM1M2M4OWE0ZGI1MjI4MDIyYWMwZWQ1ZTA1YWM4MGU4YmY2ZDdmNzJhNjMxNGVjZGRmOTNmNDE0YmY0ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODFjMDllOTI3Mzk4ZDgzNDRkMTczMTAzMzI1ZjI5MzllM2QyYjYyYTE5Y2Q1YjI3N2FjMjk5MzlkMzYzOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1YWMxZTA2NDM0MzFjYTlhMTBiYjMwZjljNTI2MjkxZDQ0MzM5OWE1Y2IzODY4OWI1MDIzMTI4ZjllYTU5NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNTdhM2ZlODJjM2IwZGZhOGQwODZkMjM1ODQ3YjAwYmFlYjgyZjI2MDMxYmYzYjUzYTRiNWFiNjRjZDc5ZjkifQ"
+        },
+        {
+          "resource": "repo://src/research/market.py#L177-L187",
+          "version": "repo-lines-v1:sha256:0fa3d935723f230fd08c197b5b9c2f57817c8d2081644b1f6c24532f16c15a26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MzBhOTAxY2EwOTY3ZDEwNjY3N2JlMDA4YWNlMTdhZjY0NTg2ZGMxMmNhN2ExYjdlMmYwY2RkOTJmNGMxOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NTBjYzEyYmE3ZDgxOThhNWFkNTk5YWZjOGNhN2UzMjljODdmZjdhNmRhODRjODJhZWFmNjg5ZTNiOTdiNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4NmJlMWFjOWVlYWNhM2EyOWUyMzRlNzMwYzkyNzcxODgxOGIxZjM5MDgzMTcyNDdiMGJlYjJlNmU2OWQzN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwZDdiNTMxYjk2OGI4NmU2NmY0Yjg4NTc2ODU1NTg5ZjYwOWNhNmYxMmI3ZmZlNzRjYWRhODgzMDc1MGM1MzkifQ"
+        },
+        {
+          "resource": "repo://src/research/market.py#L223-L233",
+          "version": "repo-lines-v1:sha256:435fdaaa32460838b1b98c43f1ab37ea68714f422147d6dfd34053e2e55ee592:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzcxNDk3Y2ZjODJlNmZlMGZmZmYwYjA2MjM2NWVmNDk3MTUzODhhNjU0N2I5N2ExMzAwZjdlZWEyOGYwMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MmU5MDFkZGZhMTA1MWI3ZTAyNTQzYjRkMjE2ZGU2ZGFhNWM2MjEwYjhmZmM5YmQ5ODZjMDdlOGU1MzU2ODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ODFmY2JlYTdlMTVlYmQxNmI5ZDAzMjBjMDBiNTgwZGIwNjIxOGUzNGY4NDczMjhjMzU0M2U5NGRkYWU2NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMjEzMDFjNzZiY2IxN2I1NDdkMTBjYzc0ZjE1ZDJhNTJhNGM0M2IwNDJjNTlkYzE2ZWFmZjI5NGQwY2M1ZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b3936118dda4002becb00dea9d1d8bb",
+      "statement": "Stakeholder research surveys four actor roles across both technology families, uses market-derived vendor context in its queries, and updates only affected claims and actor slots during retries.",
+      "evidence": [
+        {
+          "resource": "repo://src/research/stakeholder.py#L15-L69",
+          "version": "repo-lines-v1:sha256:5d9c95d8252ac7c5c16fb632fed036fc25db087637632de6b75aee8a593b47e9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjM2IxMjIxYzkxNjM3ZDNjZWRmZjc5NmQwMDcxYjBhZmM4NTRlNDExN2UzM2JjNWU2OTBjZDNmNmRhNmNjMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNDJkNjViOTFlNWNhNDcwMjc5OWEyNWE2ZTNkODNkMjc4Y2U3NjM4MTQ5MWFhOTU0YmNhM2MwYjNkYTA2ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZTc1MTdhYzQxOWRlMWFiOGQ2M2YzYTc4MjBjM2JhNjNhM2I4YjkzYWVmMGMyNDc0ODQwNjU5MTc4NTIxMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NzA2N2JmYjkwNmE5NTJkOWU5MzE3OGUzZjBiNDgyMTIxYTBlNGYyNjAxZTQwZGQ1ZDk4Njk3YjhhZmZkMjIifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L349-L379",
+          "version": "repo-lines-v1:sha256:0317e5f5851f62673b67a7564de61657df1e245a638c859e6f390e8baf0da1f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Mzc2ZDcxNDczOTlmNGEzMTQxMWNhNDFmMjM3MTQ0MWEzZGVkYTA2MmI1Y2Y0OGZiMmQ1OTE4YjZmYmRmZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlY2Q3OWM4NDNjNTBmOGUxOWU1ZDk4MGMwOWQ1MzM2YWI2NmQwMTNmMDIwN2U0NzM1OWVlMTcwMDJhMWMxNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNDY4YWQwYWJkNWRmODYyMGJiOTRiZGZmZTg1ZjQyMTEwZWNkYThhZjc2NGE0ZDVjM2JhMDZiYWE1Zjc3M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYmU5MTQzMWIyODkwYzU4ZWRiYjU5YTIwYzNkNDFiZWM0M2UxZWM0ZmVhMDUxM2U4OGI3ZDJiMjFiM2IzMjcifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L381-L397",
+          "version": "repo-lines-v1:sha256:a7fcfaea49fdab874ddaa71a281e7caede5751cc95b846cf0dfca942e1769fa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4ZjhlOGQwYTEwNmRlZDk5MTQ3NmFiMjQ3ZDA3MTFhOWY2NjgyMDYxNDQ4YWY2Mzk0NjM2MTI3MWY3ZDU4MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjdjM2I3MTQyNGNlYTE0NjI0NTE3YTAzMmExZTA3ODg0ZmJlNmI1MDhmN2Q4ZWFiMWQ1MzcwNzZkMWViNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_61218795c7234d5280add16139b39b47",
+      "statement": "Evidence auditing is a two-stage fast-fail process: static R1-R4 rules run first, and the R5 LLM judge runs only for active claims that pass the static stage.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L25-L45",
+          "version": "repo-lines-v1:sha256:c919a2585f29687db3a574fcd243b3bd28234fdcc0d35ead4bde4fecf178cc43:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDYxMzhlYmZlMmUwZDFkZGYwYzgzMWJmZDY5ZWJhYjU4OTk4NDg1ODIxYmRiYWZkMjczODcwOWU1YTgzNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNmRhMmU2ZmFmYTczYTZlYzNhZGRmYjc0ZjQxNmY2ZTQ0OWQ0OWQwY2VlZTM0MzU2YTNmZmU3NzRkZWU3M2UifQ"
+        },
+        {
+          "resource": "repo://src/audit/rules.py#L53-L122",
+          "version": "repo-lines-v1:sha256:1466c605699533ce3c4f44a4642d0ce2b9e1989e66e0eec37d949ce10b3dff36:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyOWUzYjRiNDZmMGM2NjRiY2IxMzM2ZDEzOTJlNWY1ODU3ZmRhMWUzNWUyZjY2OTkxNTQ4ZWJlMWVjZDg2YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NWE3ZDI2OThhMWRjODkzZDg1ODNmMzk0ZjEzYTk4Y2Y1MTY5MGFjZTZhMTU4ZjhlYzZhNmNiZWY0MDIyZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4NzZiNjQ0ODU0ZDlmOWUzMDZiOGU0MWM5NDQxNDI1ODY3MmQzNGQ1NWM2NWRkMDU4ZjZmYTRmNmJhYjc5NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dae35f98f5de4f8daf7ab93502ab4b00",
+      "statement": "Audit issues target a responsible agent and drive bounded, targeted retries; each affected agent's retry count increments once per audit pass, and claims become terminal `insufficient` or `rejected` at the retry limit.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L46-L77",
+          "version": "repo-lines-v1:sha256:3a279ba500f6acebf3eaa3741d39262edcd5a1ce908fb678d65f11d3d5944b97:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjN2ZhNzgxNjFkODcwYjVlZTJlNWU0MmFhYjViZjg2NGNkYmUxY2Y0Yjc2NzkyMWU5MGU1Y2RkZGY4MzZjOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODQ0ZTc2NjFlNjQ2MzBiMzljMzZjNzcxYTI1MzZkNmIxOTUzZjY2NGQ5ZTdkMzg0MDdhNWI1ZTcyOTI2MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L12-L53",
+          "version": "repo-lines-v1:sha256:c56c96a4d04435330201e84c6a226d20fdddb76f1374654e0a53e98253970cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTEyODZjYjk3ZTk0Y2JhYTQ1ZmIwN2ExNDMxYjRlNjg4ZGEwYjA5YzVkNWFkYjkzMGUyMTY4MDUwNmRkMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4Y2E4MGZjZmRmODg1YzYxYWE5ODgzYTgxZDQzYWYwODJhMmQ0NjAwMTM2ZDlmZTUxODE5MmM5ODI2ODBhOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4312955d0f1488eb2a5e5688e9d50df",
+      "statement": "Claim, evidence, and source reducers make retries idempotent by upserting claims and evidence by ID and deduplicating sources by URL while preserving canonical source references.",
+      "evidence": [
+        {
+          "resource": "repo://src/state.py#L48-L79",
+          "version": "repo-lines-v1:sha256:46617bfa6ec3cd0c2d66fa1991061ad72b6286d74e0c521aa1b6dd42274254c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZDQ5OGM5OGVjZDBlOWYzY2U1NzMwYjNjNWRhMDA4NjY4NDRlNTJjNWZmMjRhMjdlMTU4NTk5ZTA3NjNjY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZTM1MmE1MDBkYTJjMWE0Yzk2OTMwZDBkM2QzMTU3MGU0MTEwMWE5ZDUwOTJiNjc4NjE5MjZiNmE0MGRhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMzdhZGQ5M2IwNWVlOWIyZjUwZDcwNzA2Y2QzNjA3NzExMzNiMmE1MWQwYjVjYjNiOGE5YjFiY2EzZDFiZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNmZkNjEyMDYyODYzZDUzNjc0ZjQzODNhOWNmNmIzMWU0MjgwOWQzMmQwYjRhZDEzM2M0ZTc5NGI4NWU1YjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3732d1b34b624f388185bfce15a3fdfe",
+      "statement": "Dual TRL synthesis separates verified research evidence from verified market adoption evidence, maps research fact or simulation kinds to distinct technology TRL ranges, maps adoption fact or vendor claims to family TRL ranges, and returns an Unknown/Insufficient Evidence fallback when no verified claims exist.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L4-L32",
+          "version": "repo-lines-v1:sha256:e6353db31cc69c79b738106c9096f3101a75cd11935c0138f5fe6e2f185d4a6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZjJmNjc2YzQ1MDc2OTFkZmYyZGFiMDExZjY1NmJmNDEwMTJlZWNlM2MyNmUzZDU0YzU4NGIzNDRkNWFiOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkYjRhMDY3MjdjZWY3ODliZDlhMmVmYmZlODIwMTdlYTZkYmRjM2FjMTRjOGNjMmZmZmQzNDI3Mzk2ZmJiYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZjNkMjc4MmM1ZGUwMzM4ZTE1ZjE0MzQ1ODFhN2NmMDBkNDQzZTBhNmM0YzgzMjFiNDRhY2YyOTY3ZWQwNWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e321564111540c585543d3ee0ad696a",
+      "statement": "Report generation renders a Jinja2 Markdown template from the accumulated state, numbers references only for evidence attached to `ok` claims, and bypasses or falls back from polishing when the API key or polishing LLM is unavailable.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L147-L174",
+          "version": "repo-lines-v1:sha256:b6dc95ccb7a23f5da8048a08251a4021ca126b6ffa85ff7e438937ad25760bcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNjcyMzk3ZWRlYWU4MjA4ZWNjYjM0MjE1MWQxZTY2NGIzMWZjMzAyYWMwZjM4Yzc2MzY4MjFmZDM3ODViYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTg5YzlhYWFhOTQyOGIyYjNiYmEzNzc2NWUwYzI2Zjg1MmNhZjQ2ZDE1MzZmMGY1ZDYzNmM2Y2Q4M2RkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwZDAxNDMxM2YxYTZmYWVkZTNhYzA0YzAxNzE3NDUwNzZkNjA2ZjQxYmFkYjk3OGIxMjkwNzI4YzM5NGU3MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMGU3YzE4YmZhYTUyMWZkY2UxYzdjNGFlZGVmM2FkY2I5NGFjZTRmMTE1ZDM3MmE4ZTkzNmJhNDM0MWNmNTQifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L176-L193",
+          "version": "repo-lines-v1:sha256:be1f46073a807f3a406d739a9699e07fbfae56e3c12029524370c4710bda3cd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTg5YzlhYWFhOTQyOGIyYjNiYmEzNzc2NWUwYzI2Zjg1MmNhZjQ2ZDE1MzZmMGY1ZDYzNmM2Y2Q4M2RkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MGRlMzU3NjA4Yjg1NDM2ZTVjZDhlNGFkZTVkYjU5MmUzNGY1NGQ5YWJiNzAyYmRkZTAzZjkwYWFhNGMyMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/templates/report.md.j2#L3-L9",
+          "version": "repo-lines-v1:sha256:3975eaac7fbcd33e37d4a826e200a75d081c227d025a72cb528e776dfb882b94:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ0YmE4NTA2MjAyMzU0NzY0NWIyNTAzMmIxNDA1YTMyODRjNTIwMGNjYzA0OTAxYjI3Yzk1ZDkzZTFjY2JkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDU1OWUwMGFlNmU0NjE5MzEwNWFhZDU2OGY2MmFiYzk0OWUzOWIyYjczMzRiYjZkZmM3ZjdhMDU5N2JjMzBmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGU0Yjc2YjdkM2U2ZGI0OGY3NGFjZWI0MWI2MDc5YTJkZGY3OGNjYTEyOTVmZTViNjJlNmJiMzRiN2QwNGVmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNmOWM4MzVjZDgyNjc4OWUxMzhmZDIxYmQzZGM0ODIyMTVmMGE1MGJmMjhmM2M2YmVmZWE0OTE0YzUzYjU3OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d505eb7e85534958be6fe7d4aab8f6b9",
+      "statement": "The smoke tests verify graph-to-report execution, Markdown persistence, optional PDF plus Markdown backup, and the independence and equality of the entrypoint's initial state contract.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_smoke.py#L15-L54",
+          "version": "repo-lines-v1:sha256:dcf2bdccf94bb04ef147a2400a71724ffa6d69a15391da75ecd0f81c2c74bb1c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyOTMzNWJiNmZjY2Y3MzY5MDAyMzA0YTVlMzRlOWMxZDJkYzc0N2QzYjk4MThhYzE0ZmY0ZmU4ZTExYzkwZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYzdjZmJjYTBlYjdhYmYxOThiNWUzODkzMTBiNmRiNGRlZDI0MjU5NjczYWY3MjI5YmM1M2Y1N2ZiMjRkMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxYzM3YzdhNzg0M2NhMGY3NzQzODBiNWQzNWE3YzdkOGVmNmU4YjhmZDQ1NjE5NWEzNjA0ZTMyYTM0OGU5NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py#L5-L12",
+          "version": "repo-lines-v1:sha256:606b5d7040e56db44b79918347ef4855c9aec67a28b2959bc1474335bae3d4b6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdlZTIyZDdmNTlhYWY4MDlhMGQ5MjFkYWE1OWMyMjIzZjI0ODNlYjQxZGI1OTZmMzE0YjQyOTE2MmRkMjc4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVlNzMyYWRiMmU2NDQ1OTliZjM4YjhmZWU0ZWI4NTQ2MTMxMTc5MzdkZGMxY2ZmMDg2OGVmZWZhZjU3ZDM3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGNmYjgxODMyM2Q1ZDgzOThmZTljN2JmY2Q1OTU1N2VlNTI3NTRiZjA0NGU3NGIyM2JkNjgyYTI3YTVmMzRmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWM1MDY0ZGUyYTljZDY2NjRiYTBhZWJjMDQ5MDVkYjgwODA3ODM2ZTc2ZjkyNTdlMGNmNzU3OTFmNjk2YTE4MCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}
