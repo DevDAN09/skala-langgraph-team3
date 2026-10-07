@@ -144,3 +144,42 @@ def test_flow_rework_does_not_call_other_workers(monkeypatch):
     assert calls[3] == "evidence_audit"
     assert sorted(calls[4:6]) == ["market_research", "stakeholder_research"]
     assert calls[6:] == ["evidence_audit", "evaluation_synthesis", "report_generation"]
+
+
+def test_worker_exception_retries_twice_then_skips(monkeypatch):
+    import src.graph as graph_module
+
+    calls = []
+
+    def paper(state):
+        calls.append("paper_analysis")
+        raise RuntimeError("index down")
+
+    def market(state):
+        calls.append("market_research")
+        return {"market": {"vendors": ["A"]}}
+
+    def stakeholder(state):
+        calls.append("stakeholder_research")
+        return {"stakeholder": {"actors": ["cloud"]}}
+
+    def synthesis(state):
+        calls.append("evaluation_synthesis")
+        return {}
+
+    def report(state):
+        calls.append("report_generation")
+        return {"report": "ok"}
+
+    monkeypatch.setattr(graph_module, "paper_analysis_node", paper)
+    monkeypatch.setattr(graph_module, "market_research_node", market)
+    monkeypatch.setattr(graph_module, "stakeholder_research_node", stakeholder)
+    monkeypatch.setattr(graph_module, "evaluation_synthesis_node", synthesis)
+    monkeypatch.setattr(graph_module, "report_generation_node", report)
+
+    final = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
+    assert calls.count("paper_analysis") == 3
+    assert final["retry_count"]["paper"] == 2
+    assert final["node_status"]["paper"] == "skipped"
+    assert "index down" in final["last_error"]["paper"]
+    assert calls[-2:] == ["evaluation_synthesis", "report_generation"]

@@ -15,6 +15,18 @@ _WORKER_NODES = {
 }
 
 
+def isolate_worker(agent: str, node):
+    """워커 예외는 State에 남기고 Supervisor로 되돌린다."""
+    def wrapped(state):
+        try:
+            result = node(state) or {}
+        except Exception as exc:
+            print(f"⚠️ [{agent}] 실행 실패, Supervisor로 격리: {exc}")
+            return {"node_status": {agent: "failed"}, "last_error": {agent: str(exc)}}
+        return {**result, "node_status": {agent: "complete"}, "last_error": {agent: ""}}
+    return wrapped
+
+
 def route_supervisor(state: OverallState) -> list[str] | str:
     """Translate the Supervisor decision. This function does not choose the order."""
     decision = state.get("supervisor") or {}
@@ -34,9 +46,9 @@ def build_evaluation_graph():
     """Workers communicate only with the evidence_audit Supervisor."""
     builder = StateGraph(OverallState)
 
-    builder.add_node("paper_analysis", paper_analysis_node)
-    builder.add_node("market_research", market_research_node)
-    builder.add_node("stakeholder_research", stakeholder_research_node)
+    builder.add_node("paper_analysis", isolate_worker("paper", paper_analysis_node))
+    builder.add_node("market_research", isolate_worker("market", market_research_node))
+    builder.add_node("stakeholder_research", isolate_worker("stakeholder", stakeholder_research_node))
     builder.add_node("evidence_audit", evidence_audit_node)
     builder.add_node("evaluation_synthesis", evaluation_synthesis_node)
     builder.add_node("report_generation", report_generation_node)

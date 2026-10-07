@@ -65,6 +65,10 @@ def upsert_evidence(existing: list[Evidence], updates: list[Evidence]) -> list[E
         ev_map[new_e["evidence_id"]] = new_e
     return list(ev_map.values())
 
+def merge_dict(existing: dict | None, updates: dict | None) -> dict:
+    return {**(existing or {}), **(updates or {})}
+
+
 def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]:
     src_map = {s["source_id"]: s for s in (existing or [])}
     url_index = {
@@ -99,6 +103,8 @@ class OverallState(TypedDict):
     audit: Audit
     supervisor: SupervisorDecision
     retry_count: dict[str, int]
+    node_status: Annotated[dict[str, str], merge_dict]
+    last_error: Annotated[dict[str, str], merge_dict]
     trl: dict[str, TRL]
     synthesis: dict
     report: str

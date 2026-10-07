@@ -15,6 +15,8 @@ def test_mock_state_keys():
         "audit",
         "supervisor",
         "retry_count",
+        "node_status",
+        "last_error",
         "trl",
         "synthesis",
         "report",

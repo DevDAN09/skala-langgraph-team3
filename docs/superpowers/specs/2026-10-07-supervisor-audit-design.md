@@ -47,7 +47,7 @@ evaluation_synthesis → report_generation → END
 
 비어 있는 관점은 `collect`다. market이 비어 있으면 stakeholder는 `collect`에 넣지 않는다. market 결과는 State에 남고, stakeholder는 Supervisor가 그 다음에 호출한다. 이것은 워커 간 통신이 아니다.
 
-열린 issue는 해당 관점을 `rework`에 넣는다. 최초 수집은 재시도가 아니다. Supervisor가 재작업을 보낼 때만 `retry_count`를 1 올린다. 관점당 최대 2회다. 한도에 도달한 issue는 R5면 `rejected`, 그 외는 `insufficient`로 확정한다.
+열린 issue는 해당 관점을 `rework`에 넣는다. 최초 수집은 재시도가 아니다. Supervisor가 재작업을 보낼 때만 `retry_count`를 1 올린다. 관점당 최대 2회다. 한도에 도달한 issue는 R5면 `rejected`, 그 외는 `insufficient`로 확정한다. 워커 예외는 그래프를 중단하지 않고 `node_status=failed`로 남긴다. 한도가 남으면 그 워커만 다시 부르고, 소진하면 `skipped`로 두고 진행한다.
 
 `collect`와 `rework`가 모두 없고 필요한 관점이 있으면 `sufficient`다. 확정된 근거 공백이 있어도 보고서는 진행한다. `report_generation`은 Supervisor의 목적지가 아니다.
 

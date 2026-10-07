@@ -167,12 +167,14 @@ def test_overall_state_schema_keys():
         "audit",
         "supervisor",
         "retry_count",
+        "node_status",
+        "last_error",
         "trl",
         "synthesis",
         "report",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 15
+    assert len(expected_keys) == 17
 
 
 def test_config_exports():

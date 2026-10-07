@@ -24,6 +24,8 @@ INITIAL_INPUT_STATE = {
     "audit": {"issues": []},
     "supervisor": {"sufficient": False, "collect": [], "rework": [], "reason": "", "dispatched": []},
     "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    "node_status": {},
+    "last_error": {},
     "trl": {},
     "synthesis": {},
     "report": "",
