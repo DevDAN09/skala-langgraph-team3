@@ -70,6 +70,40 @@ def test_quality_reference_and_neutrality_rules():
     assert quality_evaluation_node({**base, "report": "KIVI를 추천한다"})["quality"]["scores"]["neutrality"] is False
 
 
+def test_supervisor_audits_once_per_research_step(monkeypatch):
+    import src.supervisor as supervisor
+    calls = []
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: calls.append(state["step_count"]) or {"audit": {"issues": []}})
+    state = {**MOCK_STATE, "last_audited_step": MOCK_STATE["step_count"]}
+    supervisor_node(state)
+    assert calls == []
+
+
+def test_worker_error_isolated_and_returns_to_supervisor(monkeypatch):
+    import src.graph as graph_module
+    wrapped = graph_module._supervised(lambda state: (_ for _ in ()).throw(RuntimeError("boom")), "paper")
+    result = wrapped(INITIAL_INPUT_STATE)
+    assert result["node_status"]["paper"] == "failed"
+    assert "paper: boom" in result["last_error"]
+
+
+def test_compiled_graph_mocked_e2e(monkeypatch):
+    import src.graph as graph_module
+    calls = []
+    def worker(name):
+        return lambda state: calls.append(name) or {}
+    monkeypatch.setattr(graph_module, "paper_analysis_node", worker("paper_analysis"))
+    monkeypatch.setattr(graph_module, "market_research_node", worker("market_research"))
+    monkeypatch.setattr(graph_module, "stakeholder_research_node", worker("stakeholder_research"))
+    monkeypatch.setattr(graph_module, "evaluation_synthesis_node", worker("evaluation_synthesis"))
+    monkeypatch.setattr(graph_module, "report_generation_node", lambda state: calls.append("report_generation") or {"report": "# SUMMARY\n# REFERENCE"})
+    monkeypatch.setattr(graph_module, "quality_evaluation_node", lambda state: calls.append("quality_eval") or {"quality": {"passed": True, "attempts": 1}})
+    final_state = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
+    assert {"paper_analysis", "market_research", "stakeholder_research", "evaluation_synthesis", "report_generation", "quality_eval"} <= set(calls)
+    assert final_state["report"] and final_state["quality"]["attempts"] == 1
+    assert final_state["step_count"] <= MAX_STEPS and final_state["next_agent"] == "evaluation_synthesis"
+
+
 def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():
     assert route_quality({"quality": {"passed": False, "failures": ["coverage"], "attempts": 1}}) == "supervisor"
     assert route_quality({"quality": {"passed": False, "failures": ["REFERENCES"], "attempts": 1}}) == "report_generation"

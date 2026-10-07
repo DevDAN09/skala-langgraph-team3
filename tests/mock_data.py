@@ -22,6 +22,9 @@ INITIAL_INPUT_STATE = {
     "step_count": 0,
     "trace_id": "pipeline",
     "quality": {"passed": False, "failures": [], "attempts": 0},
+    "last_audited_step": -1,
+    "last_decision": {},
+    "last_error": None,
     "trl": {},
     "synthesis": {},
     "report": "",
@@ -170,6 +173,9 @@ MOCK_STATE = {
     "step_count": 3,
     "trace_id": "test",
     "quality": {"passed": False, "failures": [], "attempts": 0},
+    "last_audited_step": -1,
+    "last_decision": {},
+    "last_error": None,
     "trl": {
         "KIVI": {
             "tech_trl": "5-6",

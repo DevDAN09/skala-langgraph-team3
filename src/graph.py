@@ -13,7 +13,12 @@ from src.synthesis.quality import quality_evaluation_node, route_quality
 def _supervised(node, agent: str):
     """Mark the specialist's payload as available before returning to Supervisor."""
     def wrapped(state: OverallState) -> dict:
-        result = node(state)
+        try:
+            result = node(state)
+        except Exception as error:
+            status = dict(state.get("node_status") or {})
+            status[agent] = "failed"
+            return {"node_status": status, "last_error": f"{agent}: {error}"}
         status = dict(state.get("node_status") or {})
         status[agent] = "complete"
         return {**result, "node_status": status}

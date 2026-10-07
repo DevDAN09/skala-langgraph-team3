@@ -171,12 +171,15 @@ def test_overall_state_schema_keys():
             "step_count",
             "trace_id",
             "quality",
+            "last_audited_step",
+            "last_decision",
+            "last_error",
             "trl",
         "synthesis",
         "report",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 19
+    assert len(expected_keys) == 22
 
 
 def test_config_exports():

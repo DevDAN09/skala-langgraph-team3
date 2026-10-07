@@ -102,7 +102,7 @@ flowchart TD
 ### State Schema
 
 - **Payload (12)**: `selected`, `tech_sw`, `tech_hw`, `domain`, `market`, `stakeholder`, `claims`, `evidence`, `sources`, `trl`, `synthesis`, `report`.
-- **Control (7)**: `audit`, `retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality` — 총 **19 fields**.
+- **Control (10)**: `audit`, `retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality`, `last_audited_step`, `last_decision`, `last_error` — 총 **22 fields**.
 - `trace_id` is a UUID per execution; large trace bodies stay outside State. `node_status`/retry/step fields support resume inspection; reducers keep claim/evidence/source writes idempotent.
 - Supervisor dispatches one Research Agent at a time. Market data is stored in State, then Supervisor may choose stakeholder; no direct Agent edge exists.
 - Termination: `RETRY_LIMIT=2`, `MAX_STEPS=10`, and two quality evaluations cap all feedback loops.
