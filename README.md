@@ -220,14 +220,16 @@ python -m src.rag.benchmark     # 임베딩 모델 Hit@5 · MRR 측정
 
 
 ## Contributors
-| 이름 (가나다순) | 역할 | 담당 영역 | 주요 수행 내용 요약 (Summary) |
-| :--- | :---: | :--- | :--- |
-| **강건호** | 담당 D | 2단계 Fast-Fail 검증 엔진 (`src/audit/**`) | • **2단계 검증 파이프라인 구축**: 규칙 기반 4대 룰(형식·출처·신뢰도) + LLM 심사(`gpt-4o`)<br/>• **오류 피드백 및 라우팅**: 검증 미달 Claim 대상 피드백 생성 및 재시도(최대 2회) 라우팅 연계<br/>• **환각 차단**: 출처 누락 및 사실 왜곡을 필터링하여 보고서 신뢰도 확보<br/>• **[Agent 과제] 코드 정리·리뷰 기준**: AI 생성 코드 불필요 코드 정리와 코드 리뷰 프롬프트 작성(#62·#64), Supervisor 브랜치 잔여 코드 정리(#58) |
-| **김효민** | 담당 C | 이해관계자 리서치 엔진 (`src/research/stakeholder.py`) | • **4대 액터 분석**: 서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자별 다각적 영향도 분석<br/>• **구조화 데이터 생성**: 기술 계열별 Benefit·Concern·Barrier·Evidence 정밀 구조화<br/>• **이해관계자 Claim 도출**: STK-01~08 정량/정성 Claim 및 출처 연계<br/>• **[Agent 과제] Supervisor 전환·품질 평가 설계**: 근거 검증 확장형 Supervisor 전환안 구현(#45), 보고서 품질 평가 설계 문서와 규칙+Judge 2단계 구현(#60), 통합 브랜치 코드 리뷰·산출물 점검(#61, #67~#75), README 정리 |
-| **윤영민** | 담당 A | 시스템 아키텍처 & LangGraph 오케스트레이션 (`src/state.py`, `src/graph.py`, `main.py`, `app.py`) | • **State-driven dynamic routing**: Supervisor가 audit·quality target·dependency로 다음 worker를 선택하고 targeted rework 수행<br/>• **24-field State contract**: payload/control 분리와 reducer로 충돌을 제어하고 `trace_id`/decision/fallback 상태를 기록<br/>• **termination/fallback control**: retry·step·quality 한도와 worker failure fallback, Streamlit·PDF 산출 파이프라인 구현<br/>• **[Agent 과제] Supervisor 승격 시안**: evidence_audit의 Supervisor 승격과 Hybrid 품질 게이트 시안(#56) |
-| **전경호** | 담당 C | 외부 웹 시장성 조사 엔진 (`src/research/market.py`, `src/research/client.py`) | • **실시간 시장성 조사**: Tavily Search 연동을 통한 최신 시장 동향 및 도입 장벽 데이터 수집<br/>• **자연어 쿼리 최적화**: 기술별 세부 카테고리 질의 생성 및 시장성 Claim(MKT-01~06, MAT-A01~02) 정제<br/>• **안정성 보장**: API 실패 및 키 미제공 상황에 대응하는 견고한 Fallback 로직 구축<br/>• **[Agent 과제] Supervisor·품질 게이트**: Supervisor 패턴 + Layered State 시안(#47), 품질 게이트 커버리지 'Gap 공개' 예외(#65) |
-| **정은희** | 담당 E | 다관점 종합 & 보고서 생성 파이프라인 (`src/synthesis/**`) | • **TRL 이원화 종합 평가**: 개별 기술 TRL과 계열 산업 TRL을 분리 분석하는 프레임워크 구축<br/>• **보고서 템플릿 엔진**: Jinja2 기반 마크다운 템플릿 설계, 본문 Citation 번호와 References 자동 연동<br/>• **보고서 정제 및 윤문**: LLM(`gpt-4o`)을 활용한 논리적 흐름 정제 및 문체 통일<br/>• **[Agent 과제] Supervisor 통합 구현**: State 기반 Supervisor 연구 흐름과 품질 게이트, 근거 Claim 기반 보고서 재구성·필드 단위 번역·PDF 개선(#48 통합 브랜치) |
-| **최지윤** | 담당 B | 논문 분석 Agentic RAG 및 임베딩 벤치마크 (`src/rag/**`) | • **Agentic RAG 구축**: KIVI 및 CXL-PNM 논문 원문 PDF 파싱, 청킹 및 FAISS 인덱싱<br/>• **임베딩 벤치마크**: 임베딩 모델 정량 평가(`bge-small-en-v1.5` vs `e5-small-v2`, 20개 질의) 수행 및 최적 모델(`intfloat/e5-small-v2`) 채택<br/>• **논문 근거 추출**: KIVI 2.6× peak memory 절감(모델 가중치 포함) 등 정량 지표 Claim 및 원문 Evidence 추출<br/>• **[Agent 과제] 통합 구조 RAG 개선**: Supervisor 오케스트레이션 보완 시안(#46), Supervisor 통합 구조에 RAG·실행 정책 개선 반영(#66) |
+Agent 과제(Multi-Agent Orchestration) 기준 개인별 수행 역할이다. 근거는 각 PR·커밋이다.
+
+| 이름 (가나다순) | 담당 영역 | 주요 수행 내용 |
+| :--- | :--- | :--- |
+| **강건호** | 코드 정리 · 리뷰 기준 | • **AI 생성 코드 정리**: 덮어써진 중복 정의 삭제, `market`·`stakeholder`에 복사된 `_build_source`를 `client.build_source`로 통합, 미사용 import·상수 제거 (동작 변경 없이 정리, #62 → 통합 브랜치 #64)<br/>• **Supervisor 브랜치 잔여 코드 정리** (#58)<br/>• **코드 리뷰 프롬프트** 작성 (`tasks/code_review_prompt.md`) |
+| **김효민** | 패턴 설계 · 보고서 품질 평가 · 통합 검증 | • **패턴 선정 분석**: Supervisor vs Orchestrator-Workers를 과제 필수 항목 기준으로 비교, 근거 검증(`evidence_audit`) 확장형 Supervisor 전환안 설계·구현 (#45)<br/>• **보고서 품질 평가 설계**: 평가 항목별 규칙·LLM Judge 2단계 Fast-Fail 설계 문서와 구현, 재작업 판단을 Supervisor로 분리 (#60)<br/>• **통합 브랜치 검증**: 실제 파이프라인 실행 검증, 코드 리뷰와 문제별 이슈 분리 (#67~#75), 산출물 체크리스트 (#61), README 정비 (#78) |
+| **윤영민** | Supervisor 승격 설계 | • **근거 검증의 Supervisor 승격**: `evidence_audit`를 Supervisor로 승격하고 `market → stakeholder` 직접 엣지와 고정 라우팅 제거, 비어 있는 관점만 호출하고 열린 issue의 워커만 재작업하는 State 기반 분기 (#56)<br/>• **Hybrid 품질 게이트·재작성 루프 시안** (`feat/supervisor-audit-promotion`) |
+| **전경호** | Supervisor 시안 · 품질 게이트 보완 | • **Supervisor 패턴 + Layered State + 품질 평가 루프 시안**: 허브-스포크 구조, 근거 부족 시 해당 에이전트 재작업, 워커 예외 1회 재시도 후 제외 (#47)<br/>• **품질 게이트 커버리지 보완**: 재수집 후 6장 Evidence Gap에 공개한 칸을 통과로 인정하는 예외 (#65) |
+| **정은희** | Supervisor 통합 구현 · 보고서 | • **통합 브랜치 구현** (`jeh_restructure-pdf-guided-architecture`): State 기반 Supervisor 연구 흐름과 라우팅 계약, 규칙 기반 품질 게이트, 워커 실패 1회 재시도<br/>• **보고서 재구성**: 검증된 Claim 기반 섹션 구성, 본문 인용과 REFERENCE 일치, 근거 문장 필드 단위 번역, PDF 출력 개선<br/>• **통합 머지·실행 오류 수정** (checkpointer import 등) |
+| **최지윤** | Supervisor 실행 정책 · RAG | • **Supervisor Hub-Spoke 시안**: State 기반 동적 라우팅, Agent별 Retry와 Worker Recovery 계약 (#46)<br/>• **통합 구조 실행 정책 반영**: `PayloadState`/`ControlState` 분리, `node_attempts`·`last_errors`, `InMemorySaver` checkpoint와 `trace_id` thread, 실제 재작업 dispatch에만 retry 증가, market 성공 후 stakeholder `stale` 처리, RAG 개선 (#66) |
 
 ### 평가 보고서의 핵심 포인트
 | 이름 (가나다순) | 담당 | 평가 보고서 핵심 포인트 (Key Takeaway) | 비고 |
