@@ -115,3 +115,12 @@ def mock_openai(monkeypatch):
         except Exception:
             pass
 
+
+
+@pytest.fixture(autouse=True)
+def clear_r5_judge_cache():
+    """R5 판정 캐시(#77)가 테스트 사이에 남아 다른 테스트의 mock 판정을 가리지 않게 한다."""
+    from src.audit.judge import clear_judge_cache
+    clear_judge_cache()
+    yield
+    clear_judge_cache()

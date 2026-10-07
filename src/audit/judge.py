@@ -37,6 +37,15 @@ judge_prompt = ChatPromptTemplate.from_messages([
 ])
 
 
+# Supervisor는 worker가 돌아올 때마다 근거 검증을 다시 실행한다. 바뀌지 않은 Claim을 매번 다시
+# 판정하면 호출 비용이 늘고 같은 입력의 판정이 흔들릴 수 있어, 성공한 판정만 입력 기준으로 재사용한다 (#77).
+_verdict_cache: dict[tuple[str, str, str], JudgeDecision] = {}
+
+
+def clear_judge_cache() -> None:
+    _verdict_cache.clear()
+
+
 def run_llm_judge(claims: list[Claim], evidence_list: list[Evidence]) -> list[AuditIssue]:
     """Runs Step 2 LLM-as-a-Judge on claims that passed Step 1 static rules."""
     issues: list[AuditIssue] = []
@@ -63,9 +72,14 @@ def run_llm_judge(claims: list[Claim], evidence_list: list[Evidence]) -> list[Au
         if not snippet:
             continue
 
+        key = (JUDGE_LLM_MODEL, c["statement"], snippet)
         try:
-            prompt_val = judge_prompt.format_messages(statement=c["statement"], snippet=snippet)
-            result = llm.invoke(prompt_val)
+            result = _verdict_cache.get(key)
+            if result is None:
+                prompt_val = judge_prompt.format_messages(statement=c["statement"], snippet=snippet)
+                result = llm.invoke(prompt_val)
+                if isinstance(result, JudgeDecision):
+                    _verdict_cache[key] = result
             if result and not result.is_grounded:
                 issues.append({
                     "claim_id": c["id"],
