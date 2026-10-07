@@ -140,18 +140,3 @@ def quality_evaluation_node(state: OverallState) -> dict:
                         "coverage_gaps": coverage_gaps, "disclosed_gaps": disclosed_gaps,
                         "rework_targets": sorted(rework_targets), "exhausted_targets": exhausted,
                         "attempts": attempts + 1}}
-
-
-_DATA_FAILURES = {"groundedness", "coverage", "bias_control"}
-
-
-def route_quality(state: OverallState) -> str:
-    """재수집 가능한 대상이 있으면 Supervisor, 형식·서술 미달만 있으면 재작성, 그 외에는 종료한다.
-    데이터 미달인데 재수집 대상이 모두 한도에 도달했으면 같은 State로 다시 돌아도 결과가 같으므로 종료한다."""
-    quality = state.get("quality") or {}
-    if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
-        return "END"
-    if quality.get("rework_targets"):
-        return "supervisor"
-    failures = set(quality.get("failures") or [])
-    return "report_generation" if failures - _DATA_FAILURES else "END"

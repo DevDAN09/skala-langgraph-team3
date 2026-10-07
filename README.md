@@ -26,7 +26,7 @@
 - **Supervisor 기반 근거 검증** : Supervisor가 R1~R5 감사 결과, 재시도 상태, 시장→이해관계자 의존성을 보고 다음 Research Agent를 동적으로 선택(관점별 최대 2회, 전체 최대 10 step). R5 판정은 같은 Claim·근거 입력이면 캐시를 재사용한다
 - **TRL 이원화** : 개별 기술 성숙도(`tech_trl`)와 기술 계열 생태계 성숙도(`family_trl`)를 분리 산출
 - **보고서 자동 생성** : 검증된 Claim으로 보고서 view를 만들고 Jinja2 템플릿으로 결정적으로 렌더링한다. LLM(`gpt-4o`)은 근거 문장 필드만 한국어로 번역하고, 인용 번호·Claim ID·수치 표기는 템플릿이 결정한다 → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
-- **보고서 품질 평가** : `report_generation` 뒤 `quality_eval`이 **3안 Hybrid**로 판정한다. 1단계 규칙(결정적)이 아래 항목을 검사하고, 통과한 보고서만 2단계 LLM Judge가 본문을 채점한다. 미달이면 원인에 따라 loop한다 (최대 2회 평가).
+- **보고서 품질 평가** : `quality_eval`이 **3안 Hybrid**로 판정한다. 1단계 규칙(결정적)이 아래 항목을 검사하고, 통과한 보고서만 2단계 LLM Judge가 본문을 채점해 State에 기록한다. Supervisor가 재수집·보고서 재작성·종료를 결정한다 (최대 2회 평가).
 
   | 항목 | 판정 기준 (`src/synthesis/quality.py`) |
   | :--- | :--- |
@@ -37,7 +37,7 @@
   | 필수 목차 | `SUMMARY`, `REFERENCE` 포함 |
   | 2단계 LLM Judge (`src/synthesis/quality_judge.py`) | 규칙을 통과한 보고서 본문을 Groundedness·중립성·편향 통제·커버리지·일관성(절 사이 모순) 5개 항목, 1–5점 기준표로 채점 (`gpt-4o`, 4점 이상 통과) |
 
-  - 재수집할 수 있는 대상(재시도 한도가 남은 에이전트)이 있으면 Supervisor로 보낸다. 근거 부족인데 대상이 모두 한도에 도달했으면 다시 돌아도 결과가 같으므로 종료하고, 서술 문제(중립성·목차·Judge 미달)만 있으면 `report_generation`으로 돌아간다.
+  - 재수집할 수 있는 대상이 있으면 Supervisor가 해당 Agent를 선택한다. 근거 부족인데 대상이 모두 한도에 도달했으면 Supervisor가 종료하고, 서술 문제(중립성·목차·Judge 미달)면 Supervisor가 `report_generation`을 다시 선택한다.
   - 3안 선정 이유: 1안(규칙만)은 형식만 검사해 보고서 생성 단계의 근거 없는 서술, 정규식 밖 우열 뉘앙스, 절 사이 모순을 놓친다. 2안(Judge만)은 비결정적이고 매번 호출 비용이 든다. 그래서 규칙 미달이면 Judge를 부르지 않는 Fast-Fail로 비용을 줄이고, Judge가 미달로 판정하면 보고서 원문 인용을 요구한다(인용이 없으면 1회 재질의 후 무효). API 키가 없거나 호출이 실패하면 규칙 판정만 쓴다.
   - `main.py`는 최종 품질 평가 결과(통과 여부·미달 항목·미충족 칸·6장 공개 칸)를 출력하고 `final_quality_result.json`으로 저장한다.
 - **확증 편향 방지 전략** :
@@ -80,7 +80,7 @@
 | `supervisor` | A/D | 조정 계층. 새 수집 결과가 있으면 내부에서 근거 검증(R1~R4 규칙 → R5 Judge)을 실행하고, audit issue·품질 재작업 대상·`node_status`·의존성으로 다음 Research Agent 1개 또는 평가 종합을 선택한다. 실제 재작업 dispatch 때만 `retry_count` 증가 | `audit`, `claims[*].status`, `next_agent`, `retry_count`, `step_count`, `last_decision` |
 | `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
 | `report_generation` | E | 검증된 Claim으로 보고서 view 구성 → 근거 문장 필드 번역 → Jinja2 렌더링 | `report` |
-| `quality_eval` | E | 보고서 품질 평가 3안 Hybrid: 1단계 규칙(Groundedness·중립성·편향 통제·관점 커버리지·필수 목차) 통과 시 2단계 LLM Judge(5개 항목 채점), 미달 원인별 재작업 대상 산출 | `quality` |
+| `quality_eval` | E | 3안 Hybrid 품질 평가 결과와 미달 원인·재작업 후보를 State에 기록하며, 다음 Node는 Supervisor가 결정 | `quality` |
 
 
 ## Architecture
@@ -91,10 +91,9 @@
 | 엣지 | 종류 | 결정 주체 |
 | :--- | :--- | :--- |
 | `START → supervisor` | 고정 | — |
-| `supervisor → paper_analysis / market_research / stakeholder_research / evaluation_synthesis` | 조건부 (`route_supervisor`) | Supervisor가 State로 선택한 `next_agent` |
-| `paper_analysis / market_research / stakeholder_research → supervisor` | 고정 | Research Agent는 항상 Supervisor로 복귀 (Agent 간 직접 통신 없음) |
-| `evaluation_synthesis → report_generation → quality_eval` | 고정 | — |
-| `quality_eval → supervisor / report_generation / END` | 조건부 (`route_quality`) | 품질 판정 결과: 재수집 가능 대상 있음 → Supervisor, 서술 문제만 → 재작성, 통과·평가 2회·재수집 대상 한도 소진 → 종료 |
+| `supervisor → 모든 작업 Node / END` | 조건부 (`route_supervisor`) | Supervisor가 현재 State로 `next_agent`를 선택 |
+| `paper_analysis / market_research / stakeholder_research → supervisor` | 고정 | Research Agent는 항상 Supervisor로 복귀 |
+| `evaluation_synthesis / report_generation / quality_eval → supervisor` | 고정 | 보고서 단계도 작업 후 Supervisor로 복귀 |
 
 ### 데이터 흐름 (End-to-End Data Flow)
 파이프라인은 24개 State field(Payload 13 + Control 11)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
@@ -105,9 +104,9 @@
 | **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(실측/시뮬레이션 구분) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
 | **Step 3<br/>시장성 및 이해관계자** | `market_research` 또는<br/>`stakeholder_research` (C) | `selected`<br/>(stakeholder는 `market` State 의존) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 시장 결과 저장 뒤 Supervisor가 dependency를 확인하여 이해관계자 작업을 선택 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
 | **Step 4<br/>Supervisor audit & routing** | `supervisor` (A/D) | `claims`, `evidence`, `sources`, control State | • R1~R5 audit 후 current State에서 한 Agent만 선택<br/>• 실제 retry dispatch만 count하며 market refresh는 stakeholder를 stale 처리 | `audit.issues`, `next_agent`, `retry_count`, `node_status` |
-| **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
-| **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • 검증된 Claim으로 보고서 view 구성, 본문 인용 번호와 REFERENCE를 일치시킴<br/>• LLM(`gpt-4o`)은 근거 문장 필드만 번역, Jinja2 템플릿이 최종 마크다운 렌더링<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
-| **Step 7<br/>보고서 품질 평가** | `quality_eval` | `report`, `claims`, `evidence`, `sources`, `retry_count` | • 1단계 규칙: Groundedness·중립성·편향 통제·관점 커버리지·필수 목차 판정<br/>• 규칙 통과 시 2단계 LLM Judge가 본문 5개 항목 채점<br/>• 재수집 가능 대상 있음 → Supervisor, 서술 문제만 → `report_generation`, 통과·2회 평가·재수집 대상 한도 소진 → 종료 | `quality` → `final_quality_result.json` |
+| **Step 5<br/>TRL 이원화 & 종합** | `supervisor → evaluation_synthesis → supervisor` (E/A) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
+| **Step 6<br/>보고서 생성 & 산출** | `supervisor → report_generation → supervisor` (E/A) | 전체 누적 State | • 검증된 Claim으로 보고서 view 구성, 근거 문장 필드 번역 및 Jinja2 렌더링<br/>• Markdown/PDF 자동 변환 | `report`,<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
+| **Step 7<br/>보고서 품질 평가** | `supervisor → quality_eval → supervisor` (E/A) | `report`, `claims`, `evidence`, `sources`, `retry_count` | • 1단계 규칙과 2단계 LLM Judge로 품질 판정<br/>• Supervisor가 재수집·보고서 재작성·종료를 선택 | `quality` → `final_quality_result.json` |
 
 
 ## State Schema

@@ -68,7 +68,9 @@ def test_judge_returns_none_on_call_failure(judge_llm):
     assert run_report_judge(REPORT, MOCK_STATE) is None
 
 
-def test_quality_node_runs_judge_after_rules_pass(judge_llm, rules_pass):
+def test_quality_node_runs_judge_after_rules_pass(judge_llm, rules_pass, monkeypatch):
+    import src.supervisor as supervisor
+
     judge_llm.invoke.return_value = _verdict(
         neutrality=JudgeItem(score=2, reason="정규식 밖 우열 뉘앙스", quotes=["KIVI는 CXL-PNM에 비해 압도적으로 실용적인 선택지다."]))
     result = quality.quality_evaluation_node(rules_pass)["quality"]
@@ -76,7 +78,11 @@ def test_quality_node_runs_judge_after_rules_pass(judge_llm, rules_pass):
     assert result["passed"] is False
     assert result["failures"] == ["judge_neutrality"]
     assert result["rework_targets"] == []  # 서술 문제는 재수집 대상이 아니다
-    assert quality.route_quality({"quality": result}) == "report_generation"
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
+    state = {**rules_pass, "quality": result, "node_status": {
+        "paper": "complete", "market": "complete", "stakeholder": "complete",
+        "synthesis": "complete", "report": "complete", "quality": "complete"}}
+    assert supervisor.supervisor_node(state)["next_agent"] == "report_generation"
 
 
 def test_quality_node_passes_when_rules_and_judge_pass(judge_llm, rules_pass):

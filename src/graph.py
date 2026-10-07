@@ -7,7 +7,7 @@ from src.research.stakeholder import stakeholder_research_node
 from src.supervisor import supervisor_node, route_supervisor
 from src.synthesis.evaluator import evaluation_synthesis_node
 from src.synthesis.report_gen import report_generation_node
-from src.synthesis.quality import quality_evaluation_node, route_quality
+from src.synthesis.quality import quality_evaluation_node
 
 
 def _supervised(node, agent: str):
@@ -33,6 +33,20 @@ def _supervised(node, agent: str):
     return wrapped
 
 
+def _supervised_stage(node, stage: str):
+    """Record report-pipeline progress before returning to Supervisor."""
+    def wrapped(state: OverallState) -> dict:
+        result = node(state)
+        status = dict(state.get("node_status") or {})
+        status[stage] = "complete"
+        if stage == "synthesis":
+            status.update({"report": "stale", "quality": "stale"})
+        elif stage == "report":
+            status["quality"] = "stale"
+        return {**result, "node_status": status}
+    return wrapped
+
+
 def build_evaluation_graph(checkpointer=None):
     """Builds compiled StateGraph conforming to LangGraph 1.2.12 anti-pattern rules."""
     builder = StateGraph(OverallState)
@@ -42,13 +56,14 @@ def build_evaluation_graph(checkpointer=None):
     builder.add_node("paper_analysis", _supervised(paper_analysis_node, "paper"))
     builder.add_node("market_research", _supervised(market_research_node, "market"))
     builder.add_node("stakeholder_research", _supervised(stakeholder_research_node, "stakeholder"))
-    builder.add_node("evaluation_synthesis", evaluation_synthesis_node)
-    builder.add_node("report_generation", report_generation_node)
-    builder.add_node("quality_eval", quality_evaluation_node)
+    builder.add_node("evaluation_synthesis", _supervised_stage(evaluation_synthesis_node, "synthesis"))
+    builder.add_node("report_generation", _supervised_stage(report_generation_node, "report"))
+    builder.add_node("quality_eval", _supervised_stage(quality_evaluation_node, "quality"))
 
     builder.add_edge(START, "supervisor")
-    for agent in ("paper_analysis", "market_research", "stakeholder_research"):
-        builder.add_edge(agent, "supervisor")
+    for node in ("paper_analysis", "market_research", "stakeholder_research",
+                 "evaluation_synthesis", "report_generation", "quality_eval"):
+        builder.add_edge(node, "supervisor")
     builder.add_conditional_edges(
         "supervisor", route_supervisor,
         {
@@ -56,13 +71,10 @@ def build_evaluation_graph(checkpointer=None):
             "market_research": "market_research",
             "stakeholder_research": "stakeholder_research",
             "evaluation_synthesis": "evaluation_synthesis",
+            "report_generation": "report_generation",
+            "quality_eval": "quality_eval",
+            "END": END,
         },
     )
-
-    builder.add_edge("evaluation_synthesis", "report_generation")
-    builder.add_edge("report_generation", "quality_eval")
-    builder.add_conditional_edges("quality_eval", route_quality, {
-        "supervisor": "supervisor", "report_generation": "report_generation", "END": END,
-    })
 
     return builder.compile(checkpointer=checkpointer)

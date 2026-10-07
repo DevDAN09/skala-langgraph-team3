@@ -1,13 +1,41 @@
 """State-driven supervisor for research selection and evidence rework."""
 from src.audit.auditor import RETRY_LIMIT, evidence_audit_node, finalize_retry_statuses
 from src.state import OverallState
+from src.synthesis.quality import MAX_QUALITY_ATTEMPTS
 
 MAX_STEPS = 10
+DATA_QUALITY_FAILURES = {"groundedness", "coverage", "bias_control"}
 RESEARCH_AGENTS = ("paper", "market", "stakeholder")
 NODE_NAMES = {
     "paper": "paper_analysis", "market": "market_research",
     "stakeholder": "stakeholder_research",
 }
+
+
+def _decision(next_node: str, reason: str, **updates) -> dict:
+    return {**updates, "next_agent": next_node,
+            "last_decision": {"next": next_node, "reason": reason}}
+
+
+def _post_research_decision(state: OverallState) -> dict:
+    status = state.get("node_status") or {}
+    quality = state.get("quality") or {}
+    if status.get("synthesis") != "complete":
+        return _decision("evaluation_synthesis", "research_complete")
+    if status.get("report") != "complete":
+        return _decision("report_generation", "synthesis_complete")
+    if status.get("quality") != "complete":
+        return _decision("quality_eval", "report_complete")
+    if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
+        return _decision("END", "quality_passed" if quality.get("passed") else "quality_limit")
+    if quality.get("rework_targets"):
+        return _decision("evaluation_synthesis", "quality_research_exhausted")
+    failures = set(quality.get("failures") or [])
+    if failures and not failures - DATA_QUALITY_FAILURES:
+        return _decision("END", "quality_research_exhausted")
+    status = dict(status)
+    status.update({"report": "stale", "quality": "stale"})
+    return _decision("report_generation", "quality_report_rewrite", node_status=status)
 
 
 def _issues(state: OverallState) -> list[dict]:
@@ -42,21 +70,29 @@ def select_agent(candidates: list[str], state: OverallState) -> str:
 
 
 def supervisor_node(state: OverallState) -> dict:
-    """Audit evidence and select one eligible research agent or synthesis."""
+    """Own every orchestration decision from research through quality termination."""
     step = state.get("step_count", 0)
     audit_result = evidence_audit_node(state) if state.get("last_audited_step", -1) != step else {}
     audited = {**state, **audit_result}
     if step >= MAX_STEPS:
         retries = {agent: RETRY_LIMIT for agent in RESEARCH_AGENTS}
-        return {**audit_result, "last_audited_step": step, "claims": finalize_retry_statuses(state.get("claims", []), _issues(audited), retries), "next_agent": "evaluation_synthesis", "last_decision": {"next": "evaluation_synthesis", "reason": "max_steps"}}
+        finalized = {**audited, "claims": finalize_retry_statuses(
+            state.get("claims", []), _issues(audited), retries)}
+        return {**audit_result, "last_audited_step": step,
+                "claims": finalized["claims"],
+                **_post_research_decision(finalized)}
     candidates = _candidates(audited)
     if not candidates:
+        finalized = {
+            **audited,
+            "claims": finalize_retry_statuses(
+                audited.get("claims", []), _issues(audited), state.get("retry_count") or {}),
+        }
         return {
             **audit_result,
             "last_audited_step": step,
-            "claims": finalize_retry_statuses(audited.get("claims", []), _issues(audited), state.get("retry_count") or {}),
-            "next_agent": "evaluation_synthesis",
-            "last_decision": {"next": "evaluation_synthesis", "reason": "sufficient_or_exhausted"},
+            "claims": finalized["claims"],
+            **_post_research_decision(finalized),
         }
 
     selected = select_agent(candidates, audited)
@@ -65,7 +101,11 @@ def supervisor_node(state: OverallState) -> dict:
     targeted = audit_targets | quality_targets
     retry_count = dict(state.get("retry_count") or {})
     reason = "audit" if selected in audit_targets else "quality" if selected in quality_targets else "initial"
-    result = {**audit_result, "last_audited_step": step, "next_agent": NODE_NAMES[selected], "step_count": step + 1, "last_decision": {"next": NODE_NAMES[selected], "reason": reason}}
+    status = dict(state.get("node_status") or {})
+    status.update({"synthesis": "stale", "report": "stale", "quality": "stale"})
+    result = {**audit_result, "last_audited_step": step, "next_agent": NODE_NAMES[selected],
+              "step_count": step + 1, "node_status": status,
+              "last_decision": {"next": NODE_NAMES[selected], "reason": reason}}
     if selected in targeted and (state.get("node_status") or {}).get(selected) == "complete":
         retry_count[selected] = retry_count.get(selected, 0) + 1
         result["retry_count"] = retry_count
