@@ -74,4 +74,4 @@ def route_quality(state: OverallState) -> str:
     if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
         return "END"
     failures = set(quality.get("failures") or [])
-    return "supervisor" if quality.get("rework_targets") or set(quality.get("failures", [])) & {"groundedness", "coverage", "bias_control"} else "report_generation"
+    return "supervisor" if quality.get("rework_targets") or failures & {"groundedness", "coverage", "bias_control"} else "report_generation"
