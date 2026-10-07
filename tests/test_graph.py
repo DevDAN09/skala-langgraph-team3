@@ -264,7 +264,9 @@ def test_compiled_graph_quality_research_rework_returns_through_supervisor(monke
 
 def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():
     assert route_quality({"quality": {"passed": False, "failures": ["coverage"], "attempts": 1}}) == "supervisor"
-    assert route_quality({"quality": {"passed": False, "failures": ["REFERENCES"], "attempts": 1}}) == "report_generation"
+    # 재수집 대상이 없는 서술·형식 미달은 같은 보고서만 다시 나오므로 재작성하지 않고 종료 (#70)
+    assert route_quality({"quality": {"passed": False, "failures": ["REFERENCES"], "attempts": 1}}) == "END"
+    assert route_quality({"quality": {"passed": False, "failures": ["neutrality"], "attempts": 1}}) == "END"
     assert route_quality({"quality": {"passed": True, "failures": [], "attempts": 1}}) == "END"
 
 

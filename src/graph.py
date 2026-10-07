@@ -62,7 +62,7 @@ def build_evaluation_graph(checkpointer=None):
     builder.add_edge("evaluation_synthesis", "report_generation")
     builder.add_edge("report_generation", "quality_eval")
     builder.add_conditional_edges("quality_eval", route_quality, {
-        "supervisor": "supervisor", "report_generation": "report_generation", "END": END,
+        "supervisor": "supervisor", "END": END,
     })
 
     return builder.compile(checkpointer=checkpointer)

@@ -86,9 +86,9 @@ tech_trl은 개별 기술의 원문 연구 단계, family_trl은 기술 계열�
   - {{ item.tech }}: {{ claim_line(item) }}
 {% endfor %}
 {% endif %}
-- **배포 장벽** (반대 근거 검색 요약, Claim 단위 출처 매핑이 보존되지 않아 인용 번호를 붙이지 않는다)
+- **배포 장벽** (반대 근거 검색 요약)
 {% for barrier in market_view.barriers %}
-  - {{ barrier }}
+  - {{ barrier.text }}{{ cite(barrier.ev) }}
 {% else %}
   - 반대 근거 미확인
 {% endfor %}
@@ -147,6 +147,9 @@ tech_trl은 개별 기술의 원문 연구 단계, family_trl은 기술 계열�
 {% else %}
 - 미확인 Claim이 없다.
 {% endfor %}
+{% if gap_groups %}
+- **미확인 사유**: 위 항목은 지지 질의와 반대 질의를 모두 수행하고, 근거 검증에서 부족 판정을 받은 관점은 재조사(최대 2회)까지 거쳤으나 인용 가능한 공개 근거를 찾지 못한 경우다. 특히 이해관계자 반응은 개별 Actor의 공개 발언이 드물어 확인되지 않은 칸이 많다. 근거 미확인은 해당 반응·채택이 없다는 뜻이 아니며, 두 기술의 근거 수 차이는 우열이 아니라 공개 자료 양의 차이다.
+{% endif %}
 
 ### 6.2 분석 범위와 해석 제약
 

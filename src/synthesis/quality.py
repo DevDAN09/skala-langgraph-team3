@@ -128,4 +128,8 @@ def route_quality(state: OverallState) -> str:
     if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
         return "END"
     failures = set(quality.get("failures") or [])
-    return "supervisor" if quality.get("rework_targets") or failures & {"groundedness", "coverage", "bias_control"} else "report_generation"
+    if quality.get("rework_targets") or failures & {"groundedness", "coverage", "bias_control"}:
+        return "supervisor"
+    # 보고서는 템플릿 + 필드 번역이라 같은 State로 다시 만들면 같은 결과가 나온다 (#70).
+    # 근거를 바꿀 재수집 대상이 없는 서술·형식 미달은 재작성 대신 결과를 남기고 종료한다.
+    return "END"

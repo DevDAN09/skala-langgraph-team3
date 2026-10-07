@@ -76,6 +76,10 @@ def main():
         else:
             print(f"⚠️ [Fallback] PDF 생성 실패로 마크다운 보고서가 유지됩니다: {REPORT_MD_PATH}")
         print(f"📝 마크다운 원본 경로: {REPORT_MD_PATH}")
+        quality = final_state.get("quality") or {}
+        print(f"🔎 품질 평가: {'통과' if quality.get('passed') else '미달'} (시도 {quality.get('attempts')}회, "
+              f"실패 {quality.get('failures') or '없음'}, 공개된 Gap {quality.get('disclosed_gaps') or '없음'}) "
+              f"· retry_count={final_state.get('retry_count')}")
         print("=" * 70)
         return 0
     except Exception as e:
