@@ -887,3 +887,51 @@ def test_evidence_audit_node_target_agent_mapping_bug_repro():
     assert by_claim["STK-01"]["target_agent"] == "stakeholder"
     assert by_claim["MAT-R01"]["target_agent"] == "paper"
     assert result["retry_count"] == {"paper": 0, "market": 0, "stakeholder": 0}
+
+
+def _judge_fixture_claim(statement="KIVI reduces peak memory by 2.6x."):
+    claim = {"id": "DOM-01", "perspective": "domain", "tech": "KIVI", "statement": statement,
+             "kind": "fact", "evidence_ids": ["EV-C1"], "status": "ok"}
+    evidence = [{"evidence_id": "EV-C1", "source_id": "SRC-C1", "snippet": "KIVI reduces peak memory usage by 2.6x."}]
+    return claim, evidence
+
+
+def test_run_llm_judge_reuses_verdict_for_unchanged_claim():
+    """#77: Supervisor가 여러 번 검증해도 바뀌지 않은 Claim은 LLM을 한 번만 호출한다."""
+    claim, evidence = _judge_fixture_claim()
+    mock_llm = MagicMock()
+    mock_llm.invoke.return_value = JudgeDecision(is_grounded=True, reason="ok")
+    with patch("src.audit.judge.OPENAI_API_KEY", "test-key"), \
+         patch("src.audit.judge.ChatOpenAI") as chat:
+        chat.return_value.with_structured_output.return_value = mock_llm
+        for _ in range(3):
+            assert run_llm_judge([claim], evidence) == []
+    assert mock_llm.invoke.call_count == 1
+
+
+def test_run_llm_judge_rejudges_when_statement_changes():
+    """#77: 재작업으로 statement가 바뀌면 캐시를 쓰지 않고 다시 판정한다."""
+    claim, evidence = _judge_fixture_claim()
+    mock_llm = MagicMock()
+    mock_llm.invoke.side_effect = [JudgeDecision(is_grounded=False, reason="mismatch"),
+                                   JudgeDecision(is_grounded=True, reason="ok")]
+    with patch("src.audit.judge.OPENAI_API_KEY", "test-key"), \
+         patch("src.audit.judge.ChatOpenAI") as chat:
+        chat.return_value.with_structured_output.return_value = mock_llm
+        assert [i["rule"] for i in run_llm_judge([claim], evidence)] == ["R5"]
+        fixed = {**claim, "statement": "KIVI reduces peak memory usage by 2.6x."}
+        assert run_llm_judge([fixed], evidence) == []
+    assert mock_llm.invoke.call_count == 2
+
+
+def test_run_llm_judge_does_not_cache_failed_calls():
+    """#77: 호출 실패(fallback)는 캐시하지 않아 다음 검증에서 다시 시도한다."""
+    claim, evidence = _judge_fixture_claim()
+    mock_llm = MagicMock()
+    mock_llm.invoke.side_effect = [RuntimeError("timeout"), JudgeDecision(is_grounded=False, reason="mismatch")]
+    with patch("src.audit.judge.OPENAI_API_KEY", "test-key"), \
+         patch("src.audit.judge.ChatOpenAI") as chat:
+        chat.return_value.with_structured_output.return_value = mock_llm
+        assert run_llm_judge([claim], evidence) == []
+        assert [i["rule"] for i in run_llm_judge([claim], evidence)] == ["R5"]
+    assert mock_llm.invoke.call_count == 2

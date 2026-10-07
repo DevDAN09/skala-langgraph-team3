@@ -1,7 +1,8 @@
-"""Deterministic post-generation report quality gate."""
+"""Post-generation report quality gate: deterministic rules, then LLM Judge (3안 Hybrid)."""
 import re
 from src.audit.auditor import RETRY_LIMIT
 from src.state import OverallState
+from src.synthesis.quality_judge import run_report_judge
 
 MAX_QUALITY_ATTEMPTS = 2
 
@@ -38,26 +39,21 @@ def _source_diversity_ok(claims: list[dict], evidence: dict, sources: dict) -> b
     return True
 
 
-def _coverage_gaps(verified: list[dict]) -> tuple[set[str], list[str]]:
-    targets: set[str] = set()
+def _coverage_gaps(verified: list[dict]) -> list[str]:
     gaps: list[str] = []
     for tech in ("KIVI", "CXL-PNM"):
         if not any(c.get("perspective") == "maturity" and c.get("tech") == tech for c in verified):
-            targets.add("paper")
             gaps.append(f"maturity:{tech}")
         if not any(c.get("perspective") == "market" and c.get("tech") == tech for c in verified):
-            targets.add("market")
             gaps.append(f"market:{tech}")
         count = sum(c.get("perspective") == "domain" and c.get("tech") == tech for c in verified)
         if count < 3:
-            targets.add("paper")
             gaps.append(f"domain:{tech}({count}/3)")
     valid_ids = {c.get("id") for c in verified}
     for actor, claim_ids in _ACTOR_CLAIMS.items():
         if not valid_ids.intersection(claim_ids):
-            targets.add("stakeholder")
             gaps.append(f"stakeholder:{actor}")
-    return targets, gaps
+    return gaps
 
 
 _GAP_OWNER = {"maturity": "paper", "market": "market", "domain": "paper", "stakeholder": "stakeholder"}
@@ -69,6 +65,14 @@ _ACTOR_CLAIMS = {
 }
 
 
+def _claim_owner(claim_id: str) -> str | None:
+    """MAT-A(채택 성숙도)는 market이, MAT-R(연구 성숙도)·DOM은 paper가 만든다."""
+    for prefix, agent in (("MAT-A", "market"), ("MKT-", "market"), ("STK-", "stakeholder"), ("MAT-R", "paper"), ("DOM-", "paper")):
+        if claim_id.startswith(prefix):
+            return agent
+    return None
+
+
 def _gap_claim_ids(gap: str, claims: list[dict]) -> set[str]:
     """coverage gap 문자열(maturity:KIVI, domain:KIVI(2/3), stakeholder:end_user)에 해당하는 Claim ID."""
     perspective, _, rest = gap.partition(":")
@@ -78,12 +82,18 @@ def _gap_claim_ids(gap: str, claims: list[dict]) -> set[str]:
     return {c.get("id") for c in claims if c.get("perspective") == perspective and c.get("tech") == tech}
 
 
+def _gap_owners(gap: str, claims: list[dict]) -> set[str]:
+    """빈 칸을 채울 수 있는 연구 에이전트. 해당 칸의 Claim을 만든 에이전트를 우선한다."""
+    owners = {_claim_owner(cid) for cid in _gap_claim_ids(gap, claims) if cid} - {None}
+    return owners or {_GAP_OWNER[gap.partition(":")[0]]}
+
+
 def _disclosed_after_retries(gaps: list[str], claims: list[dict], report: str, retry_count: dict) -> list[str]:
     """재수집 기회를 다 쓰고도 근거가 없어 6장 Evidence Gap에 공개된 칸.
     공개 근거가 없는 것은 편향이 아니라 한계이므로, 이 칸은 coverage 미달로 보지 않는다."""
     gap_text = report.split("## 6", 1)[1].split("## REFERENCE", 1)[0] if "## 6" in report else ""
     return [gap for gap in gaps
-            if retry_count.get(_GAP_OWNER[gap.partition(":")[0]], 0) >= RETRY_LIMIT
+            if all(retry_count.get(owner, 0) >= RETRY_LIMIT for owner in _gap_owners(gap, claims))
             and any(cid and cid in gap_text for cid in _gap_claim_ids(gap, claims))]
 
 
@@ -96,40 +106,50 @@ def quality_evaluation_node(state: OverallState) -> dict:
     claims = state.get("claims", [])
     verified = [claim for claim in claims if claim.get("status") == "ok"]
     grounded = bool(verified) and all(claim.get("evidence_ids") and all(evidence.get(eid, {}).get("source_id") in sources for eid in claim["evidence_ids"]) for claim in verified)
-    coverage_targets, coverage_gaps = _coverage_gaps(verified)
-    disclosed_gaps = _disclosed_after_retries(coverage_gaps, claims, report, state.get("retry_count") or {})
+    retry_count = state.get("retry_count") or {}
+    coverage_gaps = _coverage_gaps(verified)
+    disclosed_gaps = _disclosed_after_retries(coverage_gaps, claims, report, retry_count)
     coverage_gaps = [gap for gap in coverage_gaps if gap not in disclosed_gaps]
-    coverage_targets = {_GAP_OWNER[gap.partition(":")[0]] for gap in coverage_gaps}
     coverage = not coverage_gaps
     neutrality = _neutral(report)
-    counter_required = [claim for claim in claims if claim.get("perspective") in {"market", "stakeholder"} or claim.get("id", "").startswith("MAT-A")]
-    bias_control = all(claim.get("counter_searched") for claim in counter_required) and _source_diversity_ok(claims, evidence, sources)
-    scores = {"groundedness": grounded, "neutrality": neutrality, "bias_control": bias_control, "coverage": coverage}
+    # 반대 쿼리 수행(counter_searched)은 Supervisor 근거 검증 R3가 이미 보장한다. 여기서는 출처 다양성만 본다.
+    diverse = _source_diversity_ok(claims, evidence, sources)
+    scores = {"groundedness": grounded, "neutrality": neutrality, "bias_control": diverse, "coverage": coverage}
     failures = [key for key, passed in scores.items() if not passed] + missing
+    # 규칙 미달이면 Judge를 부르지 않는다 (Fast-Fail). Judge 미달은 보고서 서술 문제라 rework_targets를 만들지 않는다.
+    judge = None if failures else run_report_judge(report, state)
+    if judge:
+        failures += [f"judge_{name}" for name, item in judge.items() if not item["passed"]]
     rework_targets = set()
     owner = {"maturity": "paper", "domain": "paper", "market": "market", "stakeholder": "stakeholder"}
     for claim in verified:
-        if not claim.get("evidence_ids") or not all(evidence.get(eid, {}).get("source_id") in sources for eid in claim["evidence_ids"]): rework_targets.add(owner.get(claim.get("perspective"), "paper"))
-    for claim in counter_required:
-        if not claim.get("counter_searched"): rework_targets.add(owner.get(claim.get("perspective"), "market"))
-    if not _source_diversity_ok(claims, evidence, sources):
-        for claim in verified:
-            if claim.get("perspective") in {"market", "stakeholder"} or claim.get("id", "").startswith("MAT-A"):
-                rework_targets.add("market" if claim.get("id", "").startswith("MAT-A") else owner[claim["perspective"]])
-    rework_targets.update(coverage_targets)
+        if not claim.get("evidence_ids") or not all(evidence.get(eid, {}).get("source_id") in sources for eid in claim["evidence_ids"]):
+            rework_targets.add(_claim_owner(claim.get("id", "")) or owner.get(claim.get("perspective"), "paper"))
+    if not diverse:
+        rework_targets.update(_claim_owner(c.get("id", "")) or owner[c["perspective"]] for c in verified
+                              if c.get("perspective") in {"market", "stakeholder"} or c.get("id", "").startswith("MAT-A"))
+    for gap in coverage_gaps:
+        rework_targets.update(_gap_owners(gap, claims))
+    # 재시도 한도를 다 쓴 에이전트는 Supervisor가 고를 수 없으므로 재수집 요청에서 뺀다.
+    exhausted = sorted(agent for agent in rework_targets if retry_count.get(agent, 0) >= RETRY_LIMIT)
+    rework_targets -= set(exhausted)
     attempts = (state.get("quality") or {}).get("attempts", 0)
+    method = "rules" if judge is None else "hybrid"
     return {"quality": {"passed": not failures, "scores": scores, "failures": failures,
+                        "method": method, "judge": judge,
                         "coverage_gaps": coverage_gaps, "disclosed_gaps": disclosed_gaps,
-                        "rework_targets": sorted(rework_targets), "attempts": attempts + 1}}
+                        "rework_targets": sorted(rework_targets), "exhausted_targets": exhausted,
+                        "attempts": attempts + 1}}
 
 
 def route_quality(state: OverallState) -> str:
+    """재수집 가능한 대상이 있으면 Supervisor, 그 외에는 종료한다.
+    재수집 한도에 도달했거나 서술·형식만 미달이면 같은 State로 다시 돌아도 결과가 같으므로 종료한다 (#70)."""
     quality = state.get("quality") or {}
     if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
         return "END"
-    failures = set(quality.get("failures") or [])
-    if quality.get("rework_targets") or failures & {"groundedness", "coverage", "bias_control"}:
+    if quality.get("rework_targets"):
         return "supervisor"
     # 보고서는 템플릿 + 필드 번역이라 같은 State로 다시 만들면 같은 결과가 나온다 (#70).
-    # 근거를 바꿀 재수집 대상이 없는 서술·형식 미달은 재작성 대신 결과를 남기고 종료한다.
+    # 재수집 대상이 없는 미달(서술·형식 포함)은 재작성 대신 결과를 남기고 종료한다.
     return "END"

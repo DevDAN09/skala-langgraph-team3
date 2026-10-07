@@ -1,3 +1,4 @@
+import json
 import pytest
 import main
 from tests.mock_data import INITIAL_INPUT_STATE
@@ -19,15 +20,18 @@ def test_main_writes_report_from_state(monkeypatch, tmp_path):
     """보고서 파일은 main.py가 State의 report 문자열로 기록한다 (E 노드는 문자열만 반환)."""
     class Graph:
         def invoke(self, state, config=None):
-            return {"report": "# stub report"}
+            return {"report": "# stub report", "quality": {"passed": False, "failures": ["coverage"], "attempts": 2}}
 
     out = tmp_path / "final_evaluation_report.md"
+    quality_out = tmp_path / "final_quality_result.json"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out)
     monkeypatch.setattr(main, "REPORT_MD_PATH", tmp_path / "final_evaluation_report_backup.md")
+    monkeypatch.setattr(main, "QUALITY_RESULT_PATH", quality_out)
     monkeypatch.setattr(main, "build_evaluation_graph", lambda **_kwargs: Graph())
 
     assert main.main() == 0
     assert out.read_text(encoding="utf-8") == "# stub report"
+    assert json.loads(quality_out.read_text(encoding="utf-8"))["failures"] == ["coverage"]
 
 
 def test_main_writes_pdf_report_from_state(monkeypatch, tmp_path):
@@ -40,6 +44,7 @@ def test_main_writes_pdf_report_from_state(monkeypatch, tmp_path):
     out_md = tmp_path / "final_evaluation_report.md"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out_pdf)
     monkeypatch.setattr(main, "REPORT_MD_PATH", out_md)
+    monkeypatch.setattr(main, "QUALITY_RESULT_PATH", tmp_path / "final_quality_result.json")
     monkeypatch.setattr(main, "build_evaluation_graph", lambda **_kwargs: Graph())
 
     assert main.main() == 0

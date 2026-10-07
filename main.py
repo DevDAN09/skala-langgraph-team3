@@ -1,9 +1,10 @@
 """main.py - Non-interactive Multi-Agent System Entry Point"""
+import json
 import sys
 import time
 import uuid
 from langgraph.checkpoint.memory import InMemorySaver
-from src.config import REPORT_OUTPUT_PATH, REPORT_MD_PATH
+from src.config import QUALITY_RESULT_PATH, REPORT_OUTPUT_PATH, REPORT_MD_PATH
 from src.graph import build_evaluation_graph
 from src.synthesis.pdf_export import convert_markdown_to_pdf
 
@@ -59,6 +60,8 @@ def main():
 
         # Markdown 원본 보존
         REPORT_MD_PATH.write_text(final_state["report"], encoding="utf-8")
+        quality = final_state.get("quality") or {}
+        QUALITY_RESULT_PATH.write_text(json.dumps(quality, ensure_ascii=False, indent=2), encoding="utf-8")
 
         # PDF 변환 및 산출물 생성 (Graceful Fallback 지원)
         pdf_success = False
@@ -76,10 +79,10 @@ def main():
         else:
             print(f"⚠️ [Fallback] PDF 생성 실패로 마크다운 보고서가 유지됩니다: {REPORT_MD_PATH}")
         print(f"📝 마크다운 원본 경로: {REPORT_MD_PATH}")
-        quality = final_state.get("quality") or {}
-        print(f"🔎 품질 평가: {'통과' if quality.get('passed') else '미달'} (시도 {quality.get('attempts')}회, "
-              f"실패 {quality.get('failures') or '없음'}, 공개된 Gap {quality.get('disclosed_gaps') or '없음'}) "
-              f"· retry_count={final_state.get('retry_count')}")
+        print(f"🧪 품질 평가: {'통과' if quality.get('passed') else '미달'} "
+              f"(시도 {quality.get('attempts', 0)}회, 미달 항목 {quality.get('failures') or '-'}, "
+              f"미충족 칸 {quality.get('coverage_gaps') or '-'}, 6장 공개 칸 {quality.get('disclosed_gaps') or '-'})")
+        print(f"🧪 품질 평가 결과 경로: {QUALITY_RESULT_PATH}")
         print("=" * 70)
         return 0
     except Exception as e:
