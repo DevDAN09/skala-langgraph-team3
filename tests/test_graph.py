@@ -281,31 +281,100 @@ def test_compiled_graph_quality_research_rework_returns_through_supervisor(monke
 
 def test_compiled_graph_quality_report_rewrite_returns_through_supervisor(monkeypatch):
     import src.graph as graph_module
+
     calls = []
-    monkeypatch.setattr(graph_module, "paper_analysis_node", lambda state: calls.append("paper") or {})
-    monkeypatch.setattr(graph_module, "market_research_node", lambda state: calls.append("market") or {})
-    monkeypatch.setattr(graph_module, "stakeholder_research_node", lambda state: calls.append("stakeholder") or {})
-    monkeypatch.setattr(graph_module, "evaluation_synthesis_node", lambda state: calls.append("synthesis") or {})
-    monkeypatch.setattr(graph_module, "report_generation_node", lambda state: calls.append("report") or {"report": "# SUMMARY\n# REFERENCE"})
-    outcomes = iter((
-        {"quality": {"passed": False, "failures": ["neutrality"], "rework_targets": [], "attempts": 1}},
-        {"quality": {"passed": True, "failures": [], "rework_targets": [], "attempts": 2}},
-    ))
-    monkeypatch.setattr(graph_module, "quality_evaluation_node", lambda state: calls.append("quality") or next(outcomes))
+    monkeypatch.setattr(
+        graph_module,
+        "paper_analysis_node",
+        lambda state: calls.append("paper") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "market_research_node",
+        lambda state: calls.append("market") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "stakeholder_research_node",
+        lambda state: calls.append("stakeholder") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "evaluation_synthesis_node",
+        lambda state: calls.append("synthesis") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "report_generation_node",
+        lambda state: calls.append("report")
+        or {"report": "# SUMMARY\n# REFERENCE"},
+    )
+
+    outcomes = iter(
+        (
+            {
+                "quality": {
+                    "passed": False,
+                    "failures": ["neutrality"],
+                    "rework_targets": [],
+                    "exhausted_targets": [],
+                    "attempts": 1,
+                }
+            },
+            {
+                "quality": {
+                    "passed": True,
+                    "failures": [],
+                    "rework_targets": [],
+                    "exhausted_targets": [],
+                    "attempts": 2,
+                }
+            },
+        )
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "quality_evaluation_node",
+        lambda state: calls.append("quality") or next(outcomes),
+    )
+
     final = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
-    assert calls.count("report") == 2 and calls.count("quality") == 2
-    assert final["quality"]["passed"] is True and final["next_agent"] == "END"
+
+    assert calls.count("report") == 2
+    assert calls.count("quality") == 2
+    assert final["quality"]["passed"] is True
+    assert final["next_agent"] == "END"
 
 
 def test_supervisor_routes_quality_writing_failure_through_report(monkeypatch):
     import src.supervisor as supervisor
-    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
-    state = {**MOCK_STATE,
-             "quality": {"passed": False, "failures": ["REFERENCE"], "attempts": 1,
-                         "rework_targets": []},
-             "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete",
-                             "synthesis": "complete", "report": "complete", "quality": "complete"}}
+
+    monkeypatch.setattr(
+        supervisor,
+        "evidence_audit_node",
+        lambda state: {"audit": {"issues": []}},
+    )
+    state = {
+        **MOCK_STATE,
+        "quality": {
+            "passed": False,
+            "failures": ["REFERENCE"],
+            "rework_targets": [],
+            "exhausted_targets": [],
+            "attempts": 1,
+        },
+        "node_status": {
+            "paper": "complete",
+            "market": "complete",
+            "stakeholder": "complete",
+            "synthesis": "complete",
+            "report": "complete",
+            "quality": "complete",
+        },
+    }
+
     result = supervisor_node(state)
+
     assert result["next_agent"] == "report_generation"
     assert result["last_decision"]["reason"] == "quality_report_rewrite"
     assert result["node_status"]["quality"] == "stale"
@@ -313,15 +382,40 @@ def test_supervisor_routes_quality_writing_failure_through_report(monkeypatch):
 
 def test_supervisor_stops_quality_research_rework_at_retry_limit(monkeypatch):
     import src.supervisor as supervisor
-    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
-    state = {**MOCK_STATE,
-             "quality": {"passed": False, "failures": ["coverage"], "attempts": 1,
-                         "rework_targets": ["paper"]},
-             "retry_count": {"paper": 2, "market": 0, "stakeholder": 0},
-             "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete",
-                             "synthesis": "complete", "report": "complete", "quality": "complete"}}
+
+    monkeypatch.setattr(
+        supervisor,
+        "evidence_audit_node",
+        lambda state: {"audit": {"issues": []}},
+    )
+    state = {
+        **MOCK_STATE,
+        "quality": {
+            "passed": False,
+            "failures": ["coverage"],
+            "rework_targets": [],
+            "exhausted_targets": ["paper"],
+            "attempts": 1,
+        },
+        "retry_count": {
+            "paper": 2,
+            "market": 0,
+            "stakeholder": 0,
+        },
+        "node_status": {
+            "paper": "complete",
+            "market": "complete",
+            "stakeholder": "complete",
+            "synthesis": "complete",
+            "report": "complete",
+            "quality": "complete",
+        },
+    }
+
     result = supervisor_node(state)
-    assert result["next_agent"] == "evaluation_synthesis"
+
+    assert result["next_agent"] == "END"
+    assert result["last_decision"]["reason"] == "quality_research_exhausted"
     assert result.get("retry_count", state["retry_count"]) == state["retry_count"]
 
 
@@ -354,3 +448,75 @@ def test_quality_accepts_coverage_gap_disclosed_after_retries_exhausted():
 
     undisclosed = {**state, "report": report.replace("- **[MKT-01]** 공개 근거 미확인", "- 없음"), "retry_count": {"market": 2}}
     assert "market:KIVI" in quality_evaluation_node(undisclosed)["quality"]["coverage_gaps"]
+
+
+def test_quality_bias_control_does_not_recheck_counter_search():
+    """#73-1: counter_searched는 근거 검증 R3가 보장하므로 품질 평가는 출처 다양성만 본다."""
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [{**c, "counter_searched": False} for c in MOCK_STATE["claims"]]
+    result = quality_evaluation_node({**MOCK_STATE, "claims": claims, "report": "# SUMMARY\n# REFERENCE"})["quality"]
+    assert result["scores"]["bias_control"] is True
+
+
+def test_quality_routes_data_gap_without_eligible_agent_to_end(monkeypatch):
+    """재수집 대상이 모두 한도에 도달하면 Supervisor가 추가 재작업 없이 종료한다."""
+    import src.supervisor as supervisor
+    from src.synthesis.quality import quality_evaluation_node
+
+    monkeypatch.setattr(
+        supervisor,
+        "evidence_audit_node",
+        lambda state: {"audit": {"issues": []}},
+    )
+
+    state = {
+        **MOCK_STATE,
+        "claims": [
+            _gap_claim(
+                "MKT-01",
+                "market",
+                "KIVI",
+                status="insufficient",
+            )
+        ],
+        "report": "## SUMMARY\n## REFERENCE\n",
+        "retry_count": {
+            "paper": 2,
+            "market": 2,
+            "stakeholder": 2,
+        },
+        "node_status": {
+            "paper": "complete",
+            "market": "complete",
+            "stakeholder": "complete",
+            "synthesis": "complete",
+            "report": "complete",
+            "quality": "complete",
+        },
+    }
+
+    quality = quality_evaluation_node(state)["quality"]
+
+    assert quality["rework_targets"] == []
+    assert set(quality["exhausted_targets"]) == {
+        "paper",
+        "market",
+        "stakeholder",
+    }
+
+    result = supervisor_node({**state, "quality": quality})
+
+    assert result["next_agent"] == "END"
+    assert result["last_decision"]["reason"] == "quality_research_exhausted"
+
+
+def test_quality_maturity_gap_targets_agent_that_owns_missing_claim():
+    """#73-3: MAT-R는 paper, MAT-A는 market가 만든다."""
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [_gap_claim("MAT-R01", "maturity", "KIVI"), _gap_claim("MAT-A01", "maturity", "KIVI", status="insufficient"),
+              _gap_claim("MAT-A02", "maturity", "CXL-PNM", status="insufficient")]
+    quality = quality_evaluation_node({**MOCK_STATE, "claims": claims, "report": "## SUMMARY\n## REFERENCE\n"})["quality"]
+    assert "maturity:CXL-PNM" in quality["coverage_gaps"] and "maturity:KIVI" not in quality["coverage_gaps"]
+    from src.synthesis.quality import _gap_owners
+    assert _gap_owners("maturity:CXL-PNM", claims) == {"market"}
+    assert _gap_owners("maturity:KIVI", claims) == {"paper", "market"}

@@ -4,6 +4,7 @@ from src.state import OverallState
 from src.synthesis.quality import MAX_QUALITY_ATTEMPTS
 
 MAX_STEPS = 10
+DATA_QUALITY_FAILURES = {"groundedness", "coverage", "bias_control"}
 RESEARCH_AGENTS = ("paper", "market", "stakeholder")
 NODE_NAMES = {
     "paper": "paper_analysis", "market": "market_research",
@@ -29,6 +30,9 @@ def _post_research_decision(state: OverallState) -> dict:
         return _decision("END", "quality_passed" if quality.get("passed") else "quality_limit")
     if quality.get("rework_targets"):
         return _decision("evaluation_synthesis", "quality_research_exhausted")
+    failures = set(quality.get("failures") or [])
+    if failures and not failures - DATA_QUALITY_FAILURES:
+        return _decision("END", "quality_research_exhausted")
     status = dict(status)
     status.update({"report": "stale", "quality": "stale"})
     return _decision("report_generation", "quality_report_rewrite", node_status=status)

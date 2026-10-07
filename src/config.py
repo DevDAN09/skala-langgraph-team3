@@ -23,5 +23,6 @@ DATA_DIR = PROJECT_ROOT / "data"
 PAPERS_DIR = DATA_DIR / "papers"
 FAISS_INDEX_DIR = str(DATA_DIR / "faiss_index")
 REPORT_MD_PATH = PROJECT_ROOT / "final_evaluation_report.md"
+QUALITY_RESULT_PATH = PROJECT_ROOT / "final_quality_result.json"
 REPORT_PDF_PATH = PROJECT_ROOT / "final_evaluation_report.pdf"
 REPORT_OUTPUT_PATH = REPORT_PDF_PATH
