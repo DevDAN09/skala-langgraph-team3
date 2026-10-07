@@ -1,4 +1,5 @@
 """Report-template level checks: what the rendered report shows, not only what State contains."""
+import json
 import re
 
 import pytest
@@ -174,29 +175,56 @@ def test_in_paper_citation_numbers_are_not_confused_with_references():
 
 
 class _FakeLLM:
-    def __init__(self, outputs):
-        self.outputs = list(outputs)
+    """Echoes a fixed Korean prefix per sentence; optionally corrupts numbers to test the guard."""
+
+    def __init__(self, corrupt_numbers=False):
+        self.prompts = []
+        self.corrupt_numbers = corrupt_numbers
 
     def invoke(self, prompt):
-        return type("Message", (), {"content": self.outputs.pop(0)})()
+        self.prompts.append(prompt)
+        batch = json.loads(prompt[prompt.index("["):])
+        out = [("번역: " + text).replace("2.6", "9.9") if self.corrupt_numbers else "번역: " + text for text in batch]
+        return type("Message", (), {"content": "```json\n" + json.dumps(out, ensure_ascii=False) + "\n```"})()
 
 
-def _polish(monkeypatch, outputs):
+def _render_with(monkeypatch, fake):
     monkeypatch.setattr(report_gen, "OPENAI_API_KEY", "test-key")
     monkeypatch.setattr(report_gen, "fetch_source_metadata", lambda url: {})
-    fake = _FakeLLM(outputs)
     monkeypatch.setattr(report_gen, "ChatOpenAI", lambda **kwargs: fake)
     return report_generation_node({**STATE, **evaluation_synthesis_node(STATE)})["report"]
 
 
-def test_polishing_that_drops_citations_or_labels_falls_back_to_rendered(monkeypatch):
-    report = _polish(monkeypatch, ["## SUMMARY\n다듬은 문장", "```markdown\n## SUMMARY\n다시 다듬은 문장\n```"])
-    assert "종합 해석" in report and re.search(r"\[DOM-09\]", report)
+def test_every_displayed_evidence_sentence_is_translated(monkeypatch):
+    fake = _FakeLLM()
+    report = _render_with(monkeypatch, fake)
+    body = report.split("## REFERENCE", 1)[0]
+    for line in body.splitlines():
+        if re.search(r"\*\*\[(DOM|MKT|MAT)-", line):
+            assert "번역: " in line, line
+    assert "번역: kernel support limited" in report and "번역: KIVI: accuracy risk at 2-bit" in report
+    # Citations, Claim IDs and interpretation labels never pass through the LLM.
+    assert not any("[DOM-09]" in prompt or "종합 해석" in prompt for prompt in fake.prompts)
+    assert re.search(r"\*\*\[DOM-09\]\*\* 번역: .* \[\d+\]", report)
 
 
-def test_polishing_that_keeps_markers_is_used_without_code_fence(monkeypatch):
-    monkeypatch.setattr(report_gen, "OPENAI_API_KEY", "")
-    monkeypatch.setattr(report_gen, "fetch_source_metadata", lambda url: {})
-    rendered = report_generation_node({**STATE, **evaluation_synthesis_node(STATE)})["report"]
-    report = _polish(monkeypatch, [f"```markdown\n{rendered}\n```"])
-    assert report == rendered.strip()
+def test_translation_that_changes_numbers_keeps_original(monkeypatch):
+    report = _render_with(monkeypatch, _FakeLLM(corrupt_numbers=True))
+    assert "KIVI reduces peak memory by 2.6x." in report
+    assert "9.9" not in report
+
+
+def test_long_domain_cell_is_excerpted():
+    long_text = "First sentence of a long quote. " + "More detail. " * 20
+    assert report_gen._excerpt(long_text) == "First sentence of a long quote. …(발췌)"
+    assert report_gen._excerpt("short") == "short"
+
+
+def test_reference_author_drops_leaked_urls():
+    source = {"authors": "Akshay Reddy, DataM Intelligence, https://www.datamintelligence.com/", "source_type": "web"}
+    assert report_gen.citation_author(source) == "Akshay Reddy, DataM Intelligence"
+
+
+def test_summary_shows_first_sentence_only():
+    assert report_gen.summary_sentence("첫 문장이다. 둘째 문장이다.") == "첫 문장이다. …"
+    assert report_gen.summary_sentence("한 문장이다.") == "한 문장이다."

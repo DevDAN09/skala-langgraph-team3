@@ -1,5 +1,6 @@
 """Supervisor graph topology and routing contracts."""
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 from src.graph import build_evaluation_graph
 from src.supervisor import MAX_STEPS, route_supervisor, supervisor_node
 from src.synthesis.quality import route_quality
@@ -10,6 +11,11 @@ def test_graph_compilation_includes_supervisor_and_quality_gate():
     graph = build_evaluation_graph()
     assert {"supervisor", "paper_analysis", "market_research", "stakeholder_research",
             "evaluation_synthesis", "report_generation", "quality_eval"} <= set(graph.nodes)
+
+
+def test_graph_accepts_in_process_checkpointer():
+    saver = InMemorySaver()
+    assert build_evaluation_graph(checkpointer=saver).checkpointer is saver
 
 
 def test_compiled_topology_routes_research_only_through_supervisor():
@@ -56,20 +62,76 @@ def test_dispatch_retry_counts_only_selected_agent(monkeypatch):
     assert sum(result["retry_count"].values()) == 1
 
 
-def test_market_retry_marks_completed_stakeholder_stale(monkeypatch):
+def test_market_retry_marks_stakeholder_stale_only_after_success(monkeypatch):
     import src.supervisor as supervisor
     issue = {"claim_id": "MKT-01", "rule": "R1", "issue": "", "target_agent": "market", "action": "search_evidence"}
     monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": [issue]}})
     state = {**MOCK_STATE, "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}}
     result = supervisor_node(state)
     assert result["next_agent"] == "market_research"
-    assert result["node_status"]["stakeholder"] == "stale"
+    assert "node_status" not in result or result["node_status"]["stakeholder"] == "complete"
+    import src.graph as graph_module
+    completed = graph_module._supervised(lambda _: {"market": {"version": 2}}, "market")(
+        {**state, **result})
+    assert completed["node_status"]["stakeholder"] == "stale"
+
+
+def test_market_retry_failure_does_not_stale_stakeholder(monkeypatch):
+    import src.graph as graph_module
+    state = {**MOCK_STATE,
+             "last_decision": {"reason": "audit"},
+             "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"},
+             "node_attempts": {"paper": 0, "market": 0, "stakeholder": 0}}
+    result = graph_module._supervised(
+        lambda _: (_ for _ in ()).throw(RuntimeError("network")), "market")(state)
+    assert result["node_status"]["stakeholder"] == "complete"
+
+
+def test_stakeholder_dependency_refresh_does_not_consume_retry_and_counts_attempt(monkeypatch):
+    import src.graph as graph_module
+    import src.supervisor as supervisor
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
+    state = {**MOCK_STATE,
+             "market": {"version": 2},
+             "node_status": {"paper": "complete", "market": "complete", "stakeholder": "stale"},
+             "node_attempts": {"paper": 1, "market": 2, "stakeholder": 1},
+             "retry_count": {"paper": 0, "market": 1, "stakeholder": 0}}
+    decision = supervisor_node(state)
+    assert decision["next_agent"] == "stakeholder_research"
+    assert decision.get("retry_count", state["retry_count"])["stakeholder"] == 0
+    refreshed = graph_module._supervised(
+        lambda current: {"stakeholder": {"market_version": current["market"]["version"]}},
+        "stakeholder")({**state, **decision})
+    assert refreshed["stakeholder"]["market_version"] == 2
+    assert refreshed["node_attempts"]["stakeholder"] == 2
+
+
+def test_quality_rework_dispatch_increments_only_target_retry(monkeypatch):
+    import src.supervisor as supervisor
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
+    state = {**MOCK_STATE,
+             "quality": {"passed": False, "rework_targets": ["market"], "attempts": 1},
+             "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}}
+    result = supervisor_node(state)
+    assert result["next_agent"] == "market_research"
+    assert result["retry_count"] == {"paper": 0, "market": 1, "stakeholder": 0}
+    assert result["last_decision"]["reason"] == "quality"
 
 
 def test_quality_reports_all_four_scores():
     from src.synthesis.quality import quality_evaluation_node
     result = quality_evaluation_node({**MOCK_STATE, "report": "# SUMMARY\n# REFERENCES"})["quality"]
     assert set(result["scores"]) == {"groundedness", "neutrality", "bias_control", "coverage"}
+
+
+def test_quality_coverage_uses_only_valid_claims_and_reports_target():
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [{**claim, "status": "insufficient"} for claim in MOCK_STATE["claims"]]
+    result = quality_evaluation_node({**MOCK_STATE, "claims": claims,
+                                      "report": "# SUMMARY\n# REFERENCE"})["quality"]
+    assert result["scores"]["coverage"] is False
+    assert {"paper", "market", "stakeholder"} <= set(result["rework_targets"])
+    assert "maturity:KIVI" in result["coverage_gaps"]
 
 
 def test_quality_reference_and_neutrality_rules():
@@ -122,6 +184,13 @@ def test_worker_error_isolated_and_returns_to_supervisor(monkeypatch):
     assert result["node_status"]["paper"] == "pending"
     assert result["node_attempts"]["paper"] == 1
     assert "paper: boom" in result["last_error"]
+    assert result["last_errors"]["paper"] == result["last_error"]
+
+
+def test_successful_worker_attempt_is_counted():
+    import src.graph as graph_module
+    result = graph_module._supervised(lambda _: {}, "paper")(INITIAL_INPUT_STATE)
+    assert result["node_attempts"]["paper"] == 1
 
 
 def test_worker_repeated_error_becomes_failed_without_further_retry():
@@ -206,3 +275,25 @@ def test_graph_end_to_end_execution():
     assert final_state["report"]
     assert final_state["quality"]["attempts"] >= 1
     assert final_state["step_count"] <= MAX_STEPS
+
+
+def _gap_claim(cid, perspective, tech, status="ok"):
+    return {"id": cid, "perspective": perspective, "tech": tech, "statement": "s", "kind": "fact",
+            "evidence_ids": [], "counter_evidence_ids": [], "counter_searched": True, "status": status}
+
+
+def test_quality_accepts_coverage_gap_disclosed_after_retries_exhausted():
+    """재수집 기회를 다 쓰고도 근거가 없어 6장에 공개한 칸은 coverage 미달이 아니다 (정보 부족 ≠ 편향)."""
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [_gap_claim("MKT-01", "market", "KIVI", status="insufficient")]
+    report = "## SUMMARY\n## 6. 한계점 및 Evidence Gap\n- **[MKT-01]** 공개 근거 미확인\n## REFERENCE\n"
+    state = {**MOCK_STATE, "claims": claims, "report": report}
+
+    quality = quality_evaluation_node({**state, "retry_count": {"market": 1}})["quality"]
+    assert "market:KIVI" in quality["coverage_gaps"] and "market" in quality["rework_targets"]
+
+    quality = quality_evaluation_node({**state, "retry_count": {"market": 2}})["quality"]
+    assert "market:KIVI" in quality["disclosed_gaps"] and "market:KIVI" not in quality["coverage_gaps"]
+
+    undisclosed = {**state, "report": report.replace("- **[MKT-01]** 공개 근거 미확인", "- 없음"), "retry_count": {"market": 2}}
+    assert "market:KIVI" in quality_evaluation_node(undisclosed)["quality"]["coverage_gaps"]

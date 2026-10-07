@@ -425,6 +425,30 @@ def test_run_llm_judge_with_mocked_llm():
     assert issues[0]["action"] == "re_extract"
 
 
+def test_run_llm_judge_combines_all_claim_evidence():
+    claim = {
+        "id": "MAT-R02", "perspective": "maturity", "tech": "CXL-PNM",
+        "statement": "Combined experimental setup", "kind": "simulation",
+        "evidence_ids": ["EV-1", "EV-2"], "counter_evidence_ids": [],
+        "counter_searched": False, "status": "ok",
+    }
+    decision = MagicMock(is_grounded=True)
+    structured = MagicMock()
+    structured.invoke.return_value = decision
+    with patch("src.audit.judge.OPENAI_API_KEY", "mock-key"), patch(
+        "src.audit.judge.ChatOpenAI"
+    ) as mock_llm:
+        mock_llm.return_value.with_structured_output.return_value = structured
+        assert run_llm_judge(
+            [claim],
+            [{"evidence_id": "EV-1", "source_id": "S", "snippet": "model and context"},
+             {"evidence_id": "EV-2", "source_id": "S", "snippet": "hardware and simulator"}],
+        ) == []
+    prompt_text = str(structured.invoke.call_args.args[0])
+    assert "model and context" in prompt_text
+    assert "hardware and simulator" in prompt_text
+
+
 def test_evidence_audit_node_clean_state():
     with patch("src.audit.judge.run_llm_judge", return_value=[]):
         result = evidence_audit_node(MOCK_STATE)

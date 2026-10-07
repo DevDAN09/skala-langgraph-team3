@@ -33,6 +33,7 @@ def make_initial_state():
     "last_audited_step": -1,
     "last_decision": {},
     "last_error": None,
+    "last_errors": {},
     "node_attempts": {"paper": 0, "market": 0, "stakeholder": 0},
     "trl": {},
     "synthesis": {},
@@ -49,9 +50,11 @@ def main():
 
     start_time = time.time()
     try:
-        graph = build_evaluation_graph()
+        graph = build_evaluation_graph(checkpointer=InMemorySaver())
         print("🔗 StateGraph 컴파일 완료. 파이프라인 실행 시작...")
-        final_state = graph.invoke(make_initial_state())
+        initial_state = make_initial_state()
+        final_state = graph.invoke(initial_state, {"configurable": {
+            "thread_id": initial_state["trace_id"]}})
 
         # Markdown 원본 보존
         REPORT_MD_PATH.write_text(final_state["report"], encoding="utf-8")
