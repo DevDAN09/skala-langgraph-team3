@@ -97,7 +97,8 @@ class PayloadState(TypedDict):
 
 class ControlState(TypedDict):
     retry_count: dict[str, int]
-    next_agent: Literal["paper_analysis", "market_research", "stakeholder_research", "evaluation_synthesis"]
+    next_agent: Literal["paper_analysis", "market_research", "stakeholder_research",
+                        "evaluation_synthesis", "report_generation", "quality_eval", "END"]
     # Supervisor control metadata.  Payload fields above remain owned by their
     # specialist nodes; these fields describe orchestration only.
     node_status: dict[str, str]

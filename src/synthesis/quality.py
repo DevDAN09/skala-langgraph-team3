@@ -121,11 +121,3 @@ def quality_evaluation_node(state: OverallState) -> dict:
     return {"quality": {"passed": not failures, "scores": scores, "failures": failures,
                         "coverage_gaps": coverage_gaps, "disclosed_gaps": disclosed_gaps,
                         "rework_targets": sorted(rework_targets), "attempts": attempts + 1}}
-
-
-def route_quality(state: OverallState) -> str:
-    quality = state.get("quality") or {}
-    if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
-        return "END"
-    failures = set(quality.get("failures") or [])
-    return "supervisor" if quality.get("rework_targets") or failures & {"groundedness", "coverage", "bias_control"} else "report_generation"

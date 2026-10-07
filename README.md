@@ -26,7 +26,7 @@
 - **Supervisor 기반 근거 검증** : Supervisor가 R1~R5 감사 결과, 재시도 상태, 시장→이해관계자 의존성을 보고 다음 Research Agent를 동적으로 선택(관점별 최대 2회, 전체 최대 10 step)
 - **TRL 이원화** : 개별 기술 성숙도(`tech_trl`)와 기술 계열 생태계 성숙도(`family_trl`)를 분리 산출
 - **보고서 자동 생성** : Jinja2 골격 + Strict Grounding Polishing → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
-- **보고서 품질 평가** : `report_generation` 뒤 `quality_eval`이 Groundedness·중립성·편향 통제·관점 커버리지를 평가한다. research 원인은 Supervisor로, writing 원인은 `report_generation`으로 loop한다.
+- **보고서 품질 평가** : `quality_eval`이 Groundedness·중립성·편향 통제·관점 커버리지를 평가해 State에 기록하고, Supervisor가 research 재작업·보고서 재작성·종료를 결정한다.
 - **확증 편향 방지 전략** :
   - 모든 외부 조사 항목에 지지 쿼리와 반대 쿼리를 병행(R3). 반대 근거가 없으면 `counter-evidence not found`로 기록하고 상충을 만들지 않음
   - 출처 Tier(T1~T4) 부여, T4(커뮤니티·개인 블로그) 단독 근거 금지(R2)
@@ -67,6 +67,7 @@
 | `supervisor` | A/D | 내부 evidence-audit(R1~R5), State 기반 다음 Agent 선택, 실제 재작업 dispatch 때만 retry 증가 | `audit`, `next_agent`, `retry_count`, `node_status` |
 | `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
 | `report_generation` | E | Jinja2 골격 조립 → Strict Grounding Polishing | `report` |
+| `quality_eval` | E | 보고서의 Groundedness·중립성·편향 통제·관점 커버리지 판정 | `quality` |
 
 
 ## Architecture
@@ -79,12 +80,13 @@ flowchart TD
     paper_analysis --> supervisor
     market_research --> supervisor
     stakeholder_research --> supervisor
-    supervisor -->|sufficient / limit| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
-    evaluation_synthesis --> report_generation["report_generation (E)<br/>보고서 생성"]
-    report_generation --> quality_eval["quality_eval<br/>groundedness · neutrality<br/>bias control · coverage"]
-    quality_eval -->|research gap| supervisor
-    quality_eval -->|writing gap| report_generation
-    quality_eval -->|pass / rewrite limit| END([END])
+    supervisor -->|research complete| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
+    evaluation_synthesis --> supervisor
+    supervisor -->|synthesis complete / rewrite| report_generation["report_generation (E)<br/>보고서 생성"]
+    report_generation --> supervisor
+    supervisor -->|report complete| quality_eval["quality_eval<br/>groundedness · neutrality<br/>bias control · coverage"]
+    quality_eval --> supervisor
+    supervisor -->|quality pass / limit| END([END])
 ```
 
 ### 데이터 흐름 (End-to-End Data Flow)
@@ -96,8 +98,8 @@ flowchart TD
 | **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(실측/시뮬레이션 구분) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
 | **Step 3<br/>시장성 및 이해관계자** | `market_research` 또는<br/>`stakeholder_research` (C) | `selected`<br/>(stakeholder는 `market` State 의존) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 시장 결과 저장 뒤 Supervisor가 dependency를 확인하여 이해관계자 작업을 선택 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
 | **Step 4<br/>Supervisor audit & routing** | `supervisor` (A/D) | `claims`, `evidence`, `sources`, control State | • R1~R5 audit 후 current State에서 한 Agent만 선택<br/>• 실제 retry dispatch만 count하며 market refresh는 stakeholder를 stale 처리 | `audit.issues`, `next_agent`, `retry_count`, `node_status` |
-| **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
-| **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • Jinja2 템플릿 기반 마크다운 렌더링 및 인용 넘버링 연동<br/>• LLM(`gpt-4o`) 문체 정제 및 `final_evaluation_report.md` 생성<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 자동 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
+| **Step 5<br/>TRL 이원화 & 종합** | `supervisor → evaluation_synthesis → supervisor` (E/A) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
+| **Step 6<br/>보고서·품질 평가 & 산출** | `supervisor → report_generation → supervisor → quality_eval → supervisor` (E/A) | 전체 누적 State | • Jinja2 렌더링과 LLM 문체 정제 후 품질 4개 항목 평가<br/>• Supervisor가 재수집·재작성·종료를 선택<br/>• Markdown/PDF 자동 변환 | `report`, `quality`,<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
 
 ### State 계약 및 충돌 방지 원칙 (Reducer)
 - **Control/Payload 분리**: Research payload와 `next_agent`/`node_status`/`step_count`/`quality` control State를 분리한다. `MAX_STEPS=10`, quality attempt limit로 종료를 보장한다.
