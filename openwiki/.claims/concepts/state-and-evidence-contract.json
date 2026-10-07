@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3b5737f1223f4048dad1e82d50e649d915021ba8eaa365e503b9296e2b6d0673",
+  "claims": [
+    {
+      "id": "claim_5017ce9ab6d445fea6a551a5bc6a3fb8",
+      "statement": "OverallState is a TypedDict with exactly 14 top-level keys: selected, tech_sw, tech_hw, domain, market, stakeholder, claims, evidence, sources, audit, retry_count, trl, synthesis, and report; claims, evidence, and sources use LangGraph reducers.",
+      "evidence": [
+        {
+          "resource": "repo://src/state.py#L81-L96",
+          "version": "repo-lines-v1:sha256:169338dc3670f559d0fabedc25439cd2a0aea1e5dca09c904e78658416a5787b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWE5N2YzNDBmNTFiNDNmNzk1ODJmMGM4NzY5OTRhMjI1NzVmYTRjZTk0ODI0YTk4MjljZjllNmU4ZTAwOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNDdiZTFiNjI5OTljNjk3ZmM0MTMxNjQzNDAwZWZlYTA4YTQ2ZWJiZjRkNWU4YzliZDk2MjgxYTU3OGM1YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1YTBmMmFkMGE4NDliNzEzZDEyY2E2MWZiODI5NGYzZTA1MzU3Mzc4NDAxZjM0Yjk2YTg1YmZlMDZjZjQ4ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_state.py#L156-L175",
+          "version": "repo-lines-v1:sha256:9fed081a3677f132d87d5d1b9c8fe26f14434c311c334776084701dd03a762bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkNTVhZmNmNGMwZDhhMGI5OWU2Yzg1YzM0YTM5NzM4OTFjOTJkNDM0OGRhMDk3NjViMDkzNGI1YTAwNTZkYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkZGJiOGEyY2JiYTM2YTEzN2M5MmM1MDQ1MmZhNDYwZWY1NGE3NjVlYjcwODI3M2QzODM4OWY3MDY0ZGQxZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMTVkYzEwMGFmZDFkMzAyNDlkNmVjZDJjN2VlMGIzNTRkYjUyZjA5ZThkMTdjNWE0YTU3YjBiYTNlNzJhYjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e3533e124d240e8b3557b2b41277d75",
+      "statement": "Claims are keyed by stable IDs and carry perspective, technology, statement, kind, supporting and counter-evidence IDs, counter-search state, and status; supported kinds are fact, vendor_claim, simulation, and estimate, and supported statuses are ok, flagged, insufficient, and rejected.",
+      "evidence": [
+        {
+          "resource": "repo://src/state.py#L19-L28",
+          "version": "repo-lines-v1:sha256:021cf55cba7bf901e56d4d26d77b055500d51c6a95265cdd1e4d64998e0b6c1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0OGRkMzY1MTA3ZDVlMGMwOTRjYzAzNDkzYjc5NzVlZTc1OTkyZGVmZTAxMTBiYjQyOGRmZDcwZGM5Mzg0NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNDdhNzcxYjQ1Nzc0MmJmMmEwNDg0ZmQ4NDMzNDM3ZjRiMjFmYmUxYjBiNWM5OTVhNDUxNmU4ZTQ3Mjg5Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwNGQ3NGUwODQyMjY0ZjA3YjZlNjI2ODNjMjQwZDAxZDI3ZGE0NTg0NmYxOGQxMTE3YjUwZWYwNmY1OGNmYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMDYwZmFiY2U2YjMwNDNkNmE4Mjg4NzEzYmM4MzllNmJkOTIxZWZhOWU4OGFiZmNhN2FkOTNkMDUyYmVmMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19fb54db996f4fa489a2c5b44d8c33fa",
+      "statement": "Evidence links a snippet to exactly one source_id, while Source records title, publisher, date, URL, source type, and T1-to-T4 trust tier, creating the claim-to-evidence-to-source provenance chain used by audits and reporting.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/rules.py#L39-L51",
+          "version": "repo-lines-v1:sha256:4015cdbdaef292d21277f85d4718a6007a6df58e939317898e61f5734ffd8e74:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZTlkOWFlMmVkZTQxNzFhMTNhYjNmNmM3OWEzMjNmNjRmZWFkMTNhZWE2MmYxMGI0ZWFjYjllMGZjNjEwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzZjMmE1OThjN2Q2NDYwM2I4YTk1ZTBjYjk1N2I1MTNhNzZiYTMwMGZlZDNjMGU5ZDBlYjliMWYxYWQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZWJmMDkyZjJiYmQ1Yzk1ZjNkNDk1OGUzMDA3M2QzMzhiMjBkZjFkZjcyYjJjN2UzODQzMGMyODRkMjQ1MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NTYxZGY4ZWJmZjQwMGVhNWYwMThjZDU2MmQxYjIzNjM1OGVhMzM0ZTZmMjU3YjA0YjE1NjhiZGQxNjhhY2UifQ"
+        },
+        {
+          "resource": "repo://src/state.py#L5-L17",
+          "version": "repo-lines-v1:sha256:ab57a89c3ee04bf17363122ba4377d29abbed4ee2f6b4b987804b7d6bcb0020c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZjJjYmU3ZjQxNzJmMjc2ZWYwZjNiYjA1OTk1MDk4NTY4MDZhZWZhNTk2OTdjYjAzYzU1OWNmZjAzZmJlNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YTM0OTk1Mjk4YTZhOTc1MjExY2JhYjk3YTBmZWYyZDA0M2U4OGY1YTYyY2Q2YjI1YTdlNDJmNWI1Y2E0ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzMThhZTViNWZmNTEwNWMyMWYyNTQ5NTE5ODVjNjc4NjJmNzhlYWVhMjdjYjNkZDJjMTY3MGM4YTZjODM3MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4ZTJhYzM5ZWU5NmEzNjJjMzEyNmEwNzE0NWY2NTUxOTM1NWZjNzVmMTEwZmQ1NmQ2MTg1OTFjYWU3YmZmMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3fbbe2dd28b9498f8703a173859256d4",
+      "statement": "Claim ID prefixes are the routing ownership contract: DOM-* and MAT-R* target paper, MKT-* and MAT-A* target market, and STK-* target stakeholder; perspective is only a fallback for nonconforming IDs.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/rules.py#L10-L36",
+          "version": "repo-lines-v1:sha256:61ac92da6731cc30a993c36ea4a60591798092bc06705ddaa034295ea8833f7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYWQzYmE0NjUyYTg4MmYyNjg4NmY5MWY2ZDMwNTZhMjA3MTgyMjY1OTlmZDViNzA3YTA4YWQzNzQ1OTMxZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzNmVhZDhiZjZjNjY3M2JlZWQ0N2IyNmIyN2ZjOWI3NjU3ZmYzNGY0MTg2NDI5YjhjZDc5ZGU5NWNiYjkzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZDE4Y2YzMWNkNTJkYWIwY2M2MWUzZTJhZjMzYjkwOTllZmE1YmFjYmVmODFiODQzZmIzMTMzY2YxYzZlZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjOTZlZGQwNTlmZjRkNDAyNDkyZjRjYjU0NzM2MDIwOTQzZjdlMjFhNzNkYTI0YTAyMDBhMDliNTNmOGQ0NjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_86a372547f444de096a5fcb13ea8f629",
+      "statement": "upsert_claims and upsert_evidence are idempotent replacement-by-key reducers: duplicate claim IDs or evidence IDs replace the prior complete record, while new IDs are added.",
+      "evidence": [
+        {
+          "resource": "repo://src/state.py#L48-L59",
+          "version": "repo-lines-v1:sha256:3b56caa729fb27e5b187a2b2a7b8e5565f97844c58025b3549617aa1f859bfcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZDQ5OGM5OGVjZDBlOWYzY2U1NzMwYjNjNWRhMDA4NjY4NDRlNTJjNWZmMjRhMjdlMTU4NTk5ZTA3NjNjY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MWQwNWExNTgxN2NjMzkxOWY3MTQ4Zjk1OTJhN2U2MTBhMDMwODNiYzI0ZGRlNjJjMDk1NTI5NWZhNTZjOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMzdhZGQ5M2IwNWVlOWIyZjUwZDcwNzA2Y2QzNjA3NzExMzNiMmE1MWQwYjVjYjNiOGE5YjFiY2EzZDFiZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1M2E1Y2FhYzljNTFlNWVjZjdlNmRjNzY1ZmQ5YTgwOWY2ZjcxYzZlMTE5ZTliZmNiMzg2NjYxOGY1YTIwOGMifQ"
+        },
+        {
+          "resource": "repo://tests/test_state.py#L17-L88",
+          "version": "repo-lines-v1:sha256:5c556db6e2bf88b61aa15209b3902f24433099cc6b64e3c27793dd649b941fba:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZmEyMzZjNGI0YWMxNmY3NTI2NThkNmI2Mjc1NzgxY2QxY2E0ZmVlM2E0YTkyMDE1MDZmZTZlYzcxNjY4OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MWJmM2Q5NmYxYjExOTY4OGRlZWE5YTAwNGIyYjNmZWJiMTgwYmI4ZmIyMzQ0NjI1NjE0YWRjODU5NTYzYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5Yjk4YWVjMjVjYTkzZTAzOTBlMTY1NGUzZjBiYzg3NmY4YjBkMTEwMjY0NDE5ZDNiNDNjZDA1NDVkZWE2MTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e4041e8ca1a4accb550f653fcb7887c",
+      "statement": "union_sources deduplicates non-empty trimmed URLs across source updates, retains the existing canonical source ID when a later update proposes a different ID for the same URL, and allows distinct records for new or empty URLs.",
+      "evidence": [
+        {
+          "resource": "repo://src/state.py#L61-L79",
+          "version": "repo-lines-v1:sha256:7c7f9d6ce1ae0da9afdad7a36a84ef999e180fa80f7982fc259d0f2f393ce9ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZGI2MGQ2MTAyYWJkNTNiNmYyMWEyMTA2YzdmNWFkMzBlMTlmYjQxZjVhM2RlYjE4ODcxYTcyMTYxOGRjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZTM1MmE1MDBkYTJjMWE0Yzk2OTMwZDBkM2QzMTU3MGU0MTEwMWE5ZDUwOTJiNjc4NjE5MjZiNmE0MGRhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlOTI0MzA2ZTc0NWNjZjQ5ZWI1NGI4M2RkMzE4MWJiYjZhNDg0OTZjZjhjNGQ3Y2U1ZmU2YTI2NmYxOWJiZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNmZkNjEyMDYyODYzZDUzNjc0ZjQzODNhOWNmNmIzMWU0MjgwOWQzMmQwYjRhZDEzM2M0ZTc5NGI4NWU1YjYifQ"
+        },
+        {
+          "resource": "repo://tests/test_state.py#L90-L153",
+          "version": "repo-lines-v1:sha256:277c88808ef43597dae854ca6603d49318535a48050238c10bf1c79393369794:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZDA2YzMzNmQxMTU1NTJhYTFiZTliZTcwNTZlNjM1MDE5NDc5MTNjZmZjNTIzNWZjMjY5Y2EwZjBiYTI1NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYmI4NGUxNjllYmM2MzM5YWNjYTk3NzU3YzU4MDU0MGUwYjVhNGIwODYwYzkyNTBhZjQyMTdjMGE5ZDRlODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYWQxYzcwYmJlNzMyOTZkYjU1NzliODU1ZTdlNDkyMzg2YjRlYWNlYTFjOTA1NjI0OGVjODkxZmUwODQxMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMWEyYTJiMjRiYWVlZTg2M2RlNjE2MzhjYzc3ODZmNmI5YjdjZWVkY2E2M2U2ZGYwODA2ODNiNzA3ZGM0YjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b40e7207242c411b999e5ed020918972",
+      "statement": "Market and stakeholder writers resolve an existing source ID by trimmed URL before creating a web Source, because union_sources can discard a later duplicate and otherwise leave evidence pointing at a missing source ID.",
+      "evidence": [
+        {
+          "resource": "repo://src/research/client.py#L134-L149",
+          "version": "repo-lines-v1:sha256:91b92516c2dffc29022b0048d454c792f8c70683deeee7b9a79330c7a845a492:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4OWQ2OTg0MTQxYTYxNjczNWViOGUwNTQ4OTc2NjEwOWQyZmQyOWZjOWM0YTE5NzM5YTlkZTg5ZGE2ZmI3MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNzUzMDM0MDZlYzRkYzdkOWMxZDY5NmY2Nzk0NjNhYmNkN2U1MDBiNzQxOGU0MWIyNDNjNzg0NWU5NDU5MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllOWJjMzQ2ZDVkNzEzNDE3N2E0ZTExY2UxMjllZmFkZmZmOTEyZjMxZjUwMTMxZTc3YjUxMmI4MzdjMTc0MGUifQ"
+        },
+        {
+          "resource": "repo://src/research/market.py#L115-L129",
+          "version": "repo-lines-v1:sha256:b53795a35069773db77974b070320c97d3570072dade68b3cd2b207136b3815b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTA5NDg5YzRlNzkzZjBlNGRjMWZjOWFhN2NmYmEyODFiYjI0NDA0MjJkMzU5YTk1OWU3NjMwMDMxODk3NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMTk1M2FiMWFjZDNkMTRjOGVlNTMwZDQ3YTgzZDc4YTJhODNiZjBhNDEyYjQ0MzY5MTViODMxYjhmYjEyZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0N2Y4NmI5ODBjYzRjZTk0YjdiMjcwNWFiNzY4ZmExNDU3M2VkZDkzOGZjNTNhMmQ5ZWMxYzc4M2ZhMTZhYTMifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L113-L127",
+          "version": "repo-lines-v1:sha256:b53795a35069773db77974b070320c97d3570072dade68b3cd2b207136b3815b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTA5NDg5YzRlNzkzZjBlNGRjMWZjOWFhN2NmYmEyODFiYjI0NDA0MjJkMzU5YTk1OWU3NjMwMDMxODk3NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMTk1M2FiMWFjZDNkMTRjOGVlNTMwZDQ3YTgzZDc4YTJhODNiZjBhNDEyYjQ0MzY5MTViODMxYjhmYjEyZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZGRlNjc3NGM3YzlhYzA3MGU3ZDQ2OTVhZTA3MTAzYTZiZmJhYzM1OTU0YmU4NmM2Njg4YjU3NTNmZWY4YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1NTMzNThmNTk2YzBkMjUxZjEwNDA3MGE5MjUyZmYxYjYyNDYzNTgxM2ZkMjk2OWU5YmI3YjUzMWI3OGRmMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eedb22ed8bfa4d75ad862d09c84f34e8",
+      "statement": "The evidence audit first applies static R1-R4 checks and then runs the R5 judge only on active claims without static issues; it skips terminal insufficient and rejected claims.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L25-L45",
+          "version": "repo-lines-v1:sha256:c919a2585f29687db3a574fcd243b3bd28234fdcc0d35ead4bde4fecf178cc43:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDYxMzhlYmZlMmUwZDFkZGYwYzgzMWJmZDY5ZWJhYjU4OTk4NDg1ODIxYmRiYWZkMjczODcwOWU1YTgzNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNmRhMmU2ZmFmYTczYTZlYzNhZGRmYjc0ZjQxNmY2ZTQ0OWQ0OWQwY2VlZTM0MzU2YTNmZmU3NzRkZWU3M2UifQ"
+        },
+        {
+          "resource": "repo://src/audit/rules.py#L4-L7",
+          "version": "repo-lines-v1:sha256:b2538ad3e0fa18983b6a7e1893405a0bc639fe6a379471dac6bfece64da718c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODRiYTdmMWZlZDk3ZWViZmIyMDdlMjdhMDExYTQ2MjY1NmYyMTAxZDU3ZTEyNzVjN2E1NDM2ZmQ4OTI4MDFhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE3ZmQwMTQ1OTY2NzQ0MzdmNWY0NjM4NDNkNjcwMmU1OTc3ZjViZTkwNWE4MDJkZDM0N2ZhYWMzYTNjY2ZhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWNiODE0ZWYyMzc2NzRkZWMyNmZmOTcyNzgxYTM1ODUxMjI2YzQyMzEyNGM1ZDcxN2Y2ZTllYmY4ZjdlNzlmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2EzNWM0NGVkNjBjZTAzMDIyZjE5MjVhZTI3NmVlYmUzZTNlMmYwNzYxYmRlNWVmZjA1OWQ0MWI3OGUxODM1YiJ9"
+        },
+        {
+          "resource": "repo://src/audit/rules.py#L53-L57",
+          "version": "repo-lines-v1:sha256:520fbe6dc1c4cfd408b3750d838bc20dfff0bf36710f5218493d8c8e6882043c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODI5ZTNiNGI0NmYwYzY2NGJjYjEzMzZkMTM5MmU1ZjU4NTdmZGExZTM1ZTJmNjY5OTE1NDhlYmUxZWNkODZjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg3NmI2NDQ4NTRkOWY5ZTMwNmI4ZTQxYzk0NDE0MjU4NjcyZDM0ZDU1YzY1ZGQwNThmNmZhNGY2YmFiNzk1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc2YWM1ODViOGMxZTFiMmFjZDU2YWNiZDYzODM2YTlmMWJlY2NjOGFiN2QzZWUwMGZkYWFjYWMxNDc0ZmZlZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aafa5465b75c407db6a2bbf66aea9126",
+      "statement": "Audit attempts are counted once per affected target agent per audit pass; claims remain flagged while retries remain, then become insufficient for R1-R4 or rejected for R5 when that agent reaches the two-attempt limit.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/auditor.py#L46-L75",
+          "version": "repo-lines-v1:sha256:72b1a403820c58a527b7add2a3b797d305c50e074471268b3d070be6cf3725ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjN2ZhNzgxNjFkODcwYjVlZTJlNWU0MmFhYjViZjg2NGNkYmUxY2Y0Yjc2NzkyMWU5MGU1Y2RkZGY4MzZjOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZmY4ZjU3OWU1NGE0YjVlYjJkYjc0ZTc1MzJiMzBkOTc1NTEzZmRkY2ViZmQwNDFhOGQwY2IxOTMyZTFjOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODQ0ZTc2NjFlNjQ2MzBiMzljMzZjNzcxYTI1MzZkNmIxOTUzZjY2NGQ5ZTdkMzg0MDdhNWI1ZTcyOTI2MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1MmJiY2EzZGNjMWQyMWEzMDIzYWQxYzg3OWY5NzBkNDA3MGRhNjZhMTVhZWQyMGM5MzZmY2I2ODAzYTFhZDkifQ"
+        },
+        {
+          "resource": "repo://src/audit/auditor.py#L6-L21",
+          "version": "repo-lines-v1:sha256:2bf2f0482044bf592b25ac274640c1f31a04f71589c1c2a5aa8beb653c25b7dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NjQ0MjAyYzQyNzdiNDQyYjZkODI5ZDE3YWZmOWRlMTg4NTNkYmMzZWI4ODFlOGI0NzI2ZmYzMWUyMmE5OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNGM0MjdhMDU2NTM1MjZjN2JkN2NhZDMxMGRiMTY2NmMxNjY3YzhiOGRiOTYzYmNiMjc0YzQ3YmE1MmI0ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTFmYmRmMmVmZGY4MWM2NmUxNWUzMzRmMGZkOGRjY2JlZjc1ODQ3OWI4MWE3NzBmMjg0MGNkMGYyYmJjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_189a72a04f124515b1b569d14014663c",
+      "statement": "The evaluation graph starts paper and market research in parallel, chains market research into stakeholder research, audits after the research fan-in, routes targeted retries conditionally, and proceeds to synthesis and report generation when no retry target remains.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L12-L53",
+          "version": "repo-lines-v1:sha256:c56c96a4d04435330201e84c6a226d20fdddb76f1374654e0a53e98253970cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTEyODZjYjk3ZTk0Y2JhYTQ1ZmIwN2ExNDMxYjRlNjg4ZGEwYjA5YzVkNWFkYjkzMGUyMTY4MDUwNmRkMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4Y2E4MGZjZmRmODg1YzYxYWE5ODgzYTgxZDQzYWYwODJhMmQ0NjAwMTM2ZDlmZTUxODE5MmM5ODI2ODBhOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L56-L99",
+          "version": "repo-lines-v1:sha256:85423e4f45745857266adbfb806c4a50e86dd15cd3fb0db8839eba259ff70995:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMWJlNGU5ZDAzMTEyNGExOTI4ZDdlM2JhYjc1NmQwYTA3MmU1YmU1ODM5MjZkYzY3YmIwMmFjNmQ4NmEyODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzIzZDQ1ZTMyNzJkODFiNDZlNjM3N2Q2ZTNjOWY4YTFmZTc0NDlkMmUxZTcwYjI3YzIyOTEzMDM4Nzg4ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhN2ZkYjQ2M2MwMGViN2U5Njg0NWFkMWNkNWJkMzgxYjE1OWIzN2M1OWQwMTVlMzIyN2ZjY2RiNTk5MDM5M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d12304230b684c6e979989b60c5058f0",
+      "statement": "When web search or paper retrieval cannot provide usable support, research nodes degrade to empty or insufficient claims rather than fabricating evidence; paired market and stakeholder searches separately seek support and counter-evidence.",
+      "evidence": [
+        {
+          "resource": "repo://src/research/client.py#L19-L41",
+          "version": "repo-lines-v1:sha256:28600718eaf470853dc45f2be47d6df2aa47a34ad64989155129d7245678a52e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3MGZiMDNiZTVmZTQ5MGQyZjc2MjdiN2Q4NTMyZGE3Nzg0OTMyNWU3Njc2YjJkNTkxYjM5OTRkOTI5N2ZjMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODFjMDllOTI3Mzk4ZDgzNDRkMTczMTAzMzI1ZjI5MzllM2QyYjYyYTE5Y2Q1YjI3N2FjMjk5MzlkMzYzOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OWU3Njk4YmFjMzlkNGUyNWFlMTcyZThiNjE0MWU4OTgyMmZkMThmMTU4NmJmODUxOTE5Njc1NWJmY2Q5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYmQ5ZDRjZGYwMjNlNDZiYmM4ODVkZTc2MTZlMmI0NGY1N2M1YjkwMmI3OWMxMWUxMGFmZjIyNGEzZjg1OTMifQ"
+        },
+        {
+          "resource": "repo://src/research/client.py#L77-L83",
+          "version": "repo-lines-v1:sha256:a93a58bf9403595dcb70ae7cf6915f13a4e225471fd0ee6167cf878a739e285c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNiMDljYTJjZDZkNWZiNmQ1YjU3NDJkOWQzODQ4MjFiMDViZmUyNTRhNzBiOTY3MzJmODFmZTFiYmFiYjc3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M4MWMwOWU5MjczOThkODM0NGQxNzMxMDMzMjVmMjkzOWUzZDJiNjJhMTljZDViMjc3YWMyOTkzOWQzNjM5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDUzNzA3NzA3ZDcwYjMwMzM1Nzk0NGU3Y2EyNTlkNDFkM2Y4OTNkYzIzYjliMDE4MDkxNWY4YTNmOWRiY2U4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU1N2EzZmU4MmMzYjBkZmE4ZDA4NmQyMzU4NDdiMDBiYWViODJmMjYwMzFiZjNiNTNhNGI1YWI2NGNkNzlmOSJ9"
+        },
+        {
+          "resource": "repo://src/research/market.py#L166-L187",
+          "version": "repo-lines-v1:sha256:7fe23a3cd799a63702771614897a6300c2cf9011b3891289b569d3fa68f5aea6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMGQ2NjViYzhlMWI4ZDFlMGFiZjkzNDUyYmE3MjA2ODczNGEwZjk5YmRjYTUyMjA5YmNhZTFhNGI5NmZmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NTBjYzEyYmE3ZDgxOThhNWFkNTk5YWZjOGNhN2UzMjljODdmZjdhNmRhODRjODJhZWFmNjg5ZTNiOTdiNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllZWI0NjkzYzMyYmJlMWE5YmMzOGU3NjkwMzYzNWZmODVkMTIxZDIzODM3ZDZhNjFjMGU1ODgyZjcyYmY4M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwZDdiNTMxYjk2OGI4NmU2NmY0Yjg4NTc2ODU1NTg5ZjYwOWNhNmYxMmI3ZmZlNzRjYWRhODgzMDc1MGM1MzkifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L150-L174",
+          "version": "repo-lines-v1:sha256:e4947149001bec51acc396a232cdf2e3514bacadad29b1b1fbe8adbbe715db9a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlYzQ4YTk2ZDFmOGNmNzQ3NzEzZTE2YTIwMWQyMGRmYjlhYTVmN2VmZGU1MDI1ZThiM2YzYTUwNGM4NDdjNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxYmM0MmI5ZGM3NjM0Y2IzYTdlYTk0ODNjZTMxZmY0M2UyOGIxYWYyZTM3ZWY1YTg0MjM5ZjJmMTFlYjE0OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkYTExN2UzM2Q2N2Q5NDZlZDM0ODNjNzY0NGE5OTA4MzAyYTEzNzJjMTk4NDU0OGVkOTBjN2U4ODYxNjM5YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1NmVhMGRmOGYyM2IzNjczMmM0NzFkZjc3YTE3NjM1YThmNzIxZGIwZjBiZWE0NmU1ZGJkNDc5ODkzMGQ0MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea5080725f9e43d097cb9bfdb1a0f2da",
+      "statement": "Paper analysis owns DOM-* and MAT-R* claims, market research owns MKT-* and derives MAT-A* claims, and stakeholder research owns STK-* claims while reading market context without mutating the market summary.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L10-L26",
+          "version": "repo-lines-v1:sha256:01820abcffd4d3b098527283280a811b150de19917552581d93628e9c8306b13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YTYwYzNkNGE4MGRmZWI2Njg1NDc3Yzg1MmNkOTZmNThjNWZjMGVjNzI3MTdhNmNkYzc0ZjJhNzY4NDYxM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2OTIxY2Y3YjQwMTJiZmExM2JlZjMwMzQ3NmZmZmRkYTI1MjRlNzQwODM2MzBkYWQ5MGVlODJlOTg1ZDRhNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3N2YxYjM0ODUyOWQ1ZWQ2ZWZkOGFhZDY2OTZiZWVjYWZmY2NjY2ZiZmVmZGQzNWQ5NjNkYWY0YTVhZDM2NGEifQ"
+        },
+        {
+          "resource": "repo://src/research/market.py#L236-L274",
+          "version": "repo-lines-v1:sha256:7db732aeaed2f549b0ca1fa16734420dab211be09bf246040813e15d5acbc20c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MTA3OWQzYjI4YjFkZjA0NzNiYmJmZDgxMTZmOTM1NmEwNTNiYjBmYTdjYmI4NTkzYThkZTVmMGRlMTUyMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2YjZlZGQyOWEyM2Y4ODE4MmMwN2Q4MjRjN2FlNDIyMTFkNjY0MDA2MTRlODE1ZmE0ZjcwZDM2Yjc3ZGYwNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExYjdjNGJiN2I4OTBkZTQ0ZDY4Y2U5NjQwNmNiMzUzYmU3YmUwYzU0ZmY5ZWRhMzUxNjA0ZjE0NmVhYWZmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMDk1NGU1NzE5Yjk4NzJjOGNiYWNlYzY2ZTg3ZDAxZDkzZTA0ODRkNzU4ZGI3M2I0OTE0N2NhYWJhOTA1NWIifQ"
+        },
+        {
+          "resource": "repo://src/research/stakeholder.py#L349-L379",
+          "version": "repo-lines-v1:sha256:0317e5f5851f62673b67a7564de61657df1e245a638c859e6f390e8baf0da1f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Mzc2ZDcxNDczOTlmNGEzMTQxMWNhNDFmMjM3MTQ0MWEzZGVkYTA2MmI1Y2Y0OGZiMmQ1OTE4YjZmYmRmZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlY2Q3OWM4NDNjNTBmOGUxOWU1ZDk4MGMwOWQ1MzM2YWI2NmQwMTNmMDIwN2U0NzM1OWVlMTcwMDJhMWMxNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNDY4YWQwYWJkNWRmODYyMGJiOTRiZGZmZTg1ZjQyMTEwZWNkYThhZjc2NGE0ZDVjM2JhMDZiYWE1Zjc3M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYmU5MTQzMWIyODkwYzU4ZWRiYjU5YTIwYzNkNDFiZWM0M2UxZWM0ZmVhMDUxM2U4OGI3ZDJiMjFiM2IzMjcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}

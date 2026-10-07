@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:829d3a205b4e7904fc37000aea83aed50f176750dd8a9c373d09f88975ec8e3d",
+  "claims": [
+    {
+      "id": "claim_541253529885487db7b472eafee486ef",
+      "statement": "The evaluation graph routes a passed audit, or an audit whose retry targets have exhausted their two-attempt budget, into evaluation_synthesis, then into report_generation and graph termination; PDF conversion is not a graph node or automatic edge.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L32-L53",
+          "version": "repo-lines-v1:sha256:003dee602bd87e433985e1d9f5c54dfa5bba76429bf09087091a4b8a9307cd13:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZmRmNGUwZDU1Yjc0ZTc1YTMwZjdiZTkwMWRiNWMwMWJlMTc1ODc0YjhmZTYyMDEzNDdjMmRiNWRhYTNmNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxNDlhYjU4NWE3NDlmNDdjZjI5ZTQ0OThlODA3MmQxYzg5NDFjYTVjODgwZDYzOWQzOTFmMjNlMjY4YmNiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L83-L99",
+          "version": "repo-lines-v1:sha256:7de7edb96af5693342f0b4b405452b0b4405ee3d4ee9fc181bcb2c0051e0e13d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZmNmMTlhY2M4NmEyMzYzY2VhYjQ1OTQzNTFiNmRmMTM2NTVmNjI5NGVjNTUxYjMyNjkwNjFhMDEzOGU5YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzIzZDQ1ZTMyNzJkODFiNDZlNjM3N2Q2ZTNjOWY4YTFmZTc0NDlkMmUxZTcwYjI3YzIyOTEzMDM4Nzg4ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2YjdjZWIwZTc5ZWFkYTgzNWU5NzJlMjFhNTNjN2M1NjE4Y2MzMjg1NWRlMjg1MDNhMWQ0ZTMwYzMwYzAwODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_809eb023c0634608b11684f6fafd2c1b",
+      "statement": "evaluate_trl derives TRL only from claims for the requested technology whose status is ok, treating domain or maturity perspectives as research evidence and market perspective as adoption evidence.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L4-L9",
+          "version": "repo-lines-v1:sha256:8eb19cdcaaf39f8cc71a2b2264407fa84b43f9124c9e005fe1d350220e949a6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWFmMmY2NzZjNDUwNzY5MWRmZjJkYWIwMTFmNjU2YmY0MTAxMmVlY2UzYzI2ZTNkNTRjNTg0YjM0NGQ1YWI5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRiNGEwNjcyN2NlZjc4OWJkOWEyZWZiZmU4MjAxN2VhNmRiZGMzYWMxNGM4Y2MyZmZmZDM0MjczOTZmYmJiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGM3NDVlYmFjM2Y0OWI2NGNhNjk0ZTI2ZDE2ZTc3M2FhOTNhZGQ1NzQzMTcxOWEyNjExYTc1YzI1ZDc0MzU0OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_708a16f4bb084d18b1496d71263f84e9",
+      "statement": "Technology TRL is 5-6 for verified research facts and otherwise 3-4 for research simulations, while family TRL is 7-8 for adoption facts and otherwise 6-7 for vendor claims; unmatched axes remain Unknown.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L20-L24",
+          "version": "repo-lines-v1:sha256:38d3ef5cce6f27fba3380f36870549a1d0755e8264c8bd37728b1d3e341d8bd2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjkwOGEyNzA4YmVhY2VlZDFlZTFlZjQzMDQ0NDNmZDAzYzg4NTgzZTM2YzliMTE5NWY5N2Q4NjkwYWZkYmVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMzMWY5ZGFhNmI3YzgwNDkwMzczOWY3MDc5N2YyN2MzOTc4NDFlMDEyODhhNTIwYWYyZWQ1NDdkNWYzZDQ2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmIyMjVlMGI1Y2FhMzA2NWVkNjhiZGJmY2UzZGRiZTJkNTRmY2RjMWI3MGU1ZTRkN2VlOTIxYzAxZTMzYTZlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzcxNGRmNGQzMTg3NzU3NThkYTFiNTAzNzY5OGViOWY0ZTE5M2YxN2RkYWZjMDVlMDM4YTYxYjBmM2U0YjQ4NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_226ee08e7858432da244fde2f87d5daa",
+      "statement": "TRL confidence is high when both research and adoption evidence exist, medium when either side exists, and none otherwise; with no verified claims the evaluator returns Unknown axes, an Insufficient Evidence fallback reason, and empty evidence lists.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L10-L18",
+          "version": "repo-lines-v1:sha256:212fc69375ce280333e77650895d1044c40ee5fe8b454c5dd58a7fc0f6c3edb6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQxOWZjYzIwNjIzMWMzMzY2ZjkzZmFmNjM1MGU3ZGNlYzNiNmViYTE2NGE3OTU2OTRmODg0MjBlYzg1NzRkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEwNzEwMWIwZjljOWNkOGI3OWJhMDQ2ZGIxMmU1MzJkMmIyZGRkN2I4NGZmMzczNWY5NzkxNDgxMDNjNmY4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzYyM2E3MDdjOTc1MmIzYjdjNTI1ZDdlNmRhZTIzYzY1NWQ5ZjA0ODZjNTZjMTc2MGU0ZDE3NzhkNmI1N2VjNCJ9"
+        },
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L24-L31",
+          "version": "repo-lines-v1:sha256:6b8e8ca9b95fd4cf360e47acba2b306eba0c7952044eec50a8ed34f22f54ba28:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMzMWY5ZGFhNmI3YzgwNDkwMzczOWY3MDc5N2YyN2MzOTc4NDFlMDEyODhhNTIwYWYyZWQ1NDdkNWYzZDQ2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiOGIwOGYxMWM0NjdlMjBhMTZlZGU2NmUyOTE1YjljYjI0MjY3ZGVmOTczMTFkMzg2NDVlZTI5YzUyYjJjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk0NmNmZThmM2M1ZTgzOTZlMmJiMjkzNTkzNTM5MmMxYmQwMzRhMTNhN2M5Mjc4NjNmYzdjZmQyZGQwZTc2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDIyMTNiMjQ5NDFhYmQ1YTI4NWVkMDJiMTVhNGIzYTViZDMwMmYyZjllYzYxYjJlMDQ0YWExMDJmNjY0MTA3NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6030077d40ac49c1ae2c251859c86742",
+      "statement": "The synthesis node computes independent TRL records for KIVI and CXL-PNM and exposes insufficient or rejected claims as evidence gaps while its fixed synthesis text preserves trade-offs, possible synergy, and an explicit no-superiority conclusion.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/evaluator.py#L34-L56",
+          "version": "repo-lines-v1:sha256:594ab0e1c5d1f037d3f0c52a3c63388ffac0e6d4829a444e44e6eae412a452d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNGY1ZDM2NjNlMWFhYzRhZjZhMjI3MDIyMTNkYmNiMDY0ZDU4OTY0MmFkMjRiMWQ4YmQyOWZjNzA3MzU3NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNzFhMGEzZjY3M2FmOGVkYzFkZmJlMzA3MDZkNTZjZTZjMDA3ZGFmZWQ1ZjQ0MDFlZWRmMmRjNzc3ZTYzYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZDk5MTY5ZGNiYTQzZWYzMmUzNjhkMDYwZDliYmJiMDJmYTc2YzA3MTlmZTM0ZDI1NjY2ZTlhOTY1MjlhNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4483c828a65b4247a5bac2f17a6b1896",
+      "statement": "The report template renders only ok claims as positive technology evidence and numbers only sources reached through evidence attached to those claims; it also renders separate technology/family TRL columns, evidence gaps, and explicit no-ranking report language.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/templates/report.md.j2#L106-L120",
+          "version": "repo-lines-v1:sha256:d96e6d0d0753032f8acced735d976678711eba07c05c78ccc9e38c2b6bfe26e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NzNiOWRmYWRiNDVhYzI4OTcyMjE1YWQ2MjFjZTg1N2E2NWE4NjExYTQ3OTcyM2M2MWUyMmQwOGVmMjE1YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkZDczZGEyNjFkZDg4NDQzMDEwMGM3ODA5MDEzOTZmOGIwYjRlOWMyYjJkMDU5MmE1MjIwZDlmZTViNTM0MDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZDNiMDRhOGQ5OTdkZGE5ZmIwZTQwMDI4NGI4OTM0YjI3NGIzYjU0ZGJlZDQ3YTY0ZjUxZjY1OGM4OWI5MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlZDNmYmExZjY3MGY4YWZiMTUzODk3ZTJjOGQ4MjBjZTcwMzYzYTIyNjYyY2U5ZjRlOTY4YWUxYzk1ZjY2YzEifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/templates/report.md.j2#L3-L9",
+          "version": "repo-lines-v1:sha256:3975eaac7fbcd33e37d4a826e200a75d081c227d025a72cb528e776dfb882b94:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ0YmE4NTA2MjAyMzU0NzY0NWIyNTAzMmIxNDA1YTMyODRjNTIwMGNjYzA0OTAxYjI3Yzk1ZDkzZTFjY2JkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDU1OWUwMGFlNmU0NjE5MzEwNWFhZDU2OGY2MmFiYzk0OWUzOWIyYjczMzRiYjZkZmM3ZjdhMDU5N2JjMzBmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGU0Yjc2YjdkM2U2ZGI0OGY3NGFjZWI0MWI2MDc5YTJkZGY3OGNjYTEyOTVmZTViNjJlNmJiMzRiN2QwNGVmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNmOWM4MzVjZDgyNjc4OWUxMzhmZDIxYmQzZGM0ODIyMTVmMGE1MGJmMjhmM2M2YmVmZWE0OTE0YzUzYjU3OSJ9"
+        },
+        {
+          "resource": "repo://src/synthesis/templates/report.md.j2#L43-L70",
+          "version": "repo-lines-v1:sha256:3a151ed8be09ee0342d30b882c4e3c3096b68b7f672b2597218149589fdc2ccd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MzdiODNlNDIwMjhiZDczODM5OTZjMTU4YTA3ODQwYmY3NWE0Njg0OTdjMjg2ZmNiNGQ3M2FiMTY4YTBmN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MmE0N2Y2MjIzYmJhMWJjMjFjYTUwMjQ4MjAxZTAwMjEyZGJhYWIwYzY1YjAxMmNiMzg2MDA1OTlkMTE1NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZTBmZjU3ODMyMWU1MjQwYjFlNGY5MDRhZGE3MTViYzUzYWM0MzU4Y2RmMTQzMjRjYjZiMTRjZjQyZTdkZjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b67ba9f2e4a04ea6a8bc8914f7c571eb",
+      "statement": "Report generation enriches missing source authors, dates, and site names from bounded HTML metadata or JSON-LD requests, keeps enrichment best-effort on errors, and applies citation fallback filters before Jinja2 rendering.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L147-L170",
+          "version": "repo-lines-v1:sha256:d84a3683d9136584d7c4a04a66f51100cf903e6ff4c5cd1736f2b5904117cce9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNjcyMzk3ZWRlYWU4MjA4ZWNjYjM0MjE1MWQxZTY2NGIzMWZjMzAyYWMwZjM4Yzc2MzY4MjFmZDM3ODViYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZGMzMDhhODg2MmQ1ZmVmZTRiOTFhMzE5N2Y2ZDQyMDRmNmQ1YzZlZjMzNzkyZWVmNzE3NjE1NTZlM2Y0ZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwZDAxNDMxM2YxYTZmYWVkZTNhYzA0YzAxNzE3NDUwNzZkNjA2ZjQxYmFkYjk3OGIxMjkwNzI4YzM5NGU3MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwODQ5ODJjM2MxMGVhNDUwMjA5MzczMzY3OGMwMjNkNzNlNzQxZTA4OTM4NjdjMTljOTA4ZmE3OGI3OWQxNjQifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L27-L89",
+          "version": "repo-lines-v1:sha256:0ce054492679c4e8965bc781735d92c63fc86d828c3be04dc7b439d79a9c4c2b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMGM3OGY4MWJiZjlkOTgyNGM5OWY4YjEyZjMxNzJjN2JkMzk4NWQwNGE5YTI3NTk4Yjc5MmUxNWNhMTI2MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMjhlMTA2Y2I3M2E4NDJmZjhlMDg4MzA4MzdkNTIwZjk1NWI0YzA5NGE5NzBkMGU2M2Y0MDUyNWMxOGZjMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5ZTI1NWZjMTJmZTA1ZmE0MTUzOTI3MmM0NmYzNDZlNzU4NDQyYzUyNzZmNmYwZTQ4ODYwMmE5ZTZmYjA1ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3OTc5MDE3YzJmMWFmZGM1MzUwZGY3NDEzMzkzMDBlZjE5NTAxOTNhNmY5ZmQ5ZjI1ZTEzNGIzMTlmOGQ0MjQifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L92-L118",
+          "version": "repo-lines-v1:sha256:310feb0fbac3bfb3edc6a3c9723e62515e25fe0e3c282bc5a94e184ff5ff3c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOGNkODhlOGNkMGQ0YTQyYzQ1NTI0NzkwZjQ1M2NiMTg0NjFkOGNjMTg2MzRhNjljYjc3ZDI1MGU2ZGMxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MDcwMWVhZjgzM2I4NzY2ZjQ2YjM0ODBhZjdkNzFiMGU1ZTZmNGU5MTdmN2U2MmFlMDBhMzViODZjMTcyNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDY2NzgxZjY0YmU5ZjIwZGY3YWY3NWJkMDAzOGM3Zjg0ZDc5YmZjNzdhMzMzZWQ4MTdhODI4MDYzZDM4ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhNTdmZDliYzNkYzRlMTBmY2RiOTJjY2YxNjc5ZjA5Y2UyNWMyMmJjMGU2MDdiNjgzYjIzNTI4OWM0YzI5YjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ac687040300b48cc98e3f728e4391c3a",
+      "statement": "Strict grounding polishing is optional: without OPENAI_API_KEY the rendered Markdown is returned directly, while configured ChatOpenAI polishing is constrained against changing numbers, TRL, claim IDs, URLs, simulation labels, or adding winners/recommendations, and failures fall back to the rendered report.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L173-L193",
+          "version": "repo-lines-v1:sha256:7810c8e9863e2c9e787fc0c12d125f6cd26df2525de2669226b15d521ec630b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNTIyOTczODA4NDk1NTM0MzhjODRhNzg3NWJjZTI4MmRlZjcyNzRmMGUyMTViMzE1OTAzNmY1ODA4YmQzMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTg5YzlhYWFhOTQyOGIyYjNiYmEzNzc2NWUwYzI2Zjg1MmNhZjQ2ZDE1MzZmMGY1ZDYzNmM2Y2Q4M2RkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiNTM4ODQ5MGE3OWNlNGQzYjY0Y2NjN2Q4NDM4ZTg0ODkzOTk0YWI0Nzk2ZjNiZjY3MGRmNzc4ODFjMzM1M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b75ee58bb1494556b1bc549234a2c68d",
+      "statement": "Markdown-to-PDF conversion returns true only for a non-empty, error-free xhtml2pdf result; missing PDF dependencies and conversion failures return false, while Korean font selection checks project and platform-specific NanumGothic or AppleGothic paths before falling back to sans-serif.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L160-L170",
+          "version": "repo-lines-v1:sha256:e6e2ba725ab6184313b086720645ef3bce2335370125a48748777910f0578af4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTcyZGY2ZmUzYjNmMjJkZDk0YWFkZjU4NWM0NmYyMmY4NDdiYzQyZDM0YjQxZjY1ZTliMmQ0N2ZjY2Y5MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyODkyMTg0NGQzY2JkZmI3MmUwN2E1ZTIxNzg3ZTEyNjhmOWNkMWY2ZTg4ODk1NDFmNGI5YTc0MWY0ODkzMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L23-L41",
+          "version": "repo-lines-v1:sha256:b67fa24d86ef57657e398226554b5c106f57ca05501de6fac8fa4ae0614b2f35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZjQyYTg4YjJjOWIyOTA0YmQ1NTAyYjI0NjRiMzJhNWRmOGJhMzYyZDgwYjE1ZmZhMTc2YThmNjUyYjAxYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4OTAzZmViYTM1OTBiMWJkOWEyN2I4OTA0MjBkNjFjZDlmMzEyYjZmMjQ1MzdjMzA3ZTkwODU4YzA0ZGUwYmIifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L43-L69",
+          "version": "repo-lines-v1:sha256:87c6666dc55a6fada225a40990169db97a9587a20d08fc7d4f126df97e94818d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZjhmYjIxYzBmYWNiODgzZjM0YWFiMzhjY2Q1MmEwZDE4YzQwZjA0NjFkMDJkMjA3ZTJhYWNkMmFlMTc5MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0ZjNmNjA5ODhjODhjNmJkMzRjYjg4MWZlMTQyYzBmMWRlM2ZmNTMwZmY3NzAyNmMzYzk3YWU1ZWQyZjllYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZGUyYTk2YzhkZTRjZmNhODhmY2I2MTYxZjk1NTY1NDk1NTRlODA2MTkyNWFhMjliODI1ZjU5Y2E5YTE4MjIifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L7-L20",
+          "version": "repo-lines-v1:sha256:370ba23f472a2098bcb9027e1f9d94aabb8b6cfef967892adbd7909cca36437c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGNlZDk2YWYzZWFkMjEzOTk0YzY5NGU0ZTY0NGRjOGVjODdjNjdhZTUxMDgxZmEwNDAwZTU5MDg1MzVhM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYjJlM2MyNjBmOGM4MmZjNjQ0Yjg1NGRjM2E1YTM4MDg1YjEzMTRmNjZhODhiNjljOGYzMDg3MWQzNDI4OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4M2IxMTM5N2YxOGM1MTM5ZjUzMzA1NGQxMmFhZDYxZmY1YzFjOTU2M2RlODU3NGEwYzc2YThiZDA1N2UzZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8dad8e09a324d339167cbc4a9de5c54",
+      "statement": "Focused synthesis tests protect dual TRL and no-claims fallback behavior, required report sections, source/citation handling, simulation labeling, and the absence of superiority language; PDF tests protect Korean font discovery and non-empty table-containing PDF output.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_pdf_export.py#L6-L31",
+          "version": "repo-lines-v1:sha256:8844f5387d7efab9ab86badc97d556483c3ca9e72a8d7e55d5d126db40d59d26:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0NGNhNmFiY2U2YzAwOTEyOTQ0MTc3ZmY3YWU2ZGI5M2ExODI1Y2IxNDVlMWY3YzNiNWViZTJkZjFiMWY2NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNTM0Y2I3MTY4M2QyNjAyY2YzODYwYjExN2Q3M2NjNGI3YWU2MzMwYTFlMTE2NmI5YWMzNGU5NjE0NTIwNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNzc5ZjBmNTdiYzFhYjUyNWFkYzljZWExNzU3ZGIzNzA1ZWM1YWE0NjBkMjJkYjRlM2UwYjBlMGFjNjNkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_synthesis.py#L16-L34",
+          "version": "repo-lines-v1:sha256:e2b2167a2cfe2bdcecdcee4e01f0e6b63f8efff2f88ca0de5fc0b40d317dec53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNjNmYmZhZmU4ZWM2MTMxMDBiOWU2ODQ4NTI2NGU1NGFkNjljNTQzNjVhNDkxYWEzMzdkYTY1MDZhODRjNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Yzk3Zjg5YmJjZGY5OGM3YjdiNzc5MTg0NmI3NTkyMGUwNjMyZDg3MjI2ZDZiODI4ZjJmZmQ4ZWM4MzUyMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1NzZlNzc3NTczMWYyNjlmZGQ3ZDMxZDk4ZWMwMDc5YjVkMDk5MTEyNzhmOWJhNTJkZjc1YWNmNzgxNWU1YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2NzRkODA0NzY0YTE1OGMwZDcxZWE4MjdjNWU5ODhjNjljODc5MDE0MDhmZWM3YjI5YzY2MzRhNDczMDA0MmIifQ"
+        },
+        {
+          "resource": "repo://tests/test_synthesis.py#L36-L77",
+          "version": "repo-lines-v1:sha256:39eac446daa98c0f94dcff5f7b888cd84197871b783e75691e19d3e79fb8a209:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MThiYWQ1YjYxYTM1ZWU4NDg2ZjY4Mjg2NjgxMDFjNmYzYzVjZmYzMTkyMzI4ZGE1ZWM4NzVjN2FjZTY5OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZGQyMjYyYjExY2YxZTIyZTFiMDMyNzNhZDYyNzQ4ZDE5OTY0MDllZWFjMzFiMGU5ZjdmMTFlNGQ5NDg4M2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5YjQwMWYyOGRkODAxOTU3ZWE5NDhmZjJhMzMyNTgyN2MyMzZkZmRiYzNjODFkYjZiNmY3MTRiNjI3NDRlOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}

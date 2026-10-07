@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1ce39e42fc3abbb59250b33a2f89a81b4c1ce7de154791aaf855a866216a6bb6",
+  "claims": [
+    {
+      "id": "claim_ee490acb23464ccd856e19c6e58d4445",
+      "statement": "The project targets Python 3.10 or newer and declares LangGraph, LangChain, FAISS, sentence-transformers, Tavily, Jinja2, pypdf, Markdown, xhtml2pdf, pytest, and python-dotenv as project dependencies.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L1-L23",
+          "version": "repo-lines-v1:sha256:5c7a80ae72e53d9b8ff76a6f101b13471e13fa67fedb479fa84d8ea4bfd1d2c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b149c94d4564ebfacc74549e9229a07",
+      "statement": "src.config loads .env with python-dotenv and centralizes API-key values, model names, repository-root data paths, FAISS index location, and Markdown/PDF report paths; the default LLM is gpt-4o-mini, the Judge and polishing models are gpt-4o, and the embedding model is intfloat/e5-small-v2.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.py#L1-L28",
+          "version": "repo-lines-v1:sha256:242324d9138f083bdb120e48cd68fe32d79cac26af889cb708303f52e55f7be9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMzJmMGNkMjBkMzZiMjY4N2Y0ZjU5N2U1MDNlMGVkNTg0MWQ4MDRkNjZmMTg4NTQ4NzE3MzhmMzZjMzYyYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMTMyMjA1MDRkNGI4OWFhMzc3NmM3NGIyNGU0MjQyNTZjYjllYzQzYjNiM2I0OWYzYzlmNGYzYWU5MmI4YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7de30658b65b4a0a836b2c4b81fee71c",
+      "statement": "The compiled LangGraph starts paper analysis and market research in parallel, chains market research to stakeholder research, joins both research paths at evidence audit, conditionally retries affected agents with a maximum retry count of two, and then runs evaluation synthesis followed by report generation.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L12-L29",
+          "version": "repo-lines-v1:sha256:434e3c02c04e556213b6e17f6f4881ecf7de93794133782677c19b4c51112c3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTEyODZjYjk3ZTk0Y2JhYTQ1ZmIwN2ExNDMxYjRlNjg4ZGEwYjA5YzVkNWFkYjkzMGUyMTY4MDUwNmRkMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWM0NzI1OTkwZTcyYjJkYWI0ZWQ0MDhkYjQ0YTMzYjJkZTBjMWNkMDUxNDkyNjY5NTRkNzBjY2E5ODU4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4Y2E4MGZjZmRmODg1YzYxYWE5ODgzYTgxZDQzYWYwODJhMmQ0NjAwMTM2ZDlmZTUxODE5MmM5ODI2ODBhOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkMzUzZDJiN2IwYWRiMDljNzA3Njk0OTMxMmEzYjE2MzY5MGQ1OGQwZDhjODRhYzcwMjMzNWRlMTQyMDZhYjQifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L32-L53",
+          "version": "repo-lines-v1:sha256:003dee602bd87e433985e1d9f5c54dfa5bba76429bf09087091a4b8a9307cd13:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZmRmNGUwZDU1Yjc0ZTc1YTMwZjdiZTkwMWRiNWMwMWJlMTc1ODc0YjhmZTYyMDEzNDdjMmRiNWRhYTNmNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxNDlhYjU4NWE3NDlmNDdjZjI5ZTQ0OThlODA3MmQxYzg5NDFjYTVjODgwZDYzOWQzOTFmMjNlMjY4YmNiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L56-L99",
+          "version": "repo-lines-v1:sha256:85423e4f45745857266adbfb806c4a50e86dd15cd3fb0db8839eba259ff70995:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMWJlNGU5ZDAzMTEyNGExOTI4ZDdlM2JhYjc1NmQwYTA3MmU1YmU1ODM5MjZkYzY3YmIwMmFjNmQ4NmEyODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzIzZDQ1ZTMyNzJkODFiNDZlNjM3N2Q2ZTNjOWY4YTFmZTc0NDlkMmUxZTcwYjI3YzIyOTEzMDM4Nzg4ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhN2ZkYjQ2M2MwMGViN2U5Njg0NWFkMWNkNWJkMzgxYjE1OWIzN2M1OWQwMTVlMzIyN2ZjY2RiNTk5MDM5M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_24bcf10f13604a868c1bcf884811b09d",
+      "statement": "OPENAI_API_KEY is optional at the configuration boundary: absent credentials cause LLM-dependent paper setup or calls to be caught, audit judging to avoid the API path, and report generation to return the rendered template without polishing rather than requiring a secret in source.",
+      "evidence": [
+        {
+          "resource": "repo://src/audit/judge.py#L35-L52",
+          "version": "repo-lines-v1:sha256:fe2b313ab7139d2861d8196b2b43090292ccac52a26e3981684b1fc59a3f0e43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YWJhMTM4NTVhM2ZjNTk0NmVjN2Q2ZDRmMTgxNDQwNDQ4NjYxZDUwOGIyMTFjZWI0NDNjOTFiMmQ1ZjUxODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZDdhMTRhZDE5OGI3OWZiZDAyYTVjOWJlODNiYTA2NWViMTc0OTQ2NGY1ZGM3MWZhNDZiYzlmZDhkZmNjMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5ODQzMWE1YmEyMzZmOGNkNDI2Y2Q0ZDNjOGJkMTY3OThjZTk3YmRhZmEzOGExYWY2MTc2MmUzMDM3NTZjZmQifQ"
+        },
+        {
+          "resource": "repo://src/config.py#L11-L19",
+          "version": "repo-lines-v1:sha256:850781608aae57e76f60916c76393f6c3b18753d3f78fbecb30a66841fb8cfab:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTczOTNlM2M4Y2ZmYzAzYjkyMjljNjI4Y2VlN2U3Y2NiZDg1OTFjNWI5ZmRiMGE4Y2U1OTFlYjJmYTgzZDZmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVhMzliOGZkNjUzYTYxZGJiMDg3M2UzNjcyOTY4YmRmMDQ0YzVkMGQ5NTAyNDY5ODA0MjgzY2NiNTdlNDM1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU4ODgwZjYwMDNjMDZmM2M0NzMyNTMwNzA4ZGMyZjc5YWM2NTU2NzAyZTc0MjI0NjM5NDJkNjg4MDNhYWUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDdkMjE3ZTkzZjg4N2FlZjAxMTJiZTZkZmQxN2YwZWE0M2RjNGIwNWQ0ZTg2YzYwZGE2NjA5MmE3NDBhNjg5ZSJ9"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L65-L76",
+          "version": "repo-lines-v1:sha256:95c1ce8cb1a7e4a49293c7234ec50ce71ed3b462ecd3d70b4fbd8c99b8ee437a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZDQ2ZjM2MDRhN2RjOGE1MWVlZjI4YTYyMzlmMDQyMWNmYTY0NzM4ZjIxMDdiZWNiMGExNzQ4NmY2OTJkYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYWFhYzdiOTVkNzAzNWMyYTEyY2RjNzMyZTc4YzA3MGQwMDQ4ZDA5Y2I1YzgyNmIxZjdkNmVlZWIxZjY1ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZDAzZjViNTViNTY4YTUwNmNjNmI2MTlhMGViNTM3NWQ0MjJhMzcyMGRlYzBmMTI1NWRiZWI2ZDk2ODIwYmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmZWFmNGEwYTQyNzllMGQyM2FhYzY1OTRmOWRmNzMyNWY5MzQ1ZDViZGFiNmZiYzEwM2EzNjcwMzk4NGI3NzYifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/report_gen.py#L147-L174",
+          "version": "repo-lines-v1:sha256:b6dc95ccb7a23f5da8048a08251a4021ca126b6ffa85ff7e438937ad25760bcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNjcyMzk3ZWRlYWU4MjA4ZWNjYjM0MjE1MWQxZTY2NGIzMWZjMzAyYWMwZjM4Yzc2MzY4MjFmZDM3ODViYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTg5YzlhYWFhOTQyOGIyYjNiYmEzNzc2NWUwYzI2Zjg1MmNhZjQ2ZDE1MzZmMGY1ZDYzNmM2Y2Q4M2RkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwZDAxNDMxM2YxYTZmYWVkZTNhYzA0YzAxNzE3NDUwNzZkNjA2ZjQxYmFkYjk3OGIxMjkwNzI4YzM5NGU3MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMGU3YzE4YmZhYTUyMWZkY2UxYzdjNGFlZGVmM2FkY2I5NGFjZTRmMTE1ZDM3MmE4ZTkzNmJhNDM0MWNmNTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_39ada5f3bbb1479f919c93b1e5c1ac06",
+      "statement": "When TAVILY_API_KEY is missing or Tavily fails, paired web research returns an empty result and downstream code can continue without fabricating a source; the client explicitly logs the fallback.",
+      "evidence": [
+        {
+          "resource": "repo://src/research/client.py#L19-L41",
+          "version": "repo-lines-v1:sha256:28600718eaf470853dc45f2be47d6df2aa47a34ad64989155129d7245678a52e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3MGZiMDNiZTVmZTQ5MGQyZjc2MjdiN2Q4NTMyZGE3Nzg0OTMyNWU3Njc2YjJkNTkxYjM5OTRkOTI5N2ZjMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODFjMDllOTI3Mzk4ZDgzNDRkMTczMTAzMzI1ZjI5MzllM2QyYjYyYTE5Y2Q1YjI3N2FjMjk5MzlkMzYzOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OWU3Njk4YmFjMzlkNGUyNWFlMTcyZThiNjE0MWU4OTgyMmZkMThmMTU4NmJmODUxOTE5Njc1NWJmY2Q5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYmQ5ZDRjZGYwMjNlNDZiYmM4ODVkZTc2MTZlMmI0NGY1N2M1YjkwMmI3OWMxMWUxMGFmZjIyNGEzZjg1OTMifQ"
+        },
+        {
+          "resource": "repo://src/research/client.py#L61-L83",
+          "version": "repo-lines-v1:sha256:5ed8398a2f277fbf45c21ef20627eb037287425e2f021be1d8ec1d8053c158da:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzM1M2M4OWE0ZGI1MjI4MDIyYWMwZWQ1ZTA1YWM4MGU4YmY2ZDdmNzJhNjMxNGVjZGRmOTNmNDE0YmY0ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODFjMDllOTI3Mzk4ZDgzNDRkMTczMTAzMzI1ZjI5MzllM2QyYjYyYTE5Y2Q1YjI3N2FjMjk5MzlkMzYzOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1YWMxZTA2NDM0MzFjYTlhMTBiYjMwZjljNTI2MjkxZDQ0MzM5OWE1Y2IzODY4OWI1MDIzMTI4ZjllYTU5NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNTdhM2ZlODJjM2IwZGZhOGQwODZkMjM1ODQ3YjAwYmFlYjgyZjI2MDMxYmYzYjUzYTRiNWFiNjRjZDc5ZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e7c27f524624efeb9fcad47b4fe7c59",
+      "statement": "The CLI entrypoint invokes the evaluation graph, always writes the state report to Markdown, attempts PDF conversion when the configured output suffix is .pdf, and reports a Markdown fallback when conversion fails; uncaught pipeline exceptions return exit code 1.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L31-L66",
+          "version": "repo-lines-v1:sha256:58a26355e3aecf208a38949edeeca423cdd6a83cabd2c3461f6556adfcb81ddd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDg2NmUxYmNjNWFiNzZlM2VmNTkwMTJkMGFkMzlhNjg3YWJlMDAyM2I0MzhhY2IxMTMwYTE4ODI1ZTgxOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlNWUzYjBjMjUzMmI1OGVkMTE5MGVmNDJiNjNmMjYxMGIwNmY2YzRjNjEzMWY3Y2I1MGQ1ODQ2ZWUyNTRiNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZGIyNzQxOGM2NGE4YWMyMWFhN2VjNTU5YWYzNzFmYjllMzdiYmZhNDkzYWU5NGE5NzNmYmQ2ZTlkYmU4NjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_455a918d316f42f6885c1bcfcb1388f9",
+      "statement": "The Streamlit entrypoint is optional rather than a requirements.txt dependency; it streams graph updates, can load mock state, persists the same Markdown/PDF artifacts, and exposes report, audit, TRL/synthesis, and raw-state views.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L179-L188",
+          "version": "repo-lines-v1:sha256:138cbc1a07a620c1f9f3468eeacac953354513ea0fb3493580ee1b09dfe5c93c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjA3ZTlhOThiNDM3M2ZiODBjZmY2Mzc4YjQ2MGJiNDUzNGVkODVlYmYwMTA1Y2RlOWUyOWRkODdjYjg4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NTUwZWQ2ZDVmMDY4M2NlNDI4MmNkNzdkZDYxNTBjNWQ0MTk5YmYzZmUzMDNhMjg2YmYzMjhkOGI0NWU5YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMWQ4OWVmY2NhNWM3ODVhZDRkOGRhZTBhMWNiYzhiMTJiOTNjMzI3ODQxZjg5NTA1MGMxZDZiYzU1YWVmMWUifQ"
+        },
+        {
+          "resource": "repo://app.py#L1-L18",
+          "version": "repo-lines-v1:sha256:460902b4c91b1d68d949861ebdfcbf2dfbcc08b781a6b395cd4180aec7fb4b3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YzE1MTk4NjUxNjNlYmU4M2ZiZDM5OWVmMTQ2MDRmNTMxMjg0ZmI0MDIxZmI5ZDk1OTlkMGI1MmU1OGJjMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZTllNGY1NTlkNzhjZWEyOGRjODg0YzMyMTgwZjAxZWY3YzQzOTJhZDkxNWNmOWQ4MWI0MmZjNGZhYjNkYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmU1NTA5MjEyMThkNDk3NzhiODNmYzk5MGYxMzAyNWUwNjA4OTZjMGY1NzdjOWNmMThjYjY0ZjU5ZDhhMTYifQ"
+        },
+        {
+          "resource": "repo://app.py#L109-L152",
+          "version": "repo-lines-v1:sha256:29862ebe742267c372d60b72280843f10a62b4f5c2f5e6687a0a898e8cc7e692:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYTkxYTU0YjBkMjE1NmVmMjQ0NmRmMzljNDVmOTEzOGEwZjFmNDZlNTI1MDU4NmU1ZjcyZTU2YmU3MTdlY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZjkyNDVlY2RiYTc1NTZiNDQ5ZGE1YjMxNDEzZGY4OTk0ODNkNjI4NDUxMDMzNmFlYTliYmQ3MjM3YjFiN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NjY5ZDJiOGUzZGVhY2JkMWEwYjM2ZThjNGQ2NTZhZjIwNDBkNjFkZjk4OGMxNTQ5OTg3MWM4ODljM2MxMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhZmQzNTBiYjVjNjQ3YWJjMWUyZTEyYmNhNmJmNmMyZWQ2ZDc4YzI1ODIyNDA5ODc2MmVkNDQ0ODI2ZDY3YTUifQ"
+        },
+        {
+          "resource": "repo://app.py#L45-L107",
+          "version": "repo-lines-v1:sha256:a333b61fceb01a2a6f072360440109f507b76d73e6d47e41f8363c4af40ee0a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNjA1OTdhMjBmZDQxNTU2YzlmM2MwZjkzNzM2YTIzYzE1MDQ0NWY2MWJjNDNjYzRmOGFlNGYwYjQ3ZDEyMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzZWRlOGVmZjBhODQ3NWViMjdjOWFkOGFlMDVjNjVkZmY0MGI1YTY2MGFlYjhjMzhlZWQ0OGM2MTcwOWExMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3NmVlOWJhZWIwNGI2ZTgxMjE0MzQ5NjE4M2YxYWI5OWM5NzdmNTBiNmE0OWZkMDZjOGMwNDM1ZTEzNzBlZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZjQxMWJkOGEyNzU4NGJmZjg4ZGM0MzJkZmM0MWIzYWU0ZmE2MDI3OWE0NTY0MWQyNDYwOTFmMjAxNmI0YjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e62c67e195644aab8634f4cf37a948e9",
+      "statement": "The paper indexer requires kivi.pdf and cxl_pnm.pdf under data/papers, parses them with PyPDFLoader, preserves technology/page/section metadata, chunks sections to a tokenizer budget near 480 tokens with overlap, and saves a local FAISS index under data/faiss_index; missing files or unavailable embedding dependencies return failure instead of building a partial index.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/indexer.py#L133-L153",
+          "version": "repo-lines-v1:sha256:67b7b04f36b29475dd17d1ba1550576c7faafcaf21534e10e746fdb252dcab82:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYzk5NjViZjIyZGUxYmFhM2VjMzViMTc2ZmVlZjI3ZTg3YmE2YTc1NmVmZTE0ZjRhYWM3MTM2YWRmMTZjYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyZTYzMDEzMTI4ZjE4ZDkyMGEyOTFiNTczNzI3ODI0NWQ3NWE2MjZjYWFlMGI3NzA5MjczMWIyNmYxN2U0NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L31-L130",
+          "version": "repo-lines-v1:sha256:a535971ad78c3b509f2060312fb3992328cf39c67b534ccb1343b73f13a03cf0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YWY0MDhkOTJkMmVjYTA0ODU2MzkwMzY4ZmU5ZDI5N2RmYTczZWUxYTE2YTNiZDY0ZDcyOTFjY2IwOTEyYTU0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNmZlNjJhYzlhYzM4YThiNWQzNWVmY2Y3OGIwZmJjZWFkMDliNmU3ZWFhZTgyODEwNmY5ZDU1NjkwNTZjNGFjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5YWE1ZDU1ZWNlMDAwYTA0OGZmZmZiNGMyYmU5NzIyZTZkNDgyZTYyZWFlM2VkNWE5MDg3Njg1NzQ1MTdhOGQxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMmNjNjAwNDUzMDgyMWMwNWE3Y2QxYzQ1ODk3NjFlYTcyMGU1ZGNhMzNlOWE0YjY5NzFkNjMxZGM2YjIzY2E5In0"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L8-L28",
+          "version": "repo-lines-v1:sha256:6664358f052dcdde874f523d7b37499cadd39c45fecc13f596f7c26a143e02ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiY2I2OTYzODRkMTdjNGZiYWJhYmMzNDc4ZmMxOWQ3OTY5ODU2OWE4YzJmNTdjMGU5YTg0MWE1NGRkYjgwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZGE1ZjhkMGRiYTliMGM3ZDcxYTM4MDdhMGYzNDBhOThiNjFiYjJiOTJkMDk4ZGU3M2QwMTczMGJmM2NjMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhOWU2YjgzYzAwMmRiNTYwMWI2NDYyYTQyOTA0ZDA3NDQ4ZjBlODNiMmUyMTk4MjVlZmEzODhmNGU4OTEzNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllYjI3YjQxYzlhM2U1NDM1NWFhMDEwZGU0NWRmYjg3MWE0ODdiMGY1MjE3MGJhMWY0NzRkZGEwODQ4NDMxNzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccd55396442240a3bed2b2de018e881a",
+      "statement": "Paper retrieval loads the local FAISS index with intfloat/e5-small-v2, filters similarity search by technology with k=5, verifies that a candidate answers the question, requires an exact contiguous quote, and retries rewritten queries without changing the evaluation axis.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L51-L62",
+          "version": "repo-lines-v1:sha256:fb782a542ebf56e6d32114451cd063de5f9e2a861514b76bc725b6d231ba1d7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWI3Yjk0YTZiMDhhNWJjMzM4MmM2ODdlZDlkYjUyMDk1YmQzMjY1ZGU5NDY2ZjE3ZjdiMDM5YTI2ODk5YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNGM4YjgxZWMyMGQwZTdkNmZlMzY2MDU4YmUwZmI5YWYyNmUyYTc3M2RlODM2ZmQ5ZTY5YjJlYjRlMTE3OTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyZDU1MmM4ZDM3MTc2NjA3NDI0MWRiMzVhY2JkYTcxMzVkN2YwZWI5MGMyYThkYjk5OWVlOTlmNGY4NDBkYzAifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L89-L157",
+          "version": "repo-lines-v1:sha256:f22c33d6c7aa2cd1bc3ed5ffc02382ce58bc66d059f825d8f545928104751dd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NDBjZTZkZDM4NWFiZWRmOTJmNTE4MjQyMGU0OTIxZmE5MTgyOTMwYWYyZTg2YmM0YjU1YzAyYmI1MGRmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZjU2YjZjN2RiOGIwZTgxMDUxYWUxMzc0MDIzYmRjZjQ3YzEwNGUxOTQwYjA2MzBkNjE1YmQ5NTU0ZjA1N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZTNlM2Y0NzVjNjVjNDc0YzkxNjZlZGUxZDExNmUyMWUwMWVmMTQ5YzU1OGU0OTAyYjZkNmJhNTlhYmEwZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNzYzZWE0ZjBkZjhmYjk2MGYyZjhjMjNkNzU3MDM0NTI0MTNkMmMyYTIzMWFkNmJkZTk0ZmFlY2IzNjliMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e051a0afa414e81a88d66c1e08d4d8b",
+      "statement": "The checked-in embedding benchmark contains 20 queries, selects intfloat/e5-small-v2, and records Hit@5 0.8 and MRR 0.5955357142857143 versus Hit@5 0.75 and MRR 0.5480357142857144 for BAAI/bge-small-en-v1.5.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/benchmark_results.json#L1-L14",
+          "version": "repo-lines-v1:sha256:ef8eaf40d3ef386a81e11e27b944b33476fb260cb9b41e7a1dc25ca26c4d2d3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMGIzNmFhNzRhNTliY2Y0YTg4MTg1ODM3ZjY1OGFmYWYzNjQ2ZWZmMmJiMTZjMzkyOGQwZTkzMzVlOTQ1ZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6606c355805347cb86ca886b50620f33",
+      "statement": "PDF export converts Markdown with tables and fenced-code support, searches repository and platform paths for a Korean TrueType font, and returns False with a diagnostic when Markdown/xhtml2pdf imports or PDF creation fail, allowing Markdown fallback.",
+      "evidence": [
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L160-L170",
+          "version": "repo-lines-v1:sha256:e6e2ba725ab6184313b086720645ef3bce2335370125a48748777910f0578af4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTcyZGY2ZmUzYjNmMjJkZDk0YWFkZjU4NWM0NmYyMmY4NDdiYzQyZDM0YjQxZjY1ZTliMmQ0N2ZjY2Y5MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyODkyMTg0NGQzY2JkZmI3MmUwN2E1ZTIxNzg3ZTEyNjhmOWNkMWY2ZTg4ODk1NDFmNGI5YTc0MWY0ODkzMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L36-L69",
+          "version": "repo-lines-v1:sha256:ecef5bd0f3241ff45d7e42d257784f4eb5e2144159e01b27c617541165581a85:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZjhmYjIxYzBmYWNiODgzZjM0YWFiMzhjY2Q1MmEwZDE4YzQwZjA0NjFkMDJkMjA3ZTJhYWNkMmFlMTc5MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlMjE5NTAzMTg2ZDFkMzllODI3NTNmMDkzMDU5OTNmMjlmYWFlYWQzMThiMDJmNTg1OTk5MTk2NTlmYTY0ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZGUyYTk2YzhkZTRjZmNhODhmY2I2MTYxZjk1NTY1NDk1NTRlODA2MTkyNWFhMjliODI1ZjU5Y2E5YTE4MjIifQ"
+        },
+        {
+          "resource": "repo://src/synthesis/pdf_export.py#L7-L23",
+          "version": "repo-lines-v1:sha256:028fa8c28b89fd0b706eff0f060bf76dbbfb058b22e5c0b7d0dc88fc1264b4d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGNlZDk2YWYzZWFkMjEzOTk0YzY5NGU0ZTY0NGRjOGVjODdjNjdhZTUxMDgxZmEwNDAwZTU5MDg1MzVhM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZjQyYTg4YjJjOWIyOTA0YmQ1NTAyYjI0NjRiMzJhNWRmOGJhMzYyZDgwYjE1ZmZhMTc2YThmNjUyYjAxYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYjJlM2MyNjBmOGM4MmZjNjQ0Yjg1NGRjM2E1YTM4MDg1YjEzMTRmNjZhODhiNjljOGYzMDg3MWQzNDI4OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyOWRmZDQ5M2Y0YWZkNzE0ZDI4MTIzZDEyZDkzZTUwM2NjZGE1MDBiOTcwOTM5YTEwZWU4NGVjMzNlYmUxZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f44bb2397e949d9a44da41edd3fd312",
+      "statement": "The operational test coverage includes CLI Markdown/PDF persistence, PDF generation, missing-paper index failure, FAISS path invariants, and chunk metadata/content behavior.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_pdf_export.py#L1-L31",
+          "version": "repo-lines-v1:sha256:355b46ce3ef578b744f9fc1d31c7e34820bbe91d4db7aeff36e13a9d120121eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MmRiYWE0NTFmMWI4NjgzNTgwNGIyMWE4YWM3ODE0ZWFkODQ2OGNjNWZkY2ZkOGY3N2Q3MjUzZmYxNWRiYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNTM0Y2I3MTY4M2QyNjAyY2YzODYwYjExN2Q3M2NjNGI3YWU2MzMwYTFlMTE2NmI5YWMzNGU5NjE0NTIwNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L120-L143",
+          "version": "repo-lines-v1:sha256:eef8020f12b2a3a100b25e0657c65fa02de0c002716cb71e93acf2c8d9bb389d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MzQ0MGFjZDJiZWYwMThhZDhjMGI0NDZjYTQwNGRlMWI5YTkyYzRiZGZmYmRlYzEzZGVjZTkzZDc1ZTZiMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxNDY4Y2IzMmFlMGE4MDdjODUwMDI2ZmVhZGM2ZjU5ZDNlYzE4MmIxMTRlMjA2ZmM1MzliMTI5MzQ4MThlMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MDk1MDYyYTg4Y2I5OTNkY2I2NTVmNzA0Yjc2ZTdhNjlhMmFkZTUzODY4Njk2ZjZhYzVlY2Q0ZDYxNDk2ODMifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L27-L36",
+          "version": "repo-lines-v1:sha256:99753678e4672e132e861164d0be7f3fcfa83daaa128676896f02e77aa7486d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YThlZmJkZDIxZTE5NjFiNjUwOTZhOWFiNDEyNzgwMTIxNzI4OGM4MGZkMjI3ZjBmNjg3ZDBhMGM3ZDdmNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMzA2N2RkZjU1YWE5MTQzYjAzYmNjYTllNWE1ZDU4MmRjMzc1YTUwMTE5ZWU0NTQxZWI4MTVlMzNkMzlhYjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlMTZhNjg4YzRjMjcwMTczNGMzNzZmYTdkOGY0YmFiYTViYjM0NTFiNzc4N2FmYjcyNGY2ZmE5OTNmZTQ5YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhYmJhNjY5MmQwMGNiZWQ2ODJlMmY0NTQyNmU5MDIxYWE4N2IwN2Q3MDQ5YzY1OWUyY2U4ZGZhYTE0ODVlNGIifQ"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py#L15-L46",
+          "version": "repo-lines-v1:sha256:ed01ed676a2e44ad65a31bee6842fb4560c24b3fa6b5d0e0df36c7c140aa1989:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyOTMzNWJiNmZjY2Y3MzY5MDAyMzA0YTVlMzRlOWMxZDJkYzc0N2QzYjk4MThhYzE0ZmY0ZmU4ZTExYzkwZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZGU3NmY2NjU2NjJlNzFhYjBjMTg5Y2Y0NzcyYzk1NTU0OTI3Yzg4OTNkZmYxYTg0MjhmMmFkODM2ZTkwZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxYzM3YzdhNzg0M2NhMGY3NzQzODBiNWQzNWE3YzdkOGVmNmU4YjhmZDQ1NjE5NWEzNjA0ZTMyYTM0OGU5NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}

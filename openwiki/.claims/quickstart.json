@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ce354db3791ed3321370d3f040ab00873c093e418680562d909e43208a009e3f",
+  "claims": [
+    {
+      "id": "claim_5238cf8f711c4eb4a63135114e4c8481",
+      "statement": "The repository supports a Python 3.10+ environment whose declared dependencies cover LangGraph, LangChain/OpenAI/Hugging Face integrations, FAISS, sentence-transformers, Tavily, Jinja2, PDF conversion, pytest, and dotenv; Streamlit is used by the dashboard but is not declared in requirements.txt.",
+      "evidence": [
+        {
+          "resource": "repo://app.py#L1-L8",
+          "version": "repo-lines-v1:sha256:5235fb30fdf01001dde8a54ce818867cc4038a91ad693c8931964ae05e6c5d69:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZjMTUxOTg2NTE2M2ViZTgzZmJkMzk5ZWYxNDYwNGY1MzEyODRmYjQwMjFmYjlkOTU5OWQwYjUyZTU4YmMzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBhMmM1NTEwMDYwNTAyMzY5ZGM0YTg2ODc0NWFkYzM2MGY0ODc1MjkwOTRjNjIwNmU5Mjc5MDg5ZmE4MzRjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDU4YjIxMzhmMDFkYjM4NjBlMGM3YmRhMGUxZjBlNDUyNGViNzM4YWRmODRjZTc4NTk0ZjA5YjM0Y2ZjNzk0OCJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L5-L23",
+          "version": "repo-lines-v1:sha256:466b47bd8a5234b29fa1262ab509a49dfac01e502a5387b8ee57a79a007ee451:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTNlYjU1ZTU1NDljODIwOTE4MjcwODRiMGQ5ZTg1N2ExZjMwN2RkZTJkM2ZiNDExZmU1M2RhODBiMmE4MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMGU0MDlmMTE5NWQzMTIxNTcyOGM1M2U5YTQ4NTc5MGI5ZmYwOTA5NzdmNmQ5ZWQwYWM4MDg0YjUzMzA2NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
+        },
+        {
+          "resource": "repo://requirements.txt#L1-L15",
+          "version": "repo-lines-v1:sha256:5651dcacae7bb8386b32a43a35bb7dfa3c501fc78dd82394f8de6757cab4c638:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0NGRmOWYxYTlmZTllNjE4MGRjMjljMWNjNDFjY2M5ZTI5NjgxNDY2NjIwMzg0NmVkZTY1ZmU5ZjZiYjE4MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMjc3MjNiZmE0NGMwM2M4YTYwYTgxNjRmYWI2Mjk3MTlmNmFiNzRkNTM4YjcwNTQwMjYxNWIyYTQyYzY3NWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b332c415fb11410e93e172b300ba5de5",
+      "statement": "Runtime configuration is loaded from .env; OpenAI and Tavily keys are optional inputs, while the configured default, judge, polishing, and embedding models are gpt-4o-mini, gpt-4o, gpt-4o, and intfloat/e5-small-v2 respectively, with reports and the FAISS index rooted under the repository data/output paths.",
+      "evidence": [
+        {
+          "resource": "repo://.env.example#L1-L7",
+          "version": "repo-lines-v1:sha256:92397157166ee298bff31601b46821220fe7860af7a6f3475ff718b595ea46ee:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYTNmYmEzODQ1YmRhMWI2NGIwM2ViMzY1Yzk3ZDJiODdiNDAyMzAzZTAxYWE5MTJmOTNhNzFlMjQ3NTEyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UzODkxNzM0ZDdjN2JlNGEyZjA0ZWFlZTdlZTlkMjNkNmUxN2ZlMDVkZmVhMWM1OGNjMTMyYzNlNzBjMjkyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/config.py#L1-L28",
+          "version": "repo-lines-v1:sha256:242324d9138f083bdb120e48cd68fe32d79cac26af889cb708303f52e55f7be9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMzJmMGNkMjBkMzZiMjY4N2Y0ZjU5N2U1MDNlMGVkNTg0MWQ4MDRkNjZmMTg4NTQ4NzE3MzhmMzZjMzYyYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMTMyMjA1MDRkNGI4OWFhMzc3NmM3NGIyNGU0MjQyNTZjYjllYzQzYjNiM2I0OWYzYzlmNGYzYWU5MmI4YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_277c0101d0844db792cd37b9f58f4bb1",
+      "statement": "The CLI initializes a fixed KIVI versus CXL-PNM evaluation state, invokes the compiled evaluation graph, always writes final_evaluation_report.md, and attempts PDF conversion at the configured output path while retaining Markdown when conversion fails.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L31-L66",
+          "version": "repo-lines-v1:sha256:58a26355e3aecf208a38949edeeca423cdd6a83cabd2c3461f6556adfcb81ddd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDg2NmUxYmNjNWFiNzZlM2VmNTkwMTJkMGFkMzlhNjg3YWJlMDAyM2I0MzhhY2IxMTMwYTE4ODI1ZTgxOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlNWUzYjBjMjUzMmI1OGVkMTE5MGVmNDJiNjNmMjYxMGIwNmY2YzRjNjEzMWY3Y2I1MGQ1ODQ2ZWUyNTRiNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZGIyNzQxOGM2NGE4YWMyMWFhN2VjNTU5YWYzNzFmYjllMzdiYmZhNDkzYWU5NGE5NzNmYmQ2ZTlkYmU4NjUifQ"
+        },
+        {
+          "resource": "repo://main.py#L4-L29",
+          "version": "repo-lines-v1:sha256:377bf44369518406923903137be6a83497db05e48ad680166b4c3880b6a08674:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZGI4NTMxNTU4OThhMTUyZTYxMGZmN2RlN2UzMjM3YThmYjJiMTNhZDlhMGMwYmJjYzU0MWFlYjlmODk2NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4YTAyZTMxODA0YmM3Nzk5ZTBiZDgxNjE5OWFjMWMwMzVkNmZkMTQ1YTU2NmI2MmQ0ZjM1OGY2Y2RlYmYwNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZTkxMWQ4MWMyNTNhNWRmYmMwNWUwNDVlMTBiZWY1MjkyODMzM2U0MWViNGEzNTA1OGFlNThmZDU3YThlZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9dcc57eeae1d4f95a7cdcde8bddc77e6",
+      "statement": "The Streamlit dashboard can run the evaluation graph, stream node updates, expose report/claims/TRL/raw-state views, load deterministic mock data, and offer Markdown/PDF downloads; its run action streams the graph and then invokes it again to obtain the final state.",
+      "evidence": [
+        {
+          "resource": "repo://app.py#L109-L152",
+          "version": "repo-lines-v1:sha256:29862ebe742267c372d60b72280843f10a62b4f5c2f5e6687a0a898e8cc7e692:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYTkxYTU0YjBkMjE1NmVmMjQ0NmRmMzljNDVmOTEzOGEwZjFmNDZlNTI1MDU4NmU1ZjcyZTU2YmU3MTdlY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZjkyNDVlY2RiYTc1NTZiNDQ5ZGE1YjMxNDEzZGY4OTk0ODNkNjI4NDUxMDMzNmFlYTliYmQ3MjM3YjFiN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NjY5ZDJiOGUzZGVhY2JkMWEwYjM2ZThjNGQ2NTZhZjIwNDBkNjFkZjk4OGMxNTQ5OTg3MWM4ODljM2MxMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhZmQzNTBiYjVjNjQ3YWJjMWUyZTEyYmNhNmJmNmMyZWQ2ZDc4YzI1ODIyNDA5ODc2MmVkNDQ0ODI2ZDY3YTUifQ"
+        },
+        {
+          "resource": "repo://app.py#L156-L196",
+          "version": "repo-lines-v1:sha256:f1c13faab3f10fb5de3992b63e72aad9f38778f7251862c4d62139c6f340d4ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNTdiMDlhZTc3YTllNTgzZjhlMzdlN2E0NmI3NWRkZDAxODcwNjdlZmExMWRkOWE2NWE4MWJmYTcwYzM5OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViMmExZmRmNTU5ODQ0MGY0ZjAxZGFmNzFmNWU5OWJmNjQ5ZjE1ZjU5OTNmOTVlMjZlNTM1ZGRhZjQxYmRiOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhZmQzNTBiYjVjNjQ3YWJjMWUyZTEyYmNhNmJmNmMyZWQ2ZDc4YzI1ODIyNDA5ODc2MmVkNDQ0ODI2ZDY3YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMDhmMTBmODk4NzNmYzY5MWVjMmRmN2E3Nzg1ZDcwMWVhNzMzYjkzNjZkMTMxOTU2Zjk3ZTZkYmI1MmM5NWIifQ"
+        },
+        {
+          "resource": "repo://app.py#L45-L105",
+          "version": "repo-lines-v1:sha256:637c2db51fdde31412f2059dbacafa15a6b42532a152333160ef98bdd48fd7e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNjA1OTdhMjBmZDQxNTU2YzlmM2MwZjkzNzM2YTIzYzE1MDQ0NWY2MWJjNDNjYzRmOGFlNGYwYjQ3ZDEyMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNjVlNGNhYjAxYTdjNDcwYzNlYjQwMzAwY2I0Zjc5ZGRmM2U0NTNiNzZlOWVjNjJmNDQwNjY3OTQxNjI4YTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3NmVlOWJhZWIwNGI2ZTgxMjE0MzQ5NjE4M2YxYWI5OWM5NzdmNTBiNmE0OWZkMDZjOGMwNDM1ZTEzNzBlZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2NjY5ZDJiOGUzZGVhY2JkMWEwYjM2ZThjNGQ2NTZhZjIwNDBkNjFkZjk4OGMxNTQ5OTg3MWM4ODljM2MxMGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc09851eba324d33a8d8046cc93f012d",
+      "statement": "The evaluation graph fans out from START to paper analysis and market research, chains market research into stakeholder research, sends the result to evidence audit, conditionally retries targeted agents, and then runs synthesis followed by report generation; retry targets are limited to agents with fewer than two retries and exhausted issues route to synthesis.",
+      "evidence": [
+        {
+          "resource": "repo://src/graph.py#L12-L53",
+          "version": "repo-lines-v1:sha256:c56c96a4d04435330201e84c6a226d20fdddb76f1374654e0a53e98253970cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTEyODZjYjk3ZTk0Y2JhYTQ1ZmIwN2ExNDMxYjRlNjg4ZGEwYjA5YzVkNWFkYjkzMGUyMTY4MDUwNmRkMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNTAyZTkyNGM3ZGNjMTQzNzgwZjhlMmZjYTE3NDRmNWY4OWVkMGU4MmVjZGIwNDc4ZjIxMDg5NzgxMDIyNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4Y2E4MGZjZmRmODg1YzYxYWE5ODgzYTgxZDQzYWYwODJhMmQ0NjAwMTM2ZDlmZTUxODE5MmM5ODI2ODBhOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMGRjODQwYTAzMzRjMzM5ZWNkOWJkNGIwN2ZlZTc3NDVmN2JiMDE4MmNiNWViM2U3ZjA1ZDE5Y2Y5M2ZkZWUifQ"
+        },
+        {
+          "resource": "repo://src/graph.py#L56-L99",
+          "version": "repo-lines-v1:sha256:85423e4f45745857266adbfb806c4a50e86dd15cd3fb0db8839eba259ff70995:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMWJlNGU5ZDAzMTEyNGExOTI4ZDdlM2JhYjc1NmQwYTA3MmU1YmU1ODM5MjZkYzY3YmIwMmFjNmQ4NmEyODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzIzZDQ1ZTMyNzJkODFiNDZlNjM3N2Q2ZTNjOWY4YTFmZTc0NDlkMmUxZTcwYjI3YzIyOTEzMDM4Nzg4ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhN2ZkYjQ2M2MwMGViN2U5Njg0NWFkMWNkNWJkMzgxYjE1OWIzN2M1OWQwMTVlMzIyN2ZjY2RiNTk5MDM5M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87076af6ee464e018e4f465466ee99e7",
+      "statement": "The paper indexer requires data/papers/kivi.pdf and data/papers/cxl_pnm.pdf, preserves technology/page metadata, creates section-aware chunks, embeds with the configured model, and saves a local FAISS index; its module entry point exits non-zero when indexing fails.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/indexer.py#L133-L157",
+          "version": "repo-lines-v1:sha256:aaeeed6851a3547ae74077c67139905088ea8413f4866b773fb4e3ca5559193e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYzk5NjViZjIyZGUxYmFhM2VjMzViMTc2ZmVlZjI3ZTg3YmE2YTc1NmVmZTE0ZjRhYWM3MTM2YWRmMTZjYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhM2I4YTQ3MzY1N2M0MzVlZGFhNWEwYWJlYzdmZTJiZWM4NGYyZmFkZGNlZTQxNzIxOTgyOTlmZjVmM2U4ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyZTYzMDEzMTI4ZjE4ZDkyMGEyOTFiNTczNzI3ODI0NWQ3NWE2MjZjYWFlMGI3NzA5MjczMWIyNmYxN2U0NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L31-L130",
+          "version": "repo-lines-v1:sha256:a535971ad78c3b509f2060312fb3992328cf39c67b534ccb1343b73f13a03cf0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YWY0MDhkOTJkMmVjYTA0ODU2MzkwMzY4ZmU5ZDI5N2RmYTczZWUxYTE2YTNiZDY0ZDcyOTFjY2IwOTEyYTU0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNmZlNjJhYzlhYzM4YThiNWQzNWVmY2Y3OGIwZmJjZWFkMDliNmU3ZWFhZTgyODEwNmY5ZDU1NjkwNTZjNGFjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5YWE1ZDU1ZWNlMDAwYTA0OGZmZmZiNGMyYmU5NzIyZTZkNDgyZTYyZWFlM2VkNWE5MDg3Njg1NzQ1MTdhOGQxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMmNjNjAwNDUzMDgyMWMwNWE3Y2QxYzQ1ODk3NjFlYTcyMGU1ZGNhMzNlOWE0YjY5NzFkNjMxZGM2YjIzY2E5In0"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L8-L28",
+          "version": "repo-lines-v1:sha256:6664358f052dcdde874f523d7b37499cadd39c45fecc13f596f7c26a143e02ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiY2I2OTYzODRkMTdjNGZiYWJhYmMzNDc4ZmMxOWQ3OTY5ODU2OWE4YzJmNTdjMGU5YTg0MWE1NGRkYjgwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZGE1ZjhkMGRiYTliMGM3ZDcxYTM4MDdhMGYzNDBhOThiNjFiYjJiOTJkMDk4ZGU3M2QwMTczMGJmM2NjMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhOWU2YjgzYzAwMmRiNTYwMWI2NDYyYTQyOTA0ZDA3NDQ4ZjBlODNiMmUyMTk4MjVlZmEzODhmNGU4OTEzNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllYjI3YjQxYzlhM2U1NDM1NWFhMDEwZGU0NWRmYjg3MWE0ODdiMGY1MjE3MGJhMWY0NzRkZGEwODQ4NDMxNzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_706582039cd440c28c2238f8b2d434ef",
+      "statement": "The embedding benchmark grounds evaluation queries in actual indexed PDF chunks, requires exactly 20 queries, compares two small models by Hit@5 and MRR, falls back to BAAI/bge-m3 only when neither small model reaches Hit@5 0.8, and writes benchmark_results.json.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/benchmark.py#L10-L39",
+          "version": "repo-lines-v1:sha256:2ce4ac8a4432f82ca004b8655b01b683ebe07a369db8ec0db4007179e1f251de:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkZTVhYTczOWM4YzgwZDZhMWFkNzk3NWEzZmNiNGZhODBiZGFkY2JjZGVhYjM1NjU4OTc1YTIxNjVkM2ExMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTgzMTM0NzQzMjNiMjNkM2MwYzgwM2FiYWQzYmYxZGEwNjYyYTc1MWY4ZDNjZWYyZTU2MmUxYzk1OGYwYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3ZDE4MzlmYjA2ZTM3YTU0NTEwYTUyZTk4NjkyODVmYTM1ZWUyZDQ2Y2Q4NThlYjI2MzZiOGIwMDg5MGE3YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMDgyNWFhMzY2OTQxMTI2ZTg0NTEyYmM4ZGNmMGE2NDkzODJhNDUzYmEyOGQ0MTg5ZjYzNDQ2ZWI4MmFkZjQifQ"
+        },
+        {
+          "resource": "repo://src/rag/benchmark.py#L42-L79",
+          "version": "repo-lines-v1:sha256:c64ddc7d8e9b84625a2943b71f78da6bf04c2ffe79d58f3548134bfdd5e24d91:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYjRhNDBmZDJiNDg2YzgyYjQ2MzRhMTM1YzdlNjE0Y2I0MWZmYjViMDYzYWY2ODk3NzIyZGY4NGQ5ZDc2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzNiMTkzN2Y5ZDRlMjkxNGZlOTZhMjcxMmUxN2MzYWI5ODAxN2FmNzQwZTc0NWE1M2QwOGM2NTRjMjJmZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmNzhmY2JlYzNlYjkxMWExMTNhYTgwNmNiYTk1NmZhYjE3ZjM0Y2M1NThlM2MxMWNiN2RkZTY5Yjk0ODdiZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_28dd097616c14f5cbdbd50e2277236da",
+      "statement": "The test suite includes a full-pipeline smoke test and dedicated coverage for graph compilation/routing, while the global fixture replaces TavilyClient with deterministic local search results to avoid direct network/API calls during tests.",
+      "evidence": [
+        {
+          "resource": "repo://tests/conftest.py#L5-L50",
+          "version": "repo-lines-v1:sha256:12e409f1547a91d8e8c3412d6c692017f66779bf071d40ab62e921d3cf7de352:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMmE5Zjc4N2Q1ODhkYjYzYzZiZjk4NjRjYjc1MDc0YTJlMGRmODE4NmUzMjhmZTBmMDA3YzRlMDBlMDJiYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2YmQyNmI0MjIwMTc2NDk1OTdhMDViMTg0Yjg5ZjNmYTVjNGJiZGFlMTBhMmQ0ZmE3M2FkOWY0Yjc2ZTNiYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5N2Q1M2JhNmMxMzAxMDdmYTg5ZDk3Y2E0NTE4NjU2NWU0MGMzMzYwMWNkZWYzNmE0NzlkZGQ5NjVmODkyNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_graph.py#L7-L19",
+          "version": "repo-lines-v1:sha256:a4cd06b23a044b4b93c09e65024b05f0bb0adc22de112a229945dc38452dff97:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Nzc3ZjkwZThkYTM0MDkxZGQ3MTViNWI2Y2ZiNDYwZDZkZWE3MjMxOGNjODMyOTA5YzAwZjU1ZDFmMWI2ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzQxN2UxYTFjNTNkMDQ4MWM3ZTJmMjY2OWU3NDkxN2MwY2FiNGQ0NThlMjhhNDY1NGM0ODE1NjgzMmMwNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5OTE1NTUyNzMxMWY3NmYxNjRiZGJmYTU2YTdiMjNkZGJmOTZiZDA5ZDI2ZDgyZGMwYWZiZWNlMTI5NzNmYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlOTQ2NjBlOTBjYjMyY2NmMzA0Y2I2MjgyZTc4MzEyMjRjNDY0YTUwN2UyMGVhNzgzN2E1NTMyMzI1MTU2OGUifQ"
+        },
+        {
+          "resource": "repo://tests/test_smoke.py#L5-L12",
+          "version": "repo-lines-v1:sha256:606b5d7040e56db44b79918347ef4855c9aec67a28b2959bc1474335bae3d4b6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdlZTIyZDdmNTlhYWY4MDlhMGQ5MjFkYWE1OWMyMjIzZjI0ODNlYjQxZGI1OTZmMzE0YjQyOTE2MmRkMjc4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVlNzMyYWRiMmU2NDQ1OTliZjM4YjhmZWU0ZWI4NTQ2MTMxMTc5MzdkZGMxY2ZmMDg2OGVmZWZhZjU3ZDM3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGNmYjgxODMyM2Q1ZDgzOThmZTljN2JmY2Q1OTU1N2VlNTI3NTRiZjA0NGU3NGIyM2JkNjgyYTI3YTVmMzRmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWM1MDY0ZGUyYTljZDY2NjRiYTBhZWJjMDQ5MDVkYjgwODA3ODM2ZTc2ZjkyNTdlMGNmNzU3OTFmNjk2YTE4MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e5e6657a4d374f5eb58d82a3e208912f",
+      "statement": "The project’s documented standard commands are uv environment setup, requirements installation, pytest execution, CLI execution, optional Streamlit execution, FAISS index regeneration, and embedding benchmark execution.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L144-L194",
+          "version": "repo-lines-v1:sha256:addbce0cfc7accba113d404cb7fac4935040efa786ae00a74f43ccc3b6423804:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMmJmODIwNzg0MzY0NmQ4MDFjZWFhMjI4YmVlNzNiYjdiNmVhYWIyNWFkMzkyMjM3MDI0ZTYzYTIwNmJjYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhODliOWY3ZDZjMTk0MTE2ZDFhNzdjODNjMWE0OGIxNTQyNjhhOGI1ZDc4ZDM2MjVjNmEzZGExNTEyMjhiYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNjc3ZDU5N2M1MzY1MTZkYzg2ZjA5NWFiZDBmZmNjZjhiZTcwNzcxNWZmYzJiMWRhMTFmMGY0NWViOGU3MmQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}

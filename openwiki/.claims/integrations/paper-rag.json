@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7a4f649f2af89108b6e1e4dd8e927d08b6b8bee2a93edef85a6a1127f93cf06d",
+  "claims": [
+    {
+      "id": "claim_067f6fca6b354dcbbb0aaeef680c62bc",
+      "statement": "The paper corpus is limited to kivi.pdf and cxl_pnm.pdf; loading requires both files, tags each page with its technology and page number, and returns failure rather than building a partial index when ingestion or embedding dependencies fail.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/indexer.py#L10-L28",
+          "version": "repo-lines-v1:sha256:72773d634eb4a085a5e62059813c70ece1f95d944b7e07ee8ddf32755718ad47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5M2RiNDQxNmQ1NGM1N2RmYWYyM2YxNjJhYzFjNTAwNTFhZWQ3MzU0NDdhYzZiNjQwNTRlOWE4NTg1OWM2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZGE1ZjhkMGRiYTliMGM3ZDcxYTM4MDdhMGYzNDBhOThiNjFiYjJiOTJkMDk4ZGU3M2QwMTczMGJmM2NjMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2ZDcxNDYxZjViOThmNjFkMzg2NzU4NzRkZDE2YzUzZTVmNWY0NDBkMTc4Y2YzOGE3NzM0M2U5NDM0ODAwZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllYjI3YjQxYzlhM2U1NDM1NWFhMDEwZGU0NWRmYjg3MWE0ODdiMGY1MjE3MGJhMWY0NzRkZGEwODQ4NDMxNzMifQ"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L133-L153",
+          "version": "repo-lines-v1:sha256:67b7b04f36b29475dd17d1ba1550576c7faafcaf21534e10e746fdb252dcab82:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYzk5NjViZjIyZGUxYmFhM2VjMzViMTc2ZmVlZjI3ZTg3YmE2YTc1NmVmZTE0ZjRhYWM3MTM2YWRmMTZjYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyZTYzMDEzMTI4ZjE4ZDkyMGEyOTFiNTczNzI3ODI0NWQ3NWE2MjZjYWFlMGI3NzA5MjczMWIyNmYxN2U0NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d7f8e480ca24f16973d6ff7c4f4c01a",
+      "statement": "PDF pages are reconstructed into source-local, section-aware chunks that preserve technology, one-based page, and section metadata while handling repeated headers, footers, hyphenated page continuations, bounded overlap, and short tails.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/indexer.py#L31-L81",
+          "version": "repo-lines-v1:sha256:40345b14000fa243a75ce9a27038f913c56da9f64805135572231a828c26bd58:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZjQwOGQ5MmQyZWNhMDQ4NTYzOTAzNjhmZTlkMjk3ZGZhNzNlZTFhMTZhM2JkNjRkNzI5MWNjYjA5MTJhNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5M2Q3OTU2ZmJiNTlhMWY2ZmZmMDllNjljOWFmOWY1MTIyMmY3ZDZkNzQyMGU1ZDg4YjAzMGE1MzRlZTNlZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYTVkNTVlY2UwMDBhMDQ4ZmZmZmI0YzJiZTk3MjJlNmQ0ODJlNjJlYWUzZWQ1YTkwODc2ODU3NDUxN2E4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2Yzg5NWMxYWU4ZGNmMjJjOGI4ZTIxMGI5MGFhYzkxMzU3ZjJmYTViMmUyY2IxMWNiNTU0OGFkOTU4ZDA2ZDIifQ"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L83-L130",
+          "version": "repo-lines-v1:sha256:03d57a980fa99faf18faad19ebddb848adf6f783b8eda2d8762d2f0632c7f214:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NjFiODkyNzI2NzBlNWUwZmNhNDM5NWViOWY5NTZkMmQyNDRjM2E0N2RmYTlmZWMxZTdkZTZmY2VlZDYxNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZmU2MmFjOWFjMzhhOGI1ZDM1ZWZjZjc4YjBmYmNlYWQwOWI2ZTdlYWFlODI4MTA2ZjlkNTU2OTA1NmM0YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWY4MjQ3MjZjMTU5MzExNDgwYWI1MjJmODhmNDdjYWU1NzkwODFkODZmZTlkNmFjNDQ3ZmU2ZjVjMjhiMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyY2M2MDA0NTMwODIxYzA1YTdjZDFjNDU4OTc2MWVhNzIwZTVkY2EzM2U5YTRiNjk3MWQ2MzFkYzZiMjNjYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a44cd332cb14efbac4dde7cc7459527",
+      "statement": "The indexer embeds chunks with normalized HuggingFace embeddings and persists a LangChain FAISS index at data/faiss_index by default; the runtime loads that same local index with E5 passage/query prompts and normalized embeddings.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.py#L15-L25",
+          "version": "repo-lines-v1:sha256:077ccb805ca7c6f92b855431fdea9d108424b2e27408fbfacfd1eeb19f4785a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZWI3N2IwYjE1OTI2YmQ1MzYwMmU1ZDIzNjZjNTViMDhiOTRlNGY5MmE3NmQwNjQ3YWE1ZTllMzczNzE2OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0OTRhOWYyZDMwNDM3MTIzNTkwODU3ZjRmZmZlZjFjNWFlNzA5M2NhZWQ3NWVjMjlmZjIyMjVjMjQ4NmNmZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MjljN2Q3ZTliNDViZjIwZjNkYjEzZTE2MTUwZWQzMzcyNWY4YzFkNmZhNDQ3OGJmMmUyMjE0MGIzNzVlMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5ODJmNDAzYWIxZWY4MTRlMWJkNmYxYzdiNzgwYTZiZDlkMmFkMDFkMTAwOGI5ZWYxYjk4MGVlMTU5ZmQ2ZTkifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L51-L62",
+          "version": "repo-lines-v1:sha256:fb782a542ebf56e6d32114451cd063de5f9e2a861514b76bc725b6d231ba1d7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWI3Yjk0YTZiMDhhNWJjMzM4MmM2ODdlZDlkYjUyMDk1YmQzMjY1ZGU5NDY2ZjE3ZjdiMDM5YTI2ODk5YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNGM4YjgxZWMyMGQwZTdkNmZlMzY2MDU4YmUwZmI5YWYyNmUyYTc3M2RlODM2ZmQ5ZTY5YjJlYjRlMTE3OTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyZDU1MmM4ZDM3MTc2NjA3NDI0MWRiMzVhY2JkYTcxMzVkN2YwZWI5MGMyYThkYjk5OWVlOTlmNGY4NDBkYzAifQ"
+        },
+        {
+          "resource": "repo://src/rag/indexer.py#L133-L149",
+          "version": "repo-lines-v1:sha256:19c6200f1b41eaab09064558e3c1483563cecc4eb63cda3d4c5c83b2a4f22c21:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYzk5NjViZjIyZGUxYmFhM2VjMzViMTc2ZmVlZjI3ZTg3YmE2YTc1NmVmZTE0ZjRhYWM3MTM2YWRmMTZjYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4Y2NlYTRjMDY2MjA4Yjc4ODI4NmZkYjY1MDhmZDY2OGM5YmU2ZDI4OWFmN2E5MTU3ZjhmMjIwMzA2Y2EyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyZTYzMDEzMTI4ZjE4ZDkyMGEyOTFiNTczNzI3ODI0NWQ3NWE2MjZjYWFlMGI3NzA5MjczMWIyNmYxN2U0NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExMmQzNWZjNGY5MjYwZWZiNGU0MjVhZDQyMDdmNDM5NzdhZjI3MjkyYzUzYzc1NjA3ZWIyZDM4M2MzNDhlZTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_09dd45f1b9874da68e3352a186518b5a",
+      "statement": "Paper retrieval requests the top five vector matches with a technology metadata filter and rechecks the returned documents' technology before grounding evidence.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L89-L100",
+          "version": "repo-lines-v1:sha256:d50d9d6e2a95b2e83a303d23dd14afc2e0979f9e09f378b85e49282c8adf2b2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NDBjZTZkZDM4NWFiZWRmOTJmNTE4MjQyMGU0OTIxZmE5MTgyOTMwYWYyZTg2YmM0YjU1YzAyYmI1MGRmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOGE5ZTljMzI1MjgyMGM2NWE4MTY1MjBiOGRiNDkzMjI4MDg0OWVjOGM3ZDJlYjYyNzJhZmRmZWJlMDU5YzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZTNlM2Y0NzVjNjVjNDc0YzkxNjZlZGUxZDExNmUyMWUwMWVmMTQ5YzU1OGU0OTAyYjZkNmJhNTlhYmEwZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0NGE5MmI2NmI0NjdkYjdlMDhkYjYyYjhjYzU2OTFmZWM3ODUxYTg0YTI3OWFjYzc5YTg1ODRiZDQyOTM2MzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab1f19f3e90c4b8a930a8b3519be2f8b",
+      "statement": "A candidate passage must pass an explicit-answer sufficiency gate and then produce a verbatim contiguous quotation of at most three sentences; bandwidth, figure-caption, DOM-11 settings, and experimental-condition checks can reject otherwise retrieved text.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L101-L147",
+          "version": "repo-lines-v1:sha256:e3973268d54c7fdcda4764311765979b3bd82cdeec72a00d4c1e2cbfe8839161:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljN2Q5N2RjNmViN2M4ZGZhMDdmNzcxNGY2Nzg3ZDdlOTdkN2U3NDYwNTRmYTIwNjA4MTEzYzRmOTA1NGMyMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYjY0MGQzZmQ4YWY2MzU4OGY1YzZhNzIyN2FjYzlmYzE2ZDk4MjNiMDNlMjZhOGY4ZWUwOGQ5YTYyMTkxZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmMWRmNmMxODNhOTMzOTg0OWYwOWFhNGIyY2ZlZjE2MjUwYjY5MjY1OTE1MDczZmEyMTFiNmE4MTFjYzAyNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxMGY4YjRlNjQyMWQ4Y2MzOTIzMDA2YzAyZDQxZmViNTQzOTg2ZDkyM2RjOTVhMTg0NDIzY2FhMWJmMGI2M2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f6ea629225b4bf5ab3d99b08a932259",
+      "statement": "When retrieval fails, the agent attempts at most two LLM query rewrites, accepting only rewrites that preserve the original evaluation axis and metric; otherwise it returns no quotation and an insufficient claim rather than inventing evidence.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L148-L157",
+          "version": "repo-lines-v1:sha256:991f56be275c99425fb2ceadd93c2537d10acb1af8e3d799012bba543cb3ef97:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYzc5NDJmYmI2YTRjYzViZGMwYTNkM2Y4NTliMTNjNjU0NGU5NjIwODE4MDU4NDQxODJhNDBhMGVjNGExYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZjU2YjZjN2RiOGIwZTgxMDUxYWUxMzc0MDIzYmRjZjQ3YzEwNGUxOTQwYjA2MzBkNjE1YmQ5NTU0ZjA1N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNzlhNGI4MDRmYjdmYzdmODE2YWEzMjk0ZGM2YmNlOWYyMjA0MTgzM2MyMmY1Yzc2MGVjYWMzYTA4N2Q3NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNzYzZWE0ZjBkZjhmYjk2MGYyZjhjMjNkNzU3MDM0NTI0MTNkMmMyYTIzMWFkNmJkZTk0ZmFlY2IzNjliMzcifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L205-L215",
+          "version": "repo-lines-v1:sha256:6d60bebfee8140b34b412675455e2bcecc6246dcd17f08c2c73a4c1275ffe7a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5OTQ2M2UyZDZiNjg2NDNlMTEwOTA3ZTUzYjU4NjEzMzUwYzU2NGQ5YzdmNDY5MWIwYmJhNzQ5MTRjYmFmZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjYmI1YmFmZTVjNmZlZmU4M2IzOTc4MjMyOGRlNGMyZmE3N2IwNWI2Y2VjNzVhNjZlNDgxMGQ3YTMyNjQ3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzYzZjZjg5ZmVkYTNiNTdiOTBiNWRiNGQwMGE0YTZkNDM0MjAzZDY0NWM2NTRmZDFkNDllYzU5M2E1ZDExNjEifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L79-L86",
+          "version": "repo-lines-v1:sha256:06c2592e4573aadd9ecb6fe07ddf49e0d7f84c815c97154a835e1ae9635d719f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFlZjhhZDgyZGM0ZTZlNjJmNGI0MWRiNDE3NmUxYTUwNjhiYTZmZmMzNGUxYzc0MzhlZTM2NjVhNGQ3MDYxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRkM2RkMTE0MTA3YTFlZDBhZWIwYmZlOTUzZDUwNjE3NjRiYWFhMjRlNzMxZDgxNDVmYjhjZjhmMmQwNTNiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGRiMTQ5MzU1ZTdmNjY1ZWI1ZjQxMzgxZTFkZmFhYjMyNDk1MTI4YzEwOWU5MjI5ZmZmODIyMGU4ZTNmYjg4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODBlYjZhZGUyOWUxODYxZjQ5NDk2MTE5N2M2MmRmN2FmNWIyMjViZDM3ZTg2MWE0ZjFlNjczMzljZjI0NDFhMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_58681c3e18954fe3847b94da8e2aa1c3",
+      "statement": "The paper analysis node evaluates all configured paper axes on a normal run but scopes retries to paper-targeted audit issues, supports evidence-free relabeling without retrieval, and emits claims, evidence, and source records without mutating the input state.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L218-L263",
+          "version": "repo-lines-v1:sha256:66c28951be4f08d324507c31a7ff68b4703fa9eab243d03dd77eb19d8da83518:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4Nzg0ZDlhYThhNWI4ZmRlMWE5MmU5NDMxNzg1NzY1MzFkM2Y1YTc0N2M5NTQwMGQ2ZDkyMGYwMWM1YTdhNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYWY4YjRjMDBhYzQ3ODIzOWExMzQ3MjI2YTgzMTAyOWYyMTI0NjhmOTFkY2M1Zjg1YmIxYjExZDIwOTZiMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MDExYjUyN2M1YzFmMmE1ZTMzMGZkYzZmOTZlY2Y0YzEzZmE4OTcxNjhmZjhkNTBhYTkyYzJjZDE4ZjE1YTAifQ"
+        },
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L264-L298",
+          "version": "repo-lines-v1:sha256:9e7296b18ef61a66fb7e8257f7b933553fe90ed6b38f514011022ae176691d68:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NjRiMzk1OGQ2MmI0OTE2MmY2ZTU4YjI0MmI3NmQ3YmJlMjYwMzEyOTU1MTEwZjE3OTlhZWFmZTIyZjgwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzQzMjc5YjY2MDM4NTAxODdiZDBkM2ViNDMwZDY1NWFmYTY5ZGFlMWZkMjZmOTAxMGEzM2Q1MjljMzFiZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0ZDk0NDQyY2QzODM0OWFkOTZjZDc5Mzc4OTMyYzQwYTkxZWZlNjJjNTQ0NjdmYmVmMmY0MjYxZmFiYTk5YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L145-L180",
+          "version": "repo-lines-v1:sha256:615b8042e13f924b710ef1b38ed8b777ea18f69325f3337c23e90cdbfda639e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxOTVjNGQyY2NhMTQ1ZGQ3ZGIxOGMwNjA4ZDM5YWU5ZmJlODdlNDQ2MTdjZjEyYTViN2IxM2RkNTY5MWNmZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMjkxODdiNmNjNjNhMjU0NWQ3NWVjZGZjZTU2MWVmYTU0MWE4ZjI3YWNhM2RmYzMxMzRmZWQ3NTJmNjY2ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2NWI1ZWFlMmFlNjYzOGMzY2JhOGVlMmIxYTRiYmEzYTg1OWU4MDRlODUwNDQyMmVmNDI4ZjBiYTMwMTMzNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMDc0YWZiNmE2NjE5OWQ5OWZiZmFlYWMzNTkzMGM2NDRhZmNmMDlmYWVjYzIyZmQ5YzVjOWNmMjEzMDRlYzUifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L183-L224",
+          "version": "repo-lines-v1:sha256:ef702eb677c309e7e0f076a60ec16a6509f6d92a8bec47a7ed24467ef09d9393:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkOTUyMTRkZDAwYmIwZTU5YWJiOWM4MzdkNTZlNzZhNmRhYzMxM2VmYzljYWE3ZTRmY2YwMTgwNTg4ZDkyZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZmJhY2VmMGZiNmRiNzE0Zjk0NDM4OGY4ODhiZjJkODdmZDM5MDZkYWUyNjQ4YTZmMTY4YmI4MDlkMWM2ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1NGZlMzU5MGVkZGE2OTNhMTg5MWI3NjgzNjI4ZjkyODUyN2QxN2I3MGI4MGFlNDM4MWVjMDA3M2YyOWI0NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMDdiZDAyZmQ2OGU3YjVmOTQ3YTBhZDNkZWVhYTgyYjQ3MjBlNzQ2MjQ4NDg0YWU3MGUwNTIyNzY5OTRmMjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e52cb267998e477e84cf4b786949b3bb",
+      "statement": "CXL-PNM research-condition evidence is assembled from distinct retrieved chunks in section 4.1 Evaluation Settings and is accepted only when the excerpts collectively cover model, context length, hardware, and simulation setup.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/agentic_rag.py#L160-L202",
+          "version": "repo-lines-v1:sha256:27c1bca2678f886b9fd5bb5e91f80bc4d22d4d6cbbc3ec82c6637e4ed8c229b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2N2NmNjJkMDQ3OTNlOWVkYzBkNmM3NTY3MDZmNDE5ZDkxZWJjODdiNTBlYjE5NGUyY2RhNThkZTczOTc1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NDhiYmI4MjU0MDA4ZDMwZTlmMDc0Yjc0OTdmNmQ4Y2NlOWM1ZTcyNzNjZDIwYmEyZGE1MGJjNTUyZjRmODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NzgxMGY1NGU0MzExYjk4NTU0YjE0N2UwYWY0MzYzN2M2MzE0ZGJkN2UzYjk1ZDUzMGU1YWQ3MjRjMDZhMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkYTI5NzI2YTFjMzUxNzRiOWI0Y2IzODk2NDRkODI0ZDMyYzA5ZjkwMWI3NTU2NWFmM2ZiNGNiYjI2ZmFjMzYifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L441-L500",
+          "version": "repo-lines-v1:sha256:b28427392cb83ce1f611973aaf6143c68c794bb5b0659c3fc3ba68f4bf12f86d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZWNkNTllNmIzM2NkNGZiYWZjODg3MDYxOTE1MzU5OTYxNTc5YjJiMGY2NWFhNmIyYTdiZjAwNzcyOGYwZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzczZDIxZGJiMDBmMzAzNzBiNTU1NzhjMmEzMzBkOWE4Zjk1ZGFjYTk0Y2JhYTM4MWJkYWVmNzZhOTAxNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3NzlkZDdiYzAxMmU0ZjRmNDIyNzk2N2Y1ZjUwNWM0M2JiYWI1NDVmYmQ5ZWZiZjJkYzMwMjYzZDEzZjE4MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMTRjY2IyODIyNWI5ODE3YzlkOTg3NzRmNmZkNTExNWI3NGE4MGZlMjA5MzA5NTBlM2I1ZjU1NzZmMTdiOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_493257092772422eb6e70f0015e604b7",
+      "statement": "The benchmark grounds exactly 20 evaluation queries in actual indexed PDF chunks, computes normalized-vector rankings with Hit@5 and MRR, and raises validation errors for missing or invalid corpus targets.",
+      "evidence": [
+        {
+          "resource": "repo://data/eval_queries.json#L1-L21",
+          "version": "repo-lines-v1:sha256:1e003d64be3fe5cf0aa1f08c8cff3f5e5feb788e2c89a015fff9e4fffa38cac0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZDJiMTkzNDkzMTY5MTY2OWNjMzVhODc2MTk1MTgwMTUzMzYyMTNkZGEwYTYwZmUxYjA5ZjliOGUzZTk5M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODFiNTQ1NjlkMzA1MzNlZDg3ZjVlZDUxNTA1NTg0MWVlNDU1ODE5Y2I2NmU0MjRlNGU0MzBjMDJjOWQ1MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAifQ"
+        },
+        {
+          "resource": "repo://src/rag/benchmark.py#L14-L39",
+          "version": "repo-lines-v1:sha256:398998d701d7cf4018695246d323491558e1533d38af52e451268b276996b9f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMmZkYzFkYjE5NGE2Y2Y4MjZlODNiMzVlNTgxNWQ3ZGZkYTJhZjI3YWYwMzhmYjQxMmNjZDkxNDg3ODM3YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTgzMTM0NzQzMjNiMjNkM2MwYzgwM2FiYWQzYmYxZGEwNjYyYTc1MWY4ZDNjZWYyZTU2MmUxYzk1OGYwYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxZWJmMGE1NjQ1YWQ0NWYxMTUwNWRjMWEyN2JmODg1MDg3NDFkM2I1NDhiMDNmYzc4MmY0MmFmODg3MWE3MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMDgyNWFhMzY2OTQxMTI2ZTg0NTEyYmM4ZGNmMGE2NDkzODJhNDUzYmEyOGQ0MTg5ZjYzNDQ2ZWI4MmFkZjQifQ"
+        },
+        {
+          "resource": "repo://src/rag/benchmark.py#L42-L61",
+          "version": "repo-lines-v1:sha256:e1435bd16dc1d98721468392c450b0df2ec2b1bb6be2b25f89b364a5116f03f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYjRhNDBmZDJiNDg2YzgyYjQ2MzRhMTM1YzdlNjE0Y2I0MWZmYjViMDYzYWY2ODk3NzIyZGY4NGQ5ZDc2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNzAxYWM2NjhmMDI2YjBjYmQ3NGNiYmQ2YmUxNDExOTYyOWIwMzI2NjE5MzhjZmFlYTk3YTdmNDc0ZDQ2NWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmNzhmY2JlYzNlYjkxMWExMTNhYTgwNmNiYTk1NmZhYjE3ZjM0Y2M1NThlM2MxMWNiN2RkZTY5Yjk0ODdiZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NzhlYjQyOTc4MDFjZTFlY2I0OGJmNmIxYzk3YTZmNDQ5ZTI4M2Y5ODQxYTUxZTJlMjNjMmQ0NjEyODY5NjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_787cbf0bc61a41d797ab0439d0124cea",
+      "statement": "Benchmark selection evaluates two small embedding models on one prepared corpus, admits models with Hit@5 at least 0.8, falls back to BAAI/bge-m3 only if neither small model qualifies, and selects the eligible model with highest MRR; the inspected artifact records intfloat/e5-small-v2 selected for 20 queries.",
+      "evidence": [
+        {
+          "resource": "repo://src/rag/benchmark.py#L64-L79",
+          "version": "repo-lines-v1:sha256:55648ae01e09f2e92cce7ec7632bd0c74f0295ac0d949f43e534894e83ec9b3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYmM1MTI2NWRhM2M0OTRiZGQyOTQwOGMwZTE3NzY2NWJmZWFkNmZkMjc5MzZmMDU5ZDJjNTU3YjE5YTNjZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzNiMTkzN2Y5ZDRlMjkxNGZlOTZhMjcxMmUxN2MzYWI5ODAxN2FmNzQwZTc0NWE1M2QwOGM2NTRjMjJmZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyNzNhZTBmZjEwNTI2ZmUwNmVmNWQyNDg2ZjcyMDczNzQ0NWFlZTQ5ZWU0OWM0YmQ2NDNlYzFlYTQwMzc4MDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://src/rag/benchmark_results.json#L1-L14",
+          "version": "repo-lines-v1:sha256:ef8eaf40d3ef386a81e11e27b944b33476fb260cb9b41e7a1dc25ca26c4d2d3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMGIzNmFhNzRhNTliY2Y0YTg4MTg1ODM3ZjY1OGFmYWYzNjQ2ZWZmMmJiMTZjMzkyOGQwZTkzMzVlOTQ1ZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_32a91068aff94680843ccb0c2b87e59a",
+      "statement": "Focused RAG tests cover source-local chunking and metadata, section continuity and cleanup, FAISS path consistency, missing-PDF failure, retrieval filtering, grounding gates, axis-preserving rewrites, retry/relabel behavior, and multi-chunk experimental-condition evidence using fakes rather than downloaded models or live LLM calls.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_rag.py#L1-L10",
+          "version": "repo-lines-v1:sha256:7d902dcb4f6d5e43f497fe851a319f56db61d6ad871b2f9dd4a76e7d704ccb12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTg0YWE2ZTk3MmE4Mjc5ZWJkOTE5YWFhOTEyYWMyM2NlMzAyNGQzNmFlZmNlMGJjYzQ3MzE5NGJlZjkyNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMjA5N2NmMTNkZDEwNmU0MTZlNDY4MmZkZWQzNjI1ZWZjNDRmYTdkODcxMjYyMjAwMDQ0NjdjYjUxN2NkNjYifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L145-L224",
+          "version": "repo-lines-v1:sha256:d395fc22d7dd1dc483918ce677328e8ed67b27581c3ccee182faca5443bbba25:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxOTVjNGQyY2NhMTQ1ZGQ3ZGIxOGMwNjA4ZDM5YWU5ZmJlODdlNDQ2MTdjZjEyYTViN2IxM2RkNTY5MWNmZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZmJhY2VmMGZiNmRiNzE0Zjk0NDM4OGY4ODhiZjJkODdmZDM5MDZkYWUyNjQ4YTZmMTY4YmI4MDlkMWM2ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2NWI1ZWFlMmFlNjYzOGMzY2JhOGVlMmIxYTRiYmEzYTg1OWU4MDRlODUwNDQyMmVmNDI4ZjBiYTMwMTMzNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMDdiZDAyZmQ2OGU3YjVmOTQ3YTBhZDNkZWVhYTgyYjQ3MjBlNzQ2MjQ4NDg0YWU3MGUwNTIyNzY5OTRmMjQifQ"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L227-L500",
+          "version": "repo-lines-v1:sha256:faae43311b48ea3a5a116320b0db1546dbc2d8c8be8a7756bb1732949dcda3fd:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjc0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ZWQyYzBiMWJiMWNjMzMwZjI5MmQ1ZWY4ODFjYzdiYmIxMDZjOTBmZGFkMTNmNzM0MThmZmFkNmEyOTIyYzhlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhM2M3M2QyMWRiYjAwZjMwMzcwYjU1NTc4YzJhMzMwZDlhOGY5NWRhY2E5NGNiYWEzODFiZGFlZjc2YTkwMTZjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhN2E4NzA5OWQ5ODgyYTYwMjY1ZWEwYzFjY2YyZjczZjYzMmU1N2ZhZWY3YWMxODZmZDJjODVkNTIxNGVkM2ZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4MTE0Y2NiMjgyMjViOTgxN2M5ZDk4Nzc0ZjZmZDUxMTViNzRhODBmZTIwOTMwOTUwZTNiNWY1NTc2ZjE3YjkwIn0"
+        },
+        {
+          "resource": "repo://tests/test_rag.py#L27-L142",
+          "version": "repo-lines-v1:sha256:fecea3314f7eeed1c44af2d6ac4ec7ceba02e29e1d7608a8fa949264e6673508:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNGE4ZWZiZGQyMWUxOTYxYjY1MDk2YTlhYjQxMjc4MDEyMTcyODhjODBmZDIyN2YwZjY4N2QwYTBjN2Q3ZjU1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMjQ3MWY3NTJjN2ZkMWI1MmJmNmRhNjE5OThlZTg0NGNlOTM3NDE0ZjU4MzE0NjJiMmJmODc4YTRkZjhkNWI4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkZTE2YTY4OGM0YzI3MDE3MzRjMzc2ZmE3ZDhmNGJhYmE1YmIzNDUxYjc3ODdhZmI3MjRmNmZhOTkzZmU0OWFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NGJlMDQwNTRhMDliOGQ5YTg1MWNiNzlkYTA4Yzc3NjZjZWRlYTU5MDE0MTYwNGQ4NTk2NGQwM2VhMTI2NTU1In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T01:43:12.707Z"
+  }
+}
