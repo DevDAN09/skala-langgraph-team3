@@ -88,7 +88,7 @@ flowchart TD
 ```
 
 ### 데이터 흐름 (End-to-End Data Flow)
-파이프라인은 23개 State field(12 payload + 11 control)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
+파이프라인은 24개 State field(12 payload + 12 control)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
@@ -104,11 +104,11 @@ flowchart TD
 
 ### State Schema
 
-1. **제어 vs 페이로드 분리**: Payload(12)는 `selected`, `tech_sw`, `tech_hw`, `domain`, `market`, `stakeholder`, `claims`, `evidence`, `sources`, `trl`, `synthesis`, `report`이다. Control(11)은 `audit`, `retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality`, `last_audited_step`, `last_decision`, `last_error`, `node_attempts`이다. `OverallState`는 총 **23 fields**를 계약으로 둔다.
+1. **제어 vs 페이로드 분리**: `PayloadState`(12)는 `selected`, `tech_sw`, `tech_hw`, `domain`, `market`, `stakeholder`, `claims`, `evidence`, `sources`, `trl`, `synthesis`, `report`이다. `ControlState`(12)는 `audit`, `retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality`, `last_audited_step`, `last_decision`, `last_error`, `last_errors`, `node_attempts`이다. `OverallState`는 두 State 계약을 결합한다.
 2. **관측성 위치**: trace 본문 전체는 State에 저장하지 않는다. 실행 UUID `trace_id`로 LangSmith external trace와 연결하고, `last_decision`에는 최신 routing decision/reason만 최소 저장한다. 전체 결정 이력은 LangSmith trace에서 확인한다.
 3. **지속성 비용**: 대용량 log/trace body를 State에 누적하지 않는다. `claims`/`evidence`/`sources`는 reducer가 최종 구조화 결과만 보존하며 append-only log를 만들지 않는다.
 4. **상관**: `make_initial_state()`가 실행마다 UUID `trace_id`를 생성해 State와 external trace의 correlation key로 사용한다.
-5. **재개/복구**: `node_status`(`pending`/`complete`/`stale`/`failed`), `retry_count`, `node_attempts`, `last_error`, `step_count`로 중단·실패·재시도 상태를 판단한다. worker 첫 실패는 `pending`, 반복 실패는 `failed`이며 Supervisor는 failed worker를 무한 dispatch하지 않는다.
+5. **재개/복구**: `node_status`(`pending`/`complete`/`stale`/`failed`), `retry_count`, `node_attempts`, `last_error`, `last_errors`, `step_count`로 중단·실패·재시도 상태를 판단한다. `node_attempts`는 성공·실패를 포함한 실제 실행 횟수이며, worker 첫 실패는 `pending`, 반복 실패는 `failed`이다. 실행 그래프는 in-process checkpoint를 지원한다.
 6. **동시 처리**: Supervisor는 한 번에 Research Agent 하나만 dispatch해 control overwrite를 제거한다. `claims`/`evidence`/`sources`는 upsert/union reducer를 유지한다. market → stakeholder는 direct edge가 아닌 State dependency다.
 7. **종료 보장**: `RETRY_LIMIT=2`, `MAX_STEPS=10`, `MAX_QUALITY_ATTEMPTS=2`와 worker failure fallback이 모든 feedback loop를 제한한다. 두 번째 실제 rework가 반환된 뒤에도 audit issue가 남을 때만 Claim을 terminal(`insufficient`/`rejected`)로 확정한다.
 - **멱등적 Reducer 적용**:
