@@ -35,6 +35,33 @@ def test_supervisor_ends_research_at_step_limit():
     assert route_supervisor(result) == "evaluation_synthesis"
 
 
+def test_dispatch_retry_counts_only_selected_agent(monkeypatch):
+    import src.supervisor as supervisor
+    issues = [{"claim_id": "DOM-01", "rule": "R1", "issue": "", "target_agent": agent, "action": "search_evidence"} for agent in ("paper", "market")]
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": issues}})
+    state = {**MOCK_STATE, "retry_count": {"paper": 0, "market": 0, "stakeholder": 0}}
+    result = supervisor_node(state)
+    selected = result["next_agent"].removesuffix("_analysis").removesuffix("_research")
+    assert result["retry_count"][selected] == 1
+    assert sum(result["retry_count"].values()) == 1
+
+
+def test_market_retry_marks_completed_stakeholder_stale(monkeypatch):
+    import src.supervisor as supervisor
+    issue = {"claim_id": "MKT-01", "rule": "R1", "issue": "", "target_agent": "market", "action": "search_evidence"}
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": [issue]}})
+    state = {**MOCK_STATE, "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}}
+    result = supervisor_node(state)
+    assert result["next_agent"] == "market_research"
+    assert result["node_status"]["stakeholder"] == "stale"
+
+
+def test_quality_reports_all_four_scores():
+    from src.synthesis.quality import quality_evaluation_node
+    result = quality_evaluation_node({**MOCK_STATE, "report": "# SUMMARY\n# REFERENCES"})["quality"]
+    assert set(result["scores"]) == {"groundedness", "neutrality", "bias_control", "coverage"}
+
+
 def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():
     assert route_quality({"quality": {"passed": False, "failures": ["coverage"], "attempts": 1}}) == "supervisor"
     assert route_quality({"quality": {"passed": False, "failures": ["REFERENCES"], "attempts": 1}}) == "report_generation"

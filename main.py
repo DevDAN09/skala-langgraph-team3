@@ -23,6 +23,7 @@ INITIAL_INPUT_STATE = {
     "sources": [],
     "audit": {"issues": []},
     "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    "next_agent": "paper_analysis",
     "node_status": {"paper": "pending", "market": "pending", "stakeholder": "pending"},
     "step_count": 0,
     "trace_id": "pipeline",

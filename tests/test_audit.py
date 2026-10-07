@@ -461,7 +461,7 @@ def test_evidence_audit_node_fast_fail_static():
     issue = result["audit"]["issues"][0]
     assert issue["rule"] == "R1"
     assert issue["target_agent"] == "paper"
-    assert result["retry_count"]["paper"] == 1
+    assert result["retry_count"]["paper"] == 0  # Supervisor dispatch owns retries.
     assert "claims" in result
     assert result["claims"][0]["status"] == "flagged"
 
@@ -498,7 +498,7 @@ def test_evidence_audit_node_r5_failure():
     assert issue["rule"] == "R5"
     assert issue["action"] == "re_extract"
     assert issue["target_agent"] == "paper"
-    assert result["retry_count"]["paper"] == 1
+    assert result["retry_count"]["paper"] == 0
     assert "claims" in result
     assert result["claims"][0]["status"] == "flagged"
 
@@ -551,7 +551,7 @@ def test_evidence_audit_node_r5_stakeholder_routing():
     issue = result["audit"]["issues"][0]
     assert issue["rule"] == "R5"
     assert issue["target_agent"] == "stakeholder"
-    assert result["retry_count"]["stakeholder"] == 1
+    assert result["retry_count"]["stakeholder"] == 0
 
 
 def test_evidence_audit_node_unique_retry_count_increment():
@@ -587,8 +587,8 @@ def test_evidence_audit_node_unique_retry_count_increment():
     result = evidence_audit_node(state)
     assert len(result["audit"]["issues"]) == 2
     assert all(i["target_agent"] == "paper" for i in result["audit"]["issues"])
-    # Crucial: paper retry count incremented by 1, NOT 2
-    assert result["retry_count"]["paper"] == 1
+    # Audit discovers issues; Supervisor increments only the dispatched target.
+    assert result["retry_count"]["paper"] == 0
 
 
 def test_evidence_audit_node_no_new_claim_id_created():
@@ -666,7 +666,7 @@ def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
     original_retry_count = dict(state_round1["retry_count"])
 
     result1 = evidence_audit_node(state_round1)
-    assert result1["retry_count"]["market"] == 1
+    assert result1["retry_count"]["market"] == 0
     # The input dict must not have been mutated in place
     assert state_round1["retry_count"] == original_retry_count
 
@@ -678,7 +678,7 @@ def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
         "claims": [{**state_round1["claims"][0], "evidence_ids": []}],
     }
     result2 = evidence_audit_node(state_round2)
-    assert result2["retry_count"]["market"] == 2
+    assert result2["retry_count"]["market"] == 0
     # Untouched agents must stay untouched
     assert result2["retry_count"]["paper"] == 0
     assert result2["retry_count"]["stakeholder"] == 0
@@ -759,9 +759,9 @@ def test_evidence_audit_node_finalizes_status_when_retry_limit_reached():
         "retry_count": {"paper": 0, "market": 1, "stakeholder": 0},
     }
     result = evidence_audit_node(state)
-    assert result["retry_count"]["market"] == 2
+    assert result["retry_count"]["market"] == 1
     assert result["audit"]["issues"][0]["rule"] == "R1"
-    assert result["claims"][0]["status"] == "insufficient"
+    assert result["claims"][0]["status"] == "flagged"  # Supervisor finalizes after dispatch.
 
 
 def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
@@ -793,8 +793,8 @@ def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
     }]):
         result = evidence_audit_node(state)
 
-    assert result["retry_count"]["paper"] == 2
-    assert result["claims"][0]["status"] == "rejected"
+    assert result["retry_count"]["paper"] == 1
+    assert result["claims"][0]["status"] == "flagged"  # Supervisor finalizes after dispatch.
 
 
 def test_evidence_audit_node_does_not_reflag_finalized_claims():
@@ -862,5 +862,4 @@ def test_evidence_audit_node_target_agent_mapping_bug_repro():
     by_claim = {i["claim_id"]: i for i in result["audit"]["issues"]}
     assert by_claim["STK-01"]["target_agent"] == "stakeholder"
     assert by_claim["MAT-R01"]["target_agent"] == "paper"
-    assert result["retry_count"] == {"paper": 1, "market": 0, "stakeholder": 1}
-
+    assert result["retry_count"] == {"paper": 0, "market": 0, "stakeholder": 0}

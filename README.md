@@ -8,7 +8,7 @@
 
 ## Overview
 - **Objective** : KV cache 병목을 다루는 SW·HW 대표 기술을 4개 관점(TRL · 시장성 · 이해관계자 · 도메인 적합성)에서 근거 기반으로 비교 평가
-- **Method** : Multi-Agent(LangGraph 병렬 Fan-out · Chaining · 조건부 재실행) + Agentic RAG(충분성 게이트 · Query Rewrite) + 2단계 Fast-Fail 근거 검증
+- **Method** : Supervisor pattern (State-driven dynamic routing · targeted rework) + Agentic RAG + 2-stage Fast-Fail audit
 - **Tools** : LangGraph, FAISS, Tavily Search, Jinja2, Streamlit, xhtml2pdf
 
 
@@ -61,7 +61,7 @@
 | `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
 | `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | `market`, `claims(MKT-*, MAT-A*)` |
 | `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | `stakeholder`, `claims(STK-01~08)` |
-| `evidence_audit` | D | 2단계 Fast-Fail 검증(R1~R4 → R5), 위반 관점만 표적 피드백, 한도 도달 시 상태 확정 | `audit`, `retry_count`, `claims[*].status` |
+| `supervisor` | A/D | 내부 evidence-audit(R1~R5), State 기반 다음 Agent 선택, 실제 재작업 dispatch 때만 retry 증가 | `audit`, `next_agent`, `retry_count`, `node_status` |
 | `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
 | `report_generation` | E | Jinja2 골격 조립 → Strict Grounding Polishing | `report` |
 
@@ -85,19 +85,19 @@ flowchart TD
 ```
 
 ### 데이터 흐름 (End-to-End Data Flow)
-파이프라인 실행 시 14개의 전역 State 필드가 각 노드를 거치며 축적·검증·종합되는 흐름은 다음과 같다.
+파이프라인은 19개 State field(14 payload + 5 control)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
 | **Step 1<br/>초기화 & 동적 선택** | `START` → `supervisor` (A/D) | `INITIAL_INPUT_STATE` | • 대상 기술 및 제어 metadata 주입<br/>• audit/coverage/retry/dependency를 읽어 다음 Research Agent를 한 개 선택 | `selected`, `node_status`, `retry_count`, `step_count` |
 | **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(실측/시뮬레이션 구분) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
 | **Step 3<br/>시장성 및 이해관계자** | `market_research`<br/>→ `stakeholder_research` (C) | `selected`<br/>(+ `market` 컨텍스트) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 컨텍스트 체이닝을 통해 시장 데이터를 반영한 정량/정성 Claim 생성 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
-| **Step 4<br/>Fast-Fail 근거 검증** | `evidence_audit` (D) | `claims`, `evidence`, `sources` | • **1단계 규칙 검증**: 형식·출처(T1~T4)·수치 왜곡 4대 룰 체크<br/>• **2단계 LLM 심사**: `gpt-4o` 기반 Claim-Snippet 사실 일치 판정<br/>• 검증 미달 항목 피드백 발행 및 라우팅 (최대 2회 재시도) | `audit.issues`, `retry_count`,<br/>`claims[*].status` (ok/flagged/insufficient/rejected) |
+| **Step 4<br/>Supervisor audit & routing** | `supervisor` (A/D) | `claims`, `evidence`, `sources`, control State | • R1~R5 audit 후 current State에서 한 Agent만 선택<br/>• 실제 retry dispatch만 count하며 market refresh는 stakeholder를 stale 처리 | `audit.issues`, `next_agent`, `retry_count`, `node_status` |
 | **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
 | **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • Jinja2 템플릿 기반 마크다운 렌더링 및 인용 넘버링 연동<br/>• LLM(`gpt-4o`) 문체 정제 및 `final_evaluation_report.md` 생성<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 자동 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
 
 ### State 계약 및 충돌 방지 원칙 (Reducer)
-- **전담 Writer 분리**: 각 노드는 자신이 전담하는 State 키만 수정하여 병렬 실행 시 경합(Race Condition)을 원천 방지합니다.
+- **Control/Payload 분리**: Research payload와 `next_agent`/`node_status`/`step_count`/`quality` control State를 분리한다. `MAX_STEPS=10`, quality attempt limit로 종료를 보장한다.
 - **멱등적 Reducer 적용**:
   - `claims`: Claim ID 기준 멱등 업데이트 (`upsert_claims`)로 재시도 시 기존 Claim 정정
   - `evidence`: Evidence ID 기준 멱등 업데이트 (`upsert_evidence`)
@@ -123,7 +123,7 @@ flowchart TD
 │   ├── eval_queries.json  # 임베딩 벤치마크 질의 20개
 │   └── faiss_index/       # FAISS 로컬 인덱스 (indexer.py로 생성, git 제외)
 ├── src/                   # Agent 모듈
-│   ├── state.py           # OverallState 14개 키 + Custom Reducer
+│   ├── state.py           # OverallState 19개 키 + Custom Reducer
 │   ├── graph.py           # LangGraph StateGraph 조립 · 조건부 라우터
 │   ├── config.py          # 모델명 · 경로 · API 키
 │   ├── rag/               # [B] indexer · benchmark · agentic_rag (paper_analysis)

@@ -78,7 +78,7 @@ def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]
             url_index[url] = sid
     return list(src_map.values())
 
-# 3. Overall State (14개 키)
+# 3. Overall State (18 payload + control keys)
 class OverallState(TypedDict):
     selected: dict
     tech_sw: dict
@@ -91,6 +91,7 @@ class OverallState(TypedDict):
     sources: Annotated[list[Source], union_sources]
     audit: Audit
     retry_count: dict[str, int]
+    next_agent: Literal["paper_analysis", "market_research", "stakeholder_research", "evaluation_synthesis"]
     # Supervisor control metadata.  Payload fields above remain owned by their
     # specialist nodes; these fields describe orchestration only.
     node_status: dict[str, str]

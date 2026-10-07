@@ -166,6 +166,7 @@ def test_overall_state_schema_keys():
         "sources",
             "audit",
             "retry_count",
+            "next_agent",
             "node_status",
             "step_count",
             "trace_id",
@@ -175,7 +176,7 @@ def test_overall_state_schema_keys():
         "report",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 18
+    assert len(expected_keys) == 19
 
 
 def test_config_exports():

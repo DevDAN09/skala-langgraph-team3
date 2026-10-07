@@ -1,5 +1,5 @@
 """State-driven supervisor for research selection and evidence rework."""
-from src.audit.auditor import RETRY_LIMIT, evidence_audit_node
+from src.audit.auditor import RETRY_LIMIT, evidence_audit_node, finalize_retry_statuses
 from src.state import OverallState
 
 MAX_STEPS = 10
@@ -21,7 +21,7 @@ def _dependency_satisfied(agent: str, status: dict[str, str]) -> bool:
 def _candidates(state: OverallState) -> list[str]:
     status = state.get("node_status") or {}
     retries = state.get("retry_count") or {}
-    targeted = {issue.get("target_agent") for issue in _issues(state)}
+    targeted = {issue.get("target_agent") for issue in _issues(state)} | set((state.get("quality") or {}).get("rework_targets") or [])
     candidates = []
     for agent in RESEARCH_AGENTS:
         needs_initial_run = status.get(agent, "pending") != "complete"
@@ -53,11 +53,22 @@ def supervisor_node(state: OverallState) -> dict:
         return {**audit_result, "next_agent": "evaluation_synthesis"}
 
     selected = select_agent(candidates, audited)
-    return {
-        **audit_result,
-        "next_agent": NODE_NAMES[selected],
-        "step_count": state.get("step_count", 0) + 1,
-    }
+    targeted = {issue.get("target_agent") for issue in _issues(audited)}
+    retry_count = dict(state.get("retry_count") or {})
+    result = {**audit_result, "next_agent": NODE_NAMES[selected], "step_count": state.get("step_count", 0) + 1}
+    if selected in targeted and (state.get("node_status") or {}).get(selected) == "complete":
+        retry_count[selected] = retry_count.get(selected, 0) + 1
+        result["retry_count"] = retry_count
+        result["claims"] = finalize_retry_statuses(state.get("claims", []), _issues(audited), retry_count)
+    quality = dict(state.get("quality") or {})
+    if selected in quality.get("rework_targets", []):
+        quality["rework_targets"] = [agent for agent in quality["rework_targets"] if agent != selected]
+        result["quality"] = quality
+    status = dict(state.get("node_status") or {})
+    if selected == "market" and status.get("stakeholder") == "complete":
+        status["stakeholder"] = "stale"
+        result["node_status"] = status
+    return result
 
 
 def route_supervisor(state: OverallState) -> str:
