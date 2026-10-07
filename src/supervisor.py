@@ -43,11 +43,11 @@ def select_agent(candidates: list[str], state: OverallState) -> str:
 
 def supervisor_node(state: OverallState) -> dict:
     """Audit evidence and select one eligible research agent or synthesis."""
-    if state.get("step_count", 0) >= MAX_STEPS:
-        return {"next_agent": "evaluation_synthesis"}
-
     audit_result = evidence_audit_node(state)
     audited = {**state, **audit_result}
+    if state.get("step_count", 0) >= MAX_STEPS:
+        retries = {agent: RETRY_LIMIT for agent in RESEARCH_AGENTS}
+        return {**audit_result, "claims": finalize_retry_statuses(state.get("claims", []), _issues(audited), retries), "next_agent": "evaluation_synthesis"}
     candidates = _candidates(audited)
     if not candidates:
         return {**audit_result, "next_agent": "evaluation_synthesis"}

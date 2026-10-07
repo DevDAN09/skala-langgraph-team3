@@ -31,7 +31,7 @@ def test_supervisor_routes_targeted_audit_rework_only():
 
 def test_supervisor_ends_research_at_step_limit():
     result = supervisor_node({**INITIAL_INPUT_STATE, "step_count": MAX_STEPS})
-    assert result == {"next_agent": "evaluation_synthesis"}
+    assert result["next_agent"] == "evaluation_synthesis"
     assert route_supervisor(result) == "evaluation_synthesis"
 
 
@@ -60,6 +60,14 @@ def test_quality_reports_all_four_scores():
     from src.synthesis.quality import quality_evaluation_node
     result = quality_evaluation_node({**MOCK_STATE, "report": "# SUMMARY\n# REFERENCES"})["quality"]
     assert set(result["scores"]) == {"groundedness", "neutrality", "bias_control", "coverage"}
+
+
+def test_quality_reference_and_neutrality_rules():
+    from src.synthesis.quality import quality_evaluation_node
+    base = {**MOCK_STATE, "claims": [], "report": "# SUMMARY\n# REFERENCE\n우열을 판정하지 않는다. 특정 기술을 추천하지 않는다."}
+    assert quality_evaluation_node(base)["quality"]["scores"]["neutrality"] is True
+    assert "REFERENCE" in quality_evaluation_node({**base, "report": "# SUMMARY"})["quality"]["failures"]
+    assert quality_evaluation_node({**base, "report": "KIVI를 추천한다"})["quality"]["scores"]["neutrality"] is False
 
 
 def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():

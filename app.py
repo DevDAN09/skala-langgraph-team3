@@ -14,7 +14,7 @@ from src.config import (
     FAISS_INDEX_DIR,
 )
 from src.synthesis.pdf_export import convert_markdown_to_pdf
-from main import INITIAL_INPUT_STATE
+from main import make_initial_state
 from tests.mock_data import MOCK_STATE
 
 st.set_page_config(
@@ -67,12 +67,12 @@ if run_btn:
         "market_research": "📈 [시장성 조사] 시장 채택 및 기술 장벽 조사",
         "paper_analysis": "📄 [원문 분석] 논문 기반 메커니즘 및 도메인 분석",
         "stakeholder_research": "👥 [이해관계자] 4대 핵심 Actor 영향 분석",
-        "evidence_audit": "🛡️ [근거 검증] R1~R4 정적 룰 및 R5 심사기 검증",
+        "supervisor": "🛡️ [Supervisor] audit 및 다음 Agent 선택",
         "evaluation_synthesis": "⚖️ [평가 종합] TRL 이원화 및 트레이드오프 종합",
         "report_generation": "📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링",
+        "quality_eval": "✅ [품질 평가] groundedness · neutrality · bias · coverage",
     }
     
-    total_expected_steps = 6
     step_count = 0
 
     try:
@@ -81,17 +81,11 @@ if run_btn:
         
         status_box = st.status("파이프라인 실행 중...", expanded=True)
         with status_box:
-            for chunk in graph.stream(INITIAL_INPUT_STATE, stream_mode="updates"):
-                for node_name, node_output in chunk.items():
-                    step_count += 1
-                    label = node_labels.get(node_name, f"노드 실행: {node_name}")
-                    st.write(label)
-                    st.session_state["run_logs"].append(label)
-                    progress = min(step_count / total_expected_steps, 1.0)
-                    progress_bar.progress(progress, text=f"{label} 완료")
-            
-            # 최종 State 확보
-            final_state = graph.invoke(INITIAL_INPUT_STATE)
+            label = "Supervisor graph executing (dynamic route)"
+            st.write(label)
+            st.session_state["run_logs"].append(label)
+            progress_bar.progress(0.5, text=label)
+            final_state = graph.invoke(make_initial_state())
             elapsed = time.time() - start_time
             REPORT_MD_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
             if REPORT_OUTPUT_PATH.suffix.lower() == ".pdf":
@@ -241,5 +235,5 @@ else:
     # ----------------- Tab 4: Raw State -----------------
     with tab4:
         st.subheader("🔍 LangGraph OverallState 전체 데이터")
-        st.caption("그래프 전체에서 공유 및 축적된 14개 키의 전체 State 덤프입니다.")
+        st.caption("그래프 전체에서 공유 및 축적된 19개 State 키의 전체 덤프입니다.")
         st.json(state)

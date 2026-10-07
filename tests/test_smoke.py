@@ -54,4 +54,4 @@ def test_main_initial_state_matches_contract():
     """main.py는 tests 패키지에 의존하지 않고, 초기 State는 팀 공용 mock과 같다."""
     with open(main.__file__, encoding="utf-8") as f:
         assert "from tests" not in f.read()
-    assert main.INITIAL_INPUT_STATE == INITIAL_INPUT_STATE
+    assert {**main.INITIAL_INPUT_STATE, "trace_id": "pipeline"} == INITIAL_INPUT_STATE

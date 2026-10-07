@@ -98,6 +98,14 @@ flowchart TD
 
 ### State 계약 및 충돌 방지 원칙 (Reducer)
 - **Control/Payload 분리**: Research payload와 `next_agent`/`node_status`/`step_count`/`quality` control State를 분리한다. `MAX_STEPS=10`, quality attempt limit로 종료를 보장한다.
+
+### State Schema
+
+- **Payload (12)**: `selected`, `tech_sw`, `tech_hw`, `domain`, `market`, `stakeholder`, `claims`, `evidence`, `sources`, `trl`, `synthesis`, `report`.
+- **Control (7)**: `audit`, `retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality` — 총 **19 fields**.
+- `trace_id` is a UUID per execution; large trace bodies stay outside State. `node_status`/retry/step fields support resume inspection; reducers keep claim/evidence/source writes idempotent.
+- Supervisor dispatches one Research Agent at a time. Market data is stored in State, then Supervisor may choose stakeholder; no direct Agent edge exists.
+- Termination: `RETRY_LIMIT=2`, `MAX_STEPS=10`, and two quality evaluations cap all feedback loops.
 - **멱등적 Reducer 적용**:
   - `claims`: Claim ID 기준 멱등 업데이트 (`upsert_claims`)로 재시도 시 기존 Claim 정정
   - `evidence`: Evidence ID 기준 멱등 업데이트 (`upsert_evidence`)

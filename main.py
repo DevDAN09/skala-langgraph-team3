@@ -1,12 +1,14 @@
 """main.py - Non-interactive Multi-Agent System Entry Point"""
 import sys
 import time
+import uuid
 from src.config import REPORT_OUTPUT_PATH, REPORT_MD_PATH, REPORT_PDF_PATH
 from src.graph import build_evaluation_graph
 from src.synthesis.pdf_export import convert_markdown_to_pdf
 
 # 설계 5.1: START에서 selected만 주입. 나머지 키는 빈 값, retry_count는 관점별 0으로 시작한다.
-INITIAL_INPUT_STATE = {
+def make_initial_state():
+    return {
     "selected": {
         "sw": "KIVI",
         "hw": "CXL-PNM",
@@ -26,12 +28,14 @@ INITIAL_INPUT_STATE = {
     "next_agent": "paper_analysis",
     "node_status": {"paper": "pending", "market": "pending", "stakeholder": "pending"},
     "step_count": 0,
-    "trace_id": "pipeline",
+    "trace_id": str(uuid.uuid4()),
     "quality": {"passed": False, "failures": [], "attempts": 0},
     "trl": {},
     "synthesis": {},
     "report": "",
-}
+    }
+
+INITIAL_INPUT_STATE = make_initial_state()
 
 def main():
     print("=" * 70)
@@ -43,7 +47,7 @@ def main():
     try:
         graph = build_evaluation_graph()
         print("🔗 StateGraph 컴파일 완료. 파이프라인 실행 시작...")
-        final_state = graph.invoke(INITIAL_INPUT_STATE)
+        final_state = graph.invoke(make_initial_state())
 
         # Markdown 원본 보존
         REPORT_MD_PATH.write_text(final_state["report"], encoding="utf-8")
