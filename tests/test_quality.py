@@ -3,7 +3,7 @@ import pytest
 
 from src.quality import criteria, judge as judge_mod, node as node_mod, rules as rules_mod
 from src.quality.judge import JudgeItem, JudgeVerdict, run_quality_judge
-from src.quality.node import quality_eval_node, pick_target
+from src.quality.node import quality_eval_node
 from src.quality.rules import run_quality_rules
 
 GOOD_MD = """# KV Cache 최적화 기술 다관점 평가 보고서
@@ -142,12 +142,6 @@ def test_bias_rules():
     assert any(f.startswith("B1") for f in fails)
     assert any(f.startswith("B2") for f in fails) and set(agents) == {"market", "stakeholder"}
 
-    state = good_state()
-    for s in state["sources"]:
-        s["source_tier"] = "T4"
-    state["claims"][4]["counter_searched"] = False
-    fails, _ = failures(state=state)
-    assert any(f.startswith("B3") for f in fails) and any(f.startswith("B4") for f in fails)
 
 
 def test_b5_length_ratio_and_switch(monkeypatch):
@@ -246,41 +240,42 @@ def node_env(monkeypatch):
     return calls
 
 
-def test_node_rule_failure_skips_judge_fast_fail(node_env):
+def test_node_rule_failure_skips_judge_and_discloses_failures(node_env):
     state = {**good_state(), "report": GOOD_MD.replace("워크로드", "KIVI를 추천한다. 워크로드")}
-    ev = quality_eval_node(state)["report_eval"]
+    out = quality_eval_node(state)
+    ev = out["report_eval"]
     assert node_env["judge"] == 0
     assert ev["stage"] == "rules" and not ev["passed"]
-    assert ev["target"] == "report_generation" and "N1" in ev["feedback"]
+    assert ev["collect_agents"] == [] and "N1" in ev["feedback"]
+    # 미달이면 항상 6.3절 공개 (재작성 시에는 골격부터 다시 만들어져 사라진다)
+    assert "### 6.3 품질 평가 미통과 항목" in out["report"]
+    assert out["report"].index("### 6.3") < out["report"].index("## REFERENCE")
+
+
+def test_node_does_not_read_retry_budget(node_env):
+    """재작업 대상·한도 판단은 Supervisor 책임: retry_count가 달라도 노드 출력은 같다."""
+    report = GOOD_MD.replace("워크로드", "KIVI를 추천한다. 워크로드")
+    fresh = quality_eval_node({**good_state(), "report": report})
+    exhausted = quality_eval_node({**good_state(), "report": report,
+                                   "retry_count": {"report": 99, "market": 99}})
+    assert fresh == exhausted
 
 
 def test_node_passes_with_judge(node_env):
     node_env["judge_result"] = {n: {"passed": True, "score": 5, "failures": [], "quotes": []}
                                 for n in ("groundedness", "neutrality", "bias", "coverage")}
     ev = quality_eval_node(good_state())["report_eval"]
-    assert ev["passed"] and ev["stage"] == "judge" and ev["target"] is None and ev["feedback"] == ""
+    out = quality_eval_node(good_state())
+    assert ev["passed"] and ev["stage"] == "judge" and ev["collect_agents"] == [] and ev["feedback"] == ""
+    assert "report" not in out
 
 
 def test_node_coverage_gap_targets_collector(node_env):
     state = good_state()
     state["claims"] = [c for c in state["claims"] if c["id"] != "MKT-02"]
     state["report"] = GOOD_MD.replace("MKT-01, MKT-02", "MKT-01")
-    assert quality_eval_node(state)["report_eval"]["target"] == "market_research"
+    assert quality_eval_node(state)["report_eval"]["collect_agents"] == ["market"]
 
-
-def test_node_limit_exhausted_appends_failures_section(node_env):
-    state = {**good_state(), "report": GOOD_MD.replace("워크로드", "KIVI를 추천한다. 워크로드"),
-             "retry_count": {"report": criteria.REPORT_REVISION_LIMIT}}
-    out = quality_eval_node(state)
-    assert out["report_eval"]["target"] is None
-    assert "### 6.3 품질 평가 미통과 항목" in out["report"]
-    assert out["report"].index("### 6.3") < out["report"].index("## REFERENCE")
-
-
-def test_pick_target_priority():
-    assert pick_target({"retry_count": {}}, ["market"]) == "market_research"
-    assert pick_target({"retry_count": {"market": 2}}, ["market"]) == "report_generation"
-    assert pick_target({"retry_count": {"market": 2, "report": criteria.REPORT_REVISION_LIMIT}}, ["market"]) is None
 
 
 def test_conftest_mock_judge_returns_passing_verdict(monkeypatch):

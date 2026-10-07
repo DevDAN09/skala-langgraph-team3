@@ -41,7 +41,7 @@ flowchart LR
 | 규칙 | 조건 | 다음 노드 |
 |---|---|---|
 | ⑦ | `report_generation`이 done이고, `quality_eval`이 pending 또는 stale | `quality_eval` |
-| ⑧ | `report_eval.passed == False`이고 재작업 여유가 있음 | `report_eval.target` (6절) |
+| ⑧ | `report_eval.passed == False`이고 재작업 여유가 있음 | Supervisor가 `collect_agents`와 `retry_count`로 정한 노드 (6.1절) |
 | ⑨ | `report_eval.passed == True`, 또는 한도 소진 | END |
 
 - 재작업 대상이 수집 노드이면 `evaluation_synthesis`, `report_generation`, `quality_eval`을 `stale`로 바꾼다. 수집부터 다시 했으니 종합·보고서·평가도 다시 거친다.
@@ -64,7 +64,7 @@ class ReportEval(TypedDict):
     passed: bool
     stage: Literal["rules", "judge"]       # 어느 단계에서 판정이 끝났는지
     items: dict[str, QualityItem]          # groundedness | neutrality | bias | coverage | format
-    target: str | None                     # 재작업 노드. 통과면 None
+    collect_agents: list[str]              # 근거 부족(C5·B2)으로 재수집이 필요한 관점. 재작업 대상 결정은 Supervisor
     feedback: str                          # report_generation 프롬프트에 넣을 수정 지시 (1,500자 이내)
 
 class OverallState(TypedDict):
@@ -115,12 +115,12 @@ class OverallState(TypedDict):
 
 ### 4.3 편향 통제
 
+> T4 단독 근거(R2)와 반대 쿼리 수행(R3)은 근거 검증(`evidence_audit`)이 Claim 단위로 보장한다. 보고서에는 `status == "ok"` Claim만 들어가고, `ok`는 마지막 검증에서 R2·R3를 통과했다는 뜻이므로 여기서 다시 검사하지 않는다. (초안의 B3·B4는 리뷰 후 삭제)
+
 | ID | 검사 | 판정 |
 |---|---|---|
 | B1 | 본문 인용 중 단일 출처가 차지하는 비율 | 40% 초과면 실패 |
 | B2 | 시장성(4.2)과 이해관계자(4.3) 근거의 기술별 고유 출처 수 | 2개 미만이면 실패 → 재작업 대상은 해당 수집 노드 |
-| B3 | 인용된 Claim 중 근거가 모두 T4 출처인 것 (R2를 보고서 기준으로 재확인) | 1건 이상이면 실패 |
-| B4 | 인용된 외부 Claim(MKT, STK, MAT-A)의 `counter_searched == True` 비율 | 100% 미만이면 실패 |
 | B5 | KIVI와 CXL-PNM의 서술 분량 비율 (3.1 vs 3.2 글자 수) | 0.5–2 범위를 벗어나면 실패 |
 
 ### 4.4 관점 커버리지
@@ -198,12 +198,14 @@ else:                judge = run_quality_judge(report, state)
                      report_eval = {passed: 모든 score ≥ 4, stage: "judge", items: rules ⊕ judge, ...}
 ```
 
-### 6.1 `target` 결정 (위에서부터 먼저 걸리는 것 적용)
+### 6.1 재작업 대상 결정 — Supervisor `decide()` ⑧ (위에서부터 먼저 걸리는 것 적용)
 
-| 우선순위 | 실패 원인 | `target` | 이유 |
+`quality_eval`은 판정과 `collect_agents`(재수집 필요 관점)만 기록하고 `retry_count`를 읽지 않는다. 재작업 대상과 한도 판단은 라우팅 책임이므로 Supervisor가 한다.
+
+| 우선순위 | 실패 원인 | 재작업 대상 | 이유 |
 |---|---|---|---|
 | 1 | C5 (관점 근거 없음), B2 (출처 부족) **그리고** 해당 관점의 `retry_count < 2` | 해당 수집 노드 (`paper_analysis` / `market_research` / `stakeholder_research`) | 근거 자체가 부족해서 보고서를 다시 써도 고쳐지지 않는다 |
-| 2 | 그 밖의 모든 실패 (G·N·B1/B3–B5·C1–C4·F, Judge 미달) **그리고** `retry_count["report"] < 2` | `report_generation` | 서술, 형식, 인용의 문제다 |
+| 2 | 그 밖의 모든 실패 (G·N·B1·B5·C1–C4·F, Judge 미달) **그리고** `retry_count["report"] < 2` | `report_generation` | 서술, 형식, 인용의 문제다 |
 | 3 | 재작업 여유 없음 | 없음 → END | 6.3절 공개 후 종료 |
 
 - Judge가 "편향"으로 미달 판정해도 `report_generation`으로 보낸다. Judge 판정만으로 수집을 다시 돌리면 비용이 크고, 수집 노드가 무엇을 더 찾아야 하는지 구조화된 지시가 없기 때문이다.
@@ -223,9 +225,12 @@ else:                judge = run_quality_judge(report, state)
 - 규칙 실패 메시지와 Judge `quotes`를 합쳐서 1,500자 이내로 만든다.
 - 수치·Claim ID·인용 번호는 바꾸지 말라는 기존 polishing 제약은 그대로 둔다.
 
-### 6.3 한도 소진 시
+### 6.3 미통과 항목 공개
 
-`quality_eval`이 마지막 허용 판정에서도 미달이면, 보고서 끝(6장 뒤, REFERENCE 앞)에 아래 절을 붙여 `report`로 반환한다. 이후 Supervisor는 ⑨에 따라 END로 간다.
+`quality_eval`은 미달이면 **매번** 보고서 끝(6장 뒤, REFERENCE 앞)에 아래 절을 붙여 `report`로 반환한다.
+- Supervisor가 재작성으로 보내면 `report_generation`이 골격부터 다시 만들므로 이 절은 사라진다.
+- 한도를 다 써서 END로 가면 이 절이 최종 보고서에 남는다.
+- 그래서 `quality_eval`은 한도를 알 필요가 없다.
 
 ```markdown
 ### 6.3 품질 평가 미통과 항목
@@ -234,7 +239,7 @@ else:                judge = run_quality_judge(report, state)
 ```
 
 - 평가 결과를 숨기지 않고 공개하는 것이 목적이다. 설계서 3.7절의 "Evidence Gap 공개" 원칙과 같다.
-- 이 경우에만 `quality_eval`이 `report`를 쓴다. 앞뒤 노드와 동시에 실행되지 않으므로 쓰기 충돌은 없다.
+- `quality_eval`은 미달일 때만 `report`를 쓴다. 앞뒤 노드와 동시에 실행되지 않으므로 쓰기 충돌은 없다.
 
 ---
 
@@ -260,7 +265,7 @@ else:                judge = run_quality_judge(report, state)
 | 부정 표현 예외 | "우열을 결론내리지 않는다"는 통과, "KIVI를 추천한다"는 실패 | 위와 같음 |
 | Judge 구조화 출력 | LLM을 mock 처리. 점수 → `passed` 변환, 지어낸 `quotes` 무효 처리 | `tests/test_quality_judge.py` |
 | Fast-Fail | 규칙에서 실패하면 Judge가 호출되지 않는다 | `tests/test_quality_node.py` |
-| `target` 결정 | C5 실패 → 수집 노드, N1 실패 → `report_generation`, 한도 소진 → 6.3절 추가 | 위와 같음 |
+| 재작업 대상 결정 | C5 실패 → `collect_agents`, Supervisor가 여유에 따라 수집 노드 / `report_generation` / END 선택. 노드는 `retry_count`와 무관하게 같은 출력 | `tests/test_quality.py`, `tests/test_graph.py` |
 | 루프 종료 | 항상 미달인 품질 평가에서도 개정 2회 후 END에 도달한다 | `tests/test_graph.py` |
 
 ---
@@ -291,6 +296,9 @@ else:                judge = run_quality_judge(report, state)
 | Judge 인용 무효 처리 | 1회 재호출 | 1회 재호출 후에도 인용이 없으면 **해당 항목은 통과 처리**(failures에 "무효" 기록) | 지어낸 지적으로 재작업 루프가 도는 것을 막는다 |
 | `retry_count["report"]` | 품질 개정 횟수 | 품질 개정 + `report_generation` 실행 실패 재시도가 **같은 카운터를 공유** | `track_node` 실패 재시도와 키 체계를 하나로 유지 |
 | 기준값 위치 | 미정 | **`src/quality/criteria.py` 한 파일** | 11절 보정 작업이 이 파일만 고치면 되도록 |
+| B3·B4 | R2·R3를 보고서 기준으로 재확인 | **삭제** | 보고서에 들어가는 `ok` Claim은 이미 R2·R3를 통과했고, 검증을 건너뛰고 보고서로 가는 경로가 없어 절대 실패할 수 없는 검사였다 (PR #60 리뷰) |
+| 재작업 대상·한도 판단 | `quality_eval`이 `target` 결정 | **Supervisor `decide()`**가 `collect_agents`와 `retry_count`로 결정. `quality_eval`은 `retry_count`를 읽지 않음 | 라우팅은 조정 계층 책임. 하위 노드는 평가만 한다 (PR #60 리뷰) |
+| 6.3절 공개 시점 | 한도 소진 시에만 | 미달이면 매번 붙임 (재작성 시 골격부터 다시 만들어져 사라짐) | 하위 노드가 한도를 몰라도 되도록 |
 | 보정 도구 | 없음 | `main.py`가 `final_state.json`을 저장하고, `scripts/eval_report.py`로 같은 State에 다른 보고서를 평가 | 11절 측정 절차용 |
 
 ---

@@ -2,6 +2,8 @@
 
 설계: docs/plans/2026-10-07-report-quality-eval-design.md 4절
 G: Groundedness · N: 중립성 · B: 편향 통제 · C: 관점 커버리지 · F: 형식
+T4 단독 근거(R2)와 반대 쿼리 수행(R3)은 Claim 단위로 evidence_audit가 보장한다. 보고서에는 status=ok
+Claim만 들어가고 ok는 마지막 검증에서 R2·R3를 통과했다는 뜻이라 여기서 다시 검사하지 않는다.
 """
 import contextlib
 import os
@@ -126,7 +128,6 @@ def _neutrality(sections) -> list[str]:
 def _bias(sections, state: OverallState, ok_claims: list[dict]) -> tuple[list[str], set[str]]:
     fails, agents = [], set()
     ev_source = {e["evidence_id"]: e["source_id"] for e in state.get("evidence", [])}
-    tier = {s["source_id"]: s.get("source_tier", "T4") for s in state.get("sources", [])}
     external = [c for c in ok_claims if c["id"].startswith(EXTERNAL_PREFIXES)]
 
     ext_sources = [ev_source[e] for c in external for e in c.get("evidence_ids", []) if e in ev_source]  # B1
@@ -143,15 +144,6 @@ def _bias(sections, state: OverallState, ok_claims: list[dict]) -> tuple[list[st
             if len(srcs) < criteria.MIN_EXTERNAL_SOURCES:
                 fails.append(f"B2: {tech} {perspective} 고유 출처 {len(srcs)}개 (기준 {criteria.MIN_EXTERNAL_SOURCES}개)")
                 agents.add(PERSPECTIVE_AGENT[perspective])
-
-    for c in ok_claims:  # B3
-        tiers = {tier.get(ev_source.get(e), "T4") for e in c.get("evidence_ids", [])}
-        if tiers == {"T4"}:
-            fails.append(f"B3: {c['id']}의 근거가 T4 출처뿐이다")
-
-    unchecked = sorted(c["id"] for c in external if not c.get("counter_searched"))  # B4
-    if unchecked:
-        fails.append(f"B4: 반대 쿼리를 수행하지 않은 외부 Claim {unchecked}")
 
     if criteria.LENGTH_RATIO_RANGE:  # B5
         lo, hi = criteria.LENGTH_RATIO_RANGE

@@ -6,6 +6,7 @@ State(node_status · audit · retry_count · step_count)만 보고 다음 노드
 from langgraph.graph import END
 from src.state import OverallState
 from src.audit.auditor import evidence_audit_node, RETRY_LIMIT
+from src.quality.criteria import REPORT_REVISION_LIMIT
 
 MAX_STEPS = 30  # Supervisor 방문 상한. 재시도 한도와 별개인 최종 종료 가드
 
@@ -22,6 +23,17 @@ def _retry_key(node: str) -> str:
 
 def _can_retry(state: OverallState, node: str) -> bool:
     return (state.get("retry_count") or {}).get(_retry_key(node), 0) < RETRY_LIMIT
+
+
+def _quality_target(report_eval: dict, retry: dict) -> str | None:
+    """품질 미달 시 재작업 대상: 근거 부족 관점이 있고 여유가 있으면 수집 노드, 아니면 보고서 재작성, 둘 다 한도면 None."""
+    node_of = {agent: node for node, agent in COLLECTORS.items()}
+    for agent in report_eval.get("collect_agents") or []:
+        if retry.get(agent, 0) < RETRY_LIMIT:
+            return node_of[agent]
+    if retry.get("report", 0) < REPORT_REVISION_LIMIT:
+        return "report_generation"
+    return None
 
 
 def _collecting(state: OverallState) -> bool:
@@ -103,10 +115,10 @@ def decide(state: OverallState) -> tuple[list[str] | str, str, dict]:
     if st("quality_eval") in ("pending", "stale"):
         return ["quality_eval"], "보고서 생성 완료 → 품질 평가", extra
 
-    # 8. 품질 미달 → quality_eval이 정한 target으로 재작업 (한도는 quality_eval이 target=None으로 표시)
+    # 8. 품질 미달 → 원인과 재시도 여유를 보고 재작업 대상 결정
     report_eval = state.get("report_eval") or {}
-    target = report_eval.get("target")
-    if report_eval and not report_eval.get("passed") and target:
+    target = _quality_target(report_eval, retry) if report_eval and not report_eval.get("passed") else None
+    if target:
         retry[_retry_key(target)] = retry.get(_retry_key(target), 0) + 1
         stale = {"quality_eval": "stale"}
         if target in COLLECTORS:

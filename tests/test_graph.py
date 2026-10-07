@@ -54,8 +54,8 @@ def test_decide_clear_audit_goes_to_synthesis_report_quality_then_end():
     assert decide(_state(REPORTED))[0] == END
 
 
-def _eval(passed, target=None):
-    return {"passed": passed, "stage": "rules", "target": target, "feedback": "",
+def _eval(passed, agents=()):
+    return {"passed": passed, "stage": "rules", "collect_agents": list(agents), "feedback": "",
             "items": {"neutrality": {"passed": passed, "score": None, "failures": [], "quotes": []}}}
 
 
@@ -65,22 +65,29 @@ def test_decide_quality_pass_ends():
 
 
 def test_decide_quality_fail_rewrites_report():
-    nxt, _, extra = decide(_state(REPORTED, report_eval=_eval(False, "report_generation")))
+    nxt, _, extra = decide(_state(REPORTED, report_eval=_eval(False)))
     assert nxt == ["report_generation"]
     assert extra["retry_count"]["report"] == 1
     assert extra["node_status"] == {"quality_eval": "stale"}
 
 
 def test_decide_quality_fail_recollects_with_downstream_stale():
-    nxt, _, extra = decide(_state(REPORTED, report_eval=_eval(False, "market_research")))
+    nxt, _, extra = decide(_state(REPORTED, report_eval=_eval(False, ["market"])))
     assert nxt == ["market_research"]
     assert extra["retry_count"]["market"] == 1
     assert extra["node_status"] == {"evaluation_synthesis": "stale", "report_generation": "stale",
                                     "quality_eval": "stale", "stakeholder_research": "stale"}
 
 
-def test_decide_quality_fail_without_target_ends():
-    nxt, reason, _ = decide(_state(REPORTED, report_eval=_eval(False, None)))
+def test_decide_quality_fail_falls_back_to_rewrite_when_collector_exhausted():
+    nxt, _, _ = decide(_state(REPORTED, report_eval=_eval(False, ["market"]), retry={"market": 2}))
+    assert nxt == ["report_generation"]
+
+
+def test_decide_quality_fail_ends_when_all_budgets_exhausted():
+    from src.quality.criteria import REPORT_REVISION_LIMIT
+    nxt, reason, _ = decide(_state(REPORTED, report_eval=_eval(False, ["market"]),
+                                   retry={"market": 2, "report": REPORT_REVISION_LIMIT}))
     assert nxt == END and "6.3" in reason
 
 
@@ -249,28 +256,27 @@ def test_graph_end_to_end_execution():
     assert len(final_state["claims"]) >= 4
 
 
-def _quality_fail(target_fn, passes_after=None):
+def _quality_fail(agents_fn, passes_after=None):
     seen = {"n": 0}
 
     def judge(state):
         seen["n"] += 1
         if passes_after is not None and seen["n"] > passes_after:
             return _eval(True)
-        return _eval(False, target_fn(state))
+        return _eval(False, agents_fn(state))
     return judge
 
 
 def test_flow_quality_fail_rewrites_then_passes(monkeypatch):
     calls, _, final = _run_with_stub_nodes(
-        monkeypatch, [], quality=_quality_fail(lambda s: "report_generation", passes_after=1))
+        monkeypatch, [], quality=_quality_fail(lambda s: [], passes_after=1))
     assert calls[5:] == ["quality_eval", "report_generation", "quality_eval"]
     assert final["last_decision"]["reason"].startswith("품질 평가 통과")
 
 
 def test_flow_quality_always_failing_stops_at_revision_limit(monkeypatch):
-    from src.quality.node import pick_target
     from src.quality.criteria import REPORT_REVISION_LIMIT
-    calls, _, final = _run_with_stub_nodes(monkeypatch, [], quality=_quality_fail(lambda s: pick_target(s, [])))
+    calls, _, final = _run_with_stub_nodes(monkeypatch, [], quality=_quality_fail(lambda s: []))
     assert calls.count("report_generation") == 1 + REPORT_REVISION_LIMIT
     assert calls.count("quality_eval") == 1 + REPORT_REVISION_LIMIT
     assert final["last_decision"]["next"] == END
@@ -278,7 +284,7 @@ def test_flow_quality_always_failing_stops_at_revision_limit(monkeypatch):
 
 def test_flow_quality_fail_recollects_market_and_cascades(monkeypatch):
     calls, audits, _ = _run_with_stub_nodes(
-        monkeypatch, [], quality=_quality_fail(lambda s: "market_research", passes_after=1))
+        monkeypatch, [], quality=_quality_fail(lambda s: ["market"], passes_after=1))
     assert calls[6:] == ["market_research", "stakeholder_research", "evaluation_synthesis",
                          "report_generation", "quality_eval"]
     assert len(audits) == 2

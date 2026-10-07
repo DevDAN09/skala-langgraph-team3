@@ -56,7 +56,7 @@ class ReportEval(TypedDict):
     passed: bool
     stage: Literal["rules", "judge"]   # 판정이 끝난 단계 (규칙 실패 시 Judge 생략)
     items: dict[str, QualityItem]      # groundedness | neutrality | bias | coverage | format
-    target: str | None                 # 재작업 노드. 통과 또는 한도 소진이면 None
+    collect_agents: list[str]          # 근거 부족(C5·B2)으로 재수집이 필요한 관점. 재작업 대상 결정은 Supervisor가 한다
     feedback: str                      # report_generation 프롬프트에 넣을 수정 지시
 
 # 2. Custom Upsert Reducers (멱등성 보장)
