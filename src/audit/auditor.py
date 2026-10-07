@@ -5,6 +5,7 @@ from src.audit import judge
 
 _AGENTS = ("paper", "market", "stakeholder")
 RETRY_LIMIT = 2
+MAX_STEPS = 20
 _EMPTY_RETRY = {"paper": 0, "market": 0, "stakeholder": 0}
 
 # R5 is a factual mismatch; every other rule is missing or unfit evidence.
@@ -138,9 +139,26 @@ def build_supervisor_decision(state: OverallState, issues: list[AuditIssue]) -> 
     return decision, claims, extra
 
 
+def _forced_stop(state: OverallState) -> dict:
+    prior = list(((state.get("supervisor") or {}).get("dispatched")) or [])
+    return {
+        "step_count": 1,
+        "supervisor": {
+            "sufficient": True,
+            "collect": [],
+            "rework": [],
+            "reason": "max_steps",
+            "dispatched": prior,
+        },
+    }
+
+
 def evidence_audit_node(state: OverallState) -> dict:
     """Supervisor: audit claims, then record which workers to call or whether to report."""
     print("🛡️ [Supervisor] 관점·근거 충분성 판단")
+    if (state.get("step_count") or 0) >= MAX_STEPS:
+        print(f"⚠️ [Supervisor] step 상한({MAX_STEPS}) → 평가 종합으로 탈출")
+        return _forced_stop(state)
 
     claims = state.get("claims", [])
     sources = state.get("sources", [])
@@ -161,7 +179,13 @@ def evidence_audit_node(state: OverallState) -> dict:
         issues = list((state.get("audit") or {}).get("issues") or [])
 
     decision, updated_claims, extra = build_supervisor_decision(state, issues)
-    result = {"audit": {"issues": issues}, "supervisor": decision, "audited_seq": seq, **extra}
+    result = {
+        "audit": {"issues": issues},
+        "supervisor": decision,
+        "audited_seq": seq,
+        "step_count": 1,
+        **extra,
+    }
     if updated_claims:
         result["claims"] = updated_claims
     return result

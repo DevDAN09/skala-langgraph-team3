@@ -33,6 +33,7 @@ INITIAL_INPUT_STATE = {
     "quality_round": 0,
     "collect_seq": 0,
     "audited_seq": -1,
+    "step_count": 0,
 }
 
 def main():

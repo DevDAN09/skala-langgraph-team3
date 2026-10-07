@@ -113,3 +113,4 @@ class OverallState(TypedDict):
     quality_round: int
     collect_seq: Annotated[int, operator.add]
     audited_seq: int
+    step_count: Annotated[int, operator.add]

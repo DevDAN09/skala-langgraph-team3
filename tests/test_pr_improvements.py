@@ -2,7 +2,7 @@
 from langgraph.graph import END
 
 from src.audit.auditor import build_supervisor_decision, evidence_audit_node
-from src.graph import MAX_QUALITY_ROUNDS, route_quality
+from src.graph import MAX_QUALITY_ROUNDS, MAX_STEPS, route_quality
 from src.quality.quality_eval import check_groundedness, quality_eval_node
 from tests.mock_data import INITIAL_INPUT_STATE
 
@@ -60,6 +60,14 @@ def test_route_quality_rewrites_until_cap():
     assert route_quality({"quality": {"passed": False}, "quality_round": 1}) == "report_generation"
     assert route_quality({"quality": {"passed": True}, "quality_round": 1}) == END
     assert route_quality({"quality": {"passed": False}, "quality_round": MAX_QUALITY_ROUNDS}) == END
+    assert route_quality({"quality": {"passed": False}, "quality_round": 1, "step_count": MAX_STEPS}) == END
+
+
+def test_step_guard_forces_synthesis():
+    result = evidence_audit_node({**INITIAL_INPUT_STATE, "step_count": MAX_STEPS})
+    assert result["supervisor"]["sufficient"] is True
+    assert result["supervisor"]["reason"] == "max_steps"
+    assert result["supervisor"]["collect"] == []
 
 
 def _issue(agent="market"):

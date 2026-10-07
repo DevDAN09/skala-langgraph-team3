@@ -4,7 +4,7 @@ from src.state import OverallState
 from src.rag.agentic_rag import paper_analysis_node
 from src.research.market import market_research_node
 from src.research.stakeholder import stakeholder_research_node
-from src.audit.auditor import evidence_audit_node
+from src.audit.auditor import MAX_STEPS, evidence_audit_node
 from src.synthesis.evaluator import evaluation_synthesis_node
 from src.synthesis.report_gen import report_generation_node
 from src.quality.quality_eval import quality_eval_node
@@ -25,18 +25,27 @@ def isolate_worker(agent: str, node):
             result = node(state) or {}
         except Exception as exc:
             print(f"⚠️ [{agent}] 실행 실패, Supervisor로 격리: {exc}")
-            return {"node_status": {agent: "failed"}, "last_error": {agent: str(exc)}}
+            return {"node_status": {agent: "failed"}, "last_error": {agent: str(exc)}, "step_count": 1}
         return {
             **result,
             "node_status": {agent: "complete"},
             "last_error": {agent: ""},
             "collect_seq": 1,
+            "step_count": 1,
         }
     return wrapped
 
 
+def _counted(node):
+    def wrapped(state):
+        return {**(node(state) or {}), "step_count": 1}
+    return wrapped
+
+
 def route_quality(state: OverallState) -> str:
-    """Rewrite the report while the hybrid gate fails and the round cap remains."""
+    """Rewrite the report while the hybrid gate fails and both caps remain."""
+    if (state.get("step_count") or 0) >= MAX_STEPS:
+        return END
     quality = state.get("quality") or {}
     if quality.get("passed") or (state.get("quality_round") or 0) >= MAX_QUALITY_ROUNDS:
         return END
@@ -66,9 +75,9 @@ def build_evaluation_graph():
     builder.add_node("market_research", isolate_worker("market", market_research_node))
     builder.add_node("stakeholder_research", isolate_worker("stakeholder", stakeholder_research_node))
     builder.add_node("evidence_audit", evidence_audit_node)
-    builder.add_node("evaluation_synthesis", evaluation_synthesis_node)
-    builder.add_node("report_generation", report_generation_node)
-    builder.add_node("quality_eval", quality_eval_node)
+    builder.add_node("evaluation_synthesis", _counted(evaluation_synthesis_node))
+    builder.add_node("report_generation", _counted(report_generation_node))
+    builder.add_node("quality_eval", _counted(quality_eval_node))
 
     builder.add_edge(START, "evidence_audit")
     builder.add_edge("paper_analysis", "evidence_audit")

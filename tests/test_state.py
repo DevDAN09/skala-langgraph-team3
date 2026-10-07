@@ -176,9 +176,10 @@ def test_overall_state_schema_keys():
         "quality_round",
         "collect_seq",
         "audited_seq",
+        "step_count",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 21
+    assert len(expected_keys) == 22
 
 
 def test_config_exports():
