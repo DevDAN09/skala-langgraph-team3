@@ -229,11 +229,11 @@ Agent 과제(Multi-Agent Orchestration) 기준 개인별 수행 역할이다.
 | 이름 | 담당 | 수행 내용 |
 | :--- | :--- | :--- |
 | **강건호** | 품질 평가 Hybrid · 코드 정리 | 보고서 품질 평가 3안 Hybrid 전환·일관성 검사·R5 판정 캐시(#81), AI 생성 코드 정리와 코드 리뷰 프롬프트(#58, #62, #64) |
-| **김효민** | 패턴 설계 · 품질 평가 · 검증 | Supervisor 전환안 설계(#45), 보고서 품질 평가 설계·구현(#60), 통합 브랜치 실행 검증·이슈 분리(#61, #67~#75), README 정비(#78) |
+| **김효민** | 패턴 설계 · 품질 평가 · 검증 | Supervisor 전환안 설계(#45), 보고서 품질 평가 설계·구현(#60), 통합 브랜치 실행 검증·이슈 분리(#61, #67~#75), README 정비(#78, #82) |
 | **윤영민** | Supervisor 승격 | `evidence_audit`를 Supervisor로 승격, 직접 엣지를 State 기반 분기로 전환 (#56) |
-| **전경호** | Supervisor 시안 · 품질 게이트 | Supervisor + Layered State + 품질 루프 시안(#47), 커버리지 Gap 공개 예외(#65) |
+| **전경호** | Supervisor 시안 · 품질 게이트 | Supervisor + Layered State + 품질 루프 시안(#47), 커버리지 Gap 공개 예외(#65), 배포 장벽 출처 인용·Gap 사유 공개·무의미한 재작성 경로 제거(#79) |
 | **정은희** | 통합 구현 · 보고서 | Supervisor 통합 브랜치 구현(라우팅·품질 게이트·워커 재시도), 품질 게이트 재작업 판단 정리(#73), 근거 기반 보고서 재구성·번역·PDF 개선 |
-| **최지윤** | 실행 정책 · RAG | Hub-Spoke 시안(#46), Payload/Control State 분리·checkpoint·retry 정책·RAG 개선 (#66) |
+| **최지윤** | 실행 정책 · RAG | Hub-Spoke 시안(#46), Payload/Control State 분리·checkpoint·retry 정책·RAG 개선(#66), 보고서 단계 라우팅 Supervisor 일원화(#80) |
 
 ### 평가 보고서의 핵심 포인트
 | 이름 (가나다순) | 담당 | 평가 보고서 핵심 포인트 (Key Takeaway) | 비고 |
