@@ -20,6 +20,13 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "quality": {},
+    "step_count": 0,
+    "max_steps": 20,
+    "node_status": {},
+    "node_attempts": {},
+    "last_error": None,
+    "quality_round": 0,
 }
 
 MOCK_STATE = {

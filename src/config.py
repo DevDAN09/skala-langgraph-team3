@@ -26,3 +26,5 @@ FAISS_INDEX_DIR = str(DATA_DIR / "faiss_index")
 REPORT_MD_PATH = PROJECT_ROOT / "final_evaluation_report.md"
 REPORT_PDF_PATH = PROJECT_ROOT / "final_evaluation_report.pdf"
 REPORT_OUTPUT_PATH = REPORT_PDF_PATH
+OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+DECISION_LOG_PATH = OUTPUTS_DIR / "decision_log.jsonl"

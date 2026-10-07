@@ -1,6 +1,5 @@
 """app.py - Streamlit Interactive Dashboard for LangGraph Multi-Agent Evaluation"""
 import time
-import json
 import streamlit as st
 from pathlib import Path
 
@@ -70,9 +69,11 @@ if run_btn:
         "evidence_audit": "🛡️ [근거 검증] R1~R4 정적 룰 및 R5 심사기 검증",
         "evaluation_synthesis": "⚖️ [평가 종합] TRL 이원화 및 트레이드오프 종합",
         "report_generation": "📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링",
+        "quality_eval": "🔎 [품질 평가] Groundedness·중립성·편향·커버리지",
+        "supervisor": "🧭 [Supervisor] 다음 하위 에이전트 라우팅",
     }
     
-    total_expected_steps = 6
+    total_expected_steps = 15
     step_count = 0
 
     try:
@@ -81,17 +82,20 @@ if run_btn:
         
         status_box = st.status("파이프라인 실행 중...", expanded=True)
         with status_box:
-            for chunk in graph.stream(INITIAL_INPUT_STATE, stream_mode="updates"):
-                for node_name, node_output in chunk.items():
+            final_state = INITIAL_INPUT_STATE
+            # updates로 진행 상황을 표시하고, values로 최종 State를 받아 그래프를 한 번만 실행한다
+            for mode, chunk in graph.stream(INITIAL_INPUT_STATE, stream_mode=["updates", "values"]):
+                if mode == "values":
+                    final_state = chunk
+                    continue
+                for node_name in chunk:
                     step_count += 1
                     label = node_labels.get(node_name, f"노드 실행: {node_name}")
                     st.write(label)
                     st.session_state["run_logs"].append(label)
                     progress = min(step_count / total_expected_steps, 1.0)
                     progress_bar.progress(progress, text=f"{label} 완료")
-            
-            # 최종 State 확보
-            final_state = graph.invoke(INITIAL_INPUT_STATE)
+
             elapsed = time.time() - start_time
             REPORT_MD_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
             if REPORT_OUTPUT_PATH.suffix.lower() == ".pdf":

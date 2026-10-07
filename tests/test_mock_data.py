@@ -18,8 +18,10 @@ def test_mock_state_keys():
         "synthesis",
         "report",
     }
+    control_keys = {"quality", "step_count", "max_steps", "node_status", "node_attempts",
+                    "last_error", "quality_round"}
     assert set(MOCK_STATE.keys()) == expected_keys
-    assert set(INITIAL_INPUT_STATE.keys()) == expected_keys
+    assert set(INITIAL_INPUT_STATE.keys()) == expected_keys | control_keys
 
 
 def test_mock_state_constraints():

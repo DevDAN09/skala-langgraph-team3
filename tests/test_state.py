@@ -1,14 +1,11 @@
+from typing import get_type_hints
 from src.state import (
     upsert_claims,
     upsert_evidence,
     union_sources,
     OverallState,
-    Claim,
-    Evidence,
-    Source,
-    AuditIssue,
-    Audit,
-    TRL,
+    PayloadState,
+    ControlState,
 )
 import src.config as config
 from pathlib import Path
@@ -169,9 +166,22 @@ def test_overall_state_schema_keys():
         "trl",
         "synthesis",
         "report",
+        "quality",
     }
-    assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 14
+    control_keys = {
+        "trace_id",
+        "next",
+        "route_reason",
+        "step_count",
+        "max_steps",
+        "node_status",
+        "node_attempts",
+        "last_error",
+        "quality_round",
+    }
+    assert set(PayloadState.__annotations__.keys()) == expected_keys
+    assert set(ControlState.__annotations__.keys()) == control_keys
+    assert set(get_type_hints(OverallState).keys()) == expected_keys | control_keys
 
 
 def test_config_exports():

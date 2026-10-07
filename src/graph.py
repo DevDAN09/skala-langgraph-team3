@@ -1,4 +1,9 @@
-"""src/graph.py - LangGraph StateGraph assembly, anti-pattern 7 fix, and conditional routing"""
+"""src/graph.py - Supervisor 패턴 StateGraph 조립
+
+허브-스포크 구조: START → supervisor, 모든 하위 에이전트 → supervisor.
+supervisor → 하위 에이전트는 add_conditional_edges 하나로만 연결되며, 실행 순서는 State에 따라 동적으로 정해진다.
+하위 에이전트끼리는 엣지가 없다 (직접 통신 금지).
+"""
 from langgraph.graph import StateGraph, START, END
 from src.state import OverallState
 from src.rag.agentic_rag import paper_analysis_node
@@ -7,93 +12,47 @@ from src.research.stakeholder import stakeholder_research_node
 from src.audit.auditor import evidence_audit_node
 from src.synthesis.evaluator import evaluation_synthesis_node
 from src.synthesis.report_gen import report_generation_node
+from src.quality.quality_eval import quality_eval_node
+from src.supervisor.supervisor import supervisor_node, route_from_supervisor
+from src.supervisor.worker import as_worker
+
+SUB_AGENTS = (
+    "paper_analysis",
+    "market_research",
+    "stakeholder_research",
+    "evidence_audit",
+    "evaluation_synthesis",
+    "report_generation",
+    "quality_eval",
+)
 
 
-def _retry_targets(state: OverallState) -> set[str]:
-    """audit.issues의 target_agent 중 재시도 한도(2회)가 남은 관점만 반환한다."""
-    issues = (state.get("audit") or {}).get("issues") or []
-    retry_count = state.get("retry_count") or {}
+def _node_functions() -> dict:
+    # 모듈 전역에서 매번 조회해 테스트에서 monkeypatch로 노드를 바꿀 수 있게 한다.
     return {
-        issue["target_agent"]
-        for issue in issues
-        if "target_agent" in issue and retry_count.get(issue["target_agent"], 0) < 2
+        "paper_analysis": paper_analysis_node,
+        "market_research": market_research_node,
+        "stakeholder_research": stakeholder_research_node,
+        "evidence_audit": evidence_audit_node,
+        "evaluation_synthesis": evaluation_synthesis_node,
+        "report_generation": report_generation_node,
+        "quality_eval": quality_eval_node,
     }
 
 
-def route_after_paper(state: OverallState) -> str:
-    """첫 실행은 END. paper 재시도는 market/stakeholder가 함께 재실행되지 않을 때만 검증으로 보낸다.
-    함께 재실행되면 stakeholder → evidence_audit 엣지가 검증을 한 번만 연다 (안티패턴 7)."""
-    targets = _retry_targets(state)
-    if "paper" in targets and not targets & {"market", "stakeholder"}:
-        return "evidence_audit"
-    return END
-
-
-def route_audit_decision(state: OverallState) -> list[str] | str:
-    """Targeted retry and Cascade Chaining router. Escapes to synthesis when retry_count >= 2."""
-    issues = (state.get("audit") or {}).get("issues") or []
-
-    if not issues:
-        print("✅ [라우터] 검증 통과 -> 평가 종합으로 이동")
-        return "evaluation_synthesis"
-
-    valid_targets = _retry_targets(state)
-
-    if not valid_targets:
-        print("⚠️ [라우터] 재시도 한도(2회) 소진 -> 미해결 항목 격리 후 평가 종합으로 이동")
-        return "evaluation_synthesis"
-
-    ret = []
-    if "market" in valid_targets:
-        ret.append("market_research")
-    elif "stakeholder" in valid_targets:
-        ret.append("stakeholder_research")
-    if "paper" in valid_targets:
-        ret.append("paper_analysis")
-    return ret if ret else "evaluation_synthesis"
-
-
-def build_evaluation_graph():
-    """Builds compiled StateGraph conforming to LangGraph 1.2.12 anti-pattern rules."""
+def build_evaluation_graph(checkpointer=None):
     builder = StateGraph(OverallState)
 
-    # 1. Register 6 core nodes
-    builder.add_node("paper_analysis", paper_analysis_node)
-    builder.add_node("market_research", market_research_node)
-    builder.add_node("stakeholder_research", stakeholder_research_node)
-    builder.add_node("evidence_audit", evidence_audit_node)
-    builder.add_node("evaluation_synthesis", evaluation_synthesis_node)
-    builder.add_node("report_generation", report_generation_node)
+    builder.add_node("supervisor", supervisor_node)
+    for name, fn in _node_functions().items():
+        builder.add_node(name, as_worker(name, fn))
+        builder.add_edge(name, "supervisor")
 
-    # 2. Parallel Fan-out
-    builder.add_edge(START, "paper_analysis")
-    builder.add_edge(START, "market_research")
-
-    # 3. Context Chaining
-    builder.add_edge("market_research", "stakeholder_research")
-
-    # 4. Correct Fan-in (Anti-pattern 7 Fix)
-    builder.add_edge("stakeholder_research", "evidence_audit")
+    builder.add_edge(START, "supervisor")
     builder.add_conditional_edges(
-        "paper_analysis",
-        route_after_paper,
-        {"evidence_audit": "evidence_audit", END: END},
+        "supervisor",
+        route_from_supervisor,
+        {**{name: name for name in SUB_AGENTS}, END: END},
     )
 
-    # 5. Conditional Feedback Loop
-    builder.add_conditional_edges(
-        "evidence_audit",
-        route_audit_decision,
-        {
-            "paper_analysis": "paper_analysis",
-            "market_research": "market_research",
-            "stakeholder_research": "stakeholder_research",
-            "evaluation_synthesis": "evaluation_synthesis",
-        },
-    )
-
-    # 6. Report Pipeline
-    builder.add_edge("evaluation_synthesis", "report_generation")
-    builder.add_edge("report_generation", END)
-
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer)

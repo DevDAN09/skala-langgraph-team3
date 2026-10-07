@@ -118,12 +118,6 @@ def citation_author(source: dict, allow_publisher: bool = True) -> str:
     return citation_site_name(source) if source.get("source_type") == "web" else "기관 또는 작성자 미상"
 
 
-def domain_axis_value(domain: dict, field: str) -> str:
-    value = next((domain.get(key) for key in _DOMAIN_FIELD_ALIASES[field] if domain.get(key) is not None), None)
-    if not isinstance(value, dict): return str(value or "공개 근거 미확인").replace("corpus 내 근거 미확인", "공개 근거 미확인")
-    return "<br>".join(f"**{tech}**: {str(value.get(tech) or '공개 근거 미확인').replace('corpus 내 근거 미확인', '공개 근거 미확인')}" for tech in ("KIVI", "CXL-PNM"))
-
-
 _DOMAIN_FIELD_ALIASES = {
     "memory_footprint": ("memory_footprint",),
     "bandwidth_transfer": ("bandwidth_transfer",),
@@ -153,7 +147,6 @@ def report_generation_node(state: OverallState) -> dict:
     env.filters["citation_author"] = citation_author
     env.filters["citation_site_name"] = citation_site_name
     env.globals["domain_axis_value"] = domain_axis_value
-    env.globals["domain_axis_value"] = domain_axis_value
     template = env.get_template("report.md.j2")
 
     rendered = template.render(
@@ -173,6 +166,11 @@ def report_generation_node(state: OverallState) -> dict:
     if not OPENAI_API_KEY:
         return {"report": rendered}
 
+    # 품질 평가 미달로 재작성 요청된 경우, Supervisor가 넘긴 품질 피드백을 편집 지시에 추가한다.
+    quality = state.get("quality") or {}
+    feedback = "" if quality.get("passed", True) else "\n".join(f"- {f}" for f in quality.get("feedback", []))
+    feedback_block = f"\n이전 품질 평가에서 아래 문제가 지적되었습니다. 위 규칙을 지키는 범위에서 반영하십시오.\n{feedback}\n" if feedback else ""
+
     try:
         prompt = f"""정적 근거 기반 기술 보고서 편집자입니다.
 다음 마크다운의 문장만 다듬으십시오.
@@ -184,7 +182,7 @@ def report_generation_node(state: OverallState) -> dict:
 - 영어 Claim 문장은 원문 그대로 남기지 말고 한국어로 번역하십시오. 단, 수치·단위·연도·Claim ID·인용 번호·고유명사·기술 용어는 변경하지 마십시오.
 - 보고서 본문 문체는 `-다.` 체로 통일하고, `-습니다.` 체를 사용하지 마십시오.
 - 마크다운 전문만 반환하십시오.
-
+{feedback_block}
 {rendered}"""
         polished = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0.1).invoke(prompt).content
         return {"report": polished}

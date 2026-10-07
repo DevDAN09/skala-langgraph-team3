@@ -78,8 +78,31 @@ def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]
             url_index[url] = sid
     return list(src_map.values())
 
-# 3. Overall State (14개 키)
-class OverallState(TypedDict):
+def merge_dict(existing: dict | None, updates: dict | None) -> dict:
+    """병렬 하위 에이전트가 같은 dict 키(node_status 등)에 동시에 써도 깨지지 않도록 key 단위 병합."""
+    return {**(existing or {}), **(updates or {})}
+
+def keep_latest(existing: str | None, update: str | None) -> str | None:
+    """병렬 실패 시 동시 쓰기 충돌 방지: None이 아닌 마지막 값만 남긴다."""
+    return update if update is not None else existing
+
+# 3. Layered State
+# ── 제어 계층 (Supervisor 라우팅·종료·재개에 필요한 최소치) ──
+# 결정 로그(사유 포함) 본문은 State에 쌓지 않고 외부 로거/LangSmith로 내보낸다.
+# State에는 trace_id(상관 키)와 마지막 결정 사유 한 줄(route_reason)만 둔다.
+class ControlState(TypedDict, total=False):
+    trace_id: str                                         # 외부 로그·LangSmith trace와 잇는 상관 키
+    next: list[str]                                       # Supervisor가 이번 턴에 보낼 하위 에이전트
+    route_reason: str                                     # 마지막 라우팅 결정 사유 (덮어쓰기, 무한 증식 X)
+    step_count: int                                       # Supervisor 턴 수 (종료 가드)
+    max_steps: int                                        # Supervisor 턴 상한
+    node_status: Annotated[dict[str, str], merge_dict]    # 하위 에이전트별 pending/done/failed/skipped
+    node_attempts: Annotated[dict[str, int], merge_dict]  # 하위 에이전트 실패 재시도 횟수
+    last_error: Annotated[str | None, keep_latest]
+    quality_round: int                                    # 보고서 품질 평가 루프 횟수
+
+# ── 페이로드 계층 (하위 에이전트 작업 결과) ──
+class PayloadState(TypedDict, total=False):
     selected: dict
     tech_sw: dict
     tech_hw: dict
@@ -94,3 +117,7 @@ class OverallState(TypedDict):
     trl: dict[str, TRL]
     synthesis: dict
     report: str
+    quality: dict                                         # 품질 평가 verdict (구조화)
+
+class OverallState(PayloadState, ControlState, total=False):
+    """그래프 전체 State = 페이로드 계층 + 제어 계층."""

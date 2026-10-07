@@ -122,17 +122,18 @@ flowchart TD
 │   ├── eval_queries.json  # 임베딩 벤치마크 질의 20개
 │   └── faiss_index/       # FAISS 로컬 인덱스 (indexer.py로 생성, git 제외)
 ├── src/                   # Agent 모듈
-│   ├── state.py           # OverallState 14개 키 + Custom Reducer
-│   ├── graph.py           # LangGraph StateGraph 조립 · 조건부 라우터
+│   ├── state.py           # Layered State (ControlState + PayloadState) + Custom Reducer
+│   ├── graph.py           # LangGraph StateGraph 조립 (Supervisor 허브-스포크)
 │   ├── config.py          # 모델명 · 경로 · API 키
 │   ├── rag/               # [B] indexer · benchmark · agentic_rag (paper_analysis)
 │   ├── research/          # [C] client · market · stakeholder
 │   ├── audit/             # [D] rules(R1~R4) · judge(R5) · auditor (evidence_audit)
-│   └── synthesis/         # [E] evaluator · report_gen · pdf_export
-│       └── templates/     # 보고서 템플릿 (report.md.j2)
+│   ├── synthesis/         # [E] evaluator · report_gen · pdf_export
+│   │   └── templates/     # 보고서 템플릿 (report.md.j2)
+│   ├── supervisor/        # 조정 계층: supervisor(라우팅) · worker(하위 에이전트 래퍼) · observability(결정 로그)
+│   └── quality/           # 보고서 품질 평가 노드 (정적 룰 + LLM Judge)
 ├── tests/                 # 모듈별 단위 테스트 + mock_data.py
-├── tasks/                 # 역할별 개발 가이드 · 공통 규칙
-├── docs/                  # 구현 계획·명세 문서
+├── docs/                  # OpenWiki 기반 기술 백서 리포트 (HTML)
 ├── KV_cache_최적화_기술_평가_설계서_최종.md   # 설계서
 ├── main.py                # 실행 스크립트 (non-interactive)
 ├── app.py                 # Streamlit 대시보드
