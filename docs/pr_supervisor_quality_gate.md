@@ -44,7 +44,7 @@ Supervisor는 `audit.issues`, `quality.rework_targets`, Agent별 재시도 가�
 - Supervisor가 특정 Agent를 실제 재작업 대상으로 dispatch할 때만 해당 Agent의 `retry_count`를 증가시킵니다.
 - 최초 실행은 retry로 계산하지 않습니다.
 - Agent별 `RETRY_LIMIT=2`를 유지합니다.
-- 재시도 한도 또는 `MAX_STEPS=10` 도달 시, 미해결 Claim은 `insufficient` 또는 `rejected` 상태로 확정한 뒤 synthesis로 진행합니다.
+- 두 번째 실제 rework worker가 반환된 뒤 fresh audit에서도 이슈가 남거나 `MAX_STEPS=10`에 도달한 경우에만, 미해결 Claim을 `insufficient` 또는 `rejected`로 확정한 뒤 synthesis로 진행합니다.
 
 ### 4. market 재조사 후 stakeholder stale 처리
 
@@ -59,7 +59,7 @@ Supervisor는 `audit.issues`, `quality.rework_targets`, Agent별 재시도 가�
 | --- | --- |
 | Groundedness | `status="ok"` Claim만 대상으로 `Claim → Evidence → Source` 참조 연결을 검증 |
 | Neutrality | 실제 추천/우열 판정 표현만 탐지. “추천하지 않는다”, “우열을 판정하지 않는다” 같은 부정 표현은 통과 |
-| Bias control | market/stakeholder/MAT-A Claim의 counter search 수행 여부를 검증. 반대 근거를 찾지 못했어도 `counter_searched=True`이면 통과 |
+| Bias control | market/stakeholder/MAT-A Claim의 `counter_searched`를 검증. 반대 근거가 없어도 `counter_searched=True`이면 통과하며, 관점별 verified external Claim이 2건 이상이면 하나의 source_id 편중도 실패로 처리 |
 | Coverage | maturity, market, stakeholder, domain 네 관점의 Claim 존재 여부를 검증 |
 
 품질 실패 시 재작업 대상도 원인별로 계산합니다.
@@ -82,7 +82,7 @@ Supervisor는 `audit.issues`, `quality.rework_targets`, Agent별 재시도 가�
 - `trace_id`는 `make_initial_state()`에서 실행마다 UUID로 생성합니다.
 - Streamlit 화면은 버튼 클릭 한 번당 `graph.invoke()`를 한 번만 호출하도록 수정했습니다.
 - 기존 `graph.stream()` 실행 후 `graph.invoke()`를 다시 호출하던 이중 실행을 제거했습니다.
-- Supervisor, quality_eval 노드 라벨과 19개 State 표시를 최신 구조에 맞췄습니다.
+- Supervisor, quality_eval 노드 라벨과 23-field State 표시를 최신 구조에 맞췄습니다.
 
 ### 8. 최신 main 반영
 
@@ -94,9 +94,15 @@ Supervisor는 `audit.issues`, `quality.rework_targets`, Agent별 재시도 가�
 
 ```text
 pytest -q
-138 passed
+149 passed, 2 skipped, 1 warning
 ```
 
 ## 참고
 
 - `src/synthesis/pdf_export.py`의 기존 로컬 변경은 본 PR에 포함하지 않았습니다.
+
+## 제출용 LangSmith 캡처
+
+- Trace A: `Supervisor → research agents → Supervisor → synthesis → report → quality pass`에서 conditional routing, 방문 순서, `trace_id`, 종료를 캡처합니다.
+- Trace B: `Supervisor → targeted agent → Supervisor → audit issue → rework → Supervisor → synthesis → report → quality`에서 retry/rework 또는 quality loop를 캡처합니다.
+- 최종 실행 후 PDF가 10p 이하이고 `SUMMARY`/`REFERENCE`를 포함하는지 수동 확인합니다.

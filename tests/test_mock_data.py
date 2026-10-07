@@ -22,6 +22,7 @@ def test_mock_state_keys():
             "last_audited_step",
             "last_decision",
             "last_error",
+            "last_errors",
             "node_attempts",
             "trl",
         "synthesis",

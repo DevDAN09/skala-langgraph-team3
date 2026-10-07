@@ -79,7 +79,7 @@ def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]
     return list(src_map.values())
 
 # 3. Overall State (18 payload + control keys)
-class OverallState(TypedDict):
+class PayloadState(TypedDict):
     selected: dict
     tech_sw: dict
     tech_hw: dict
@@ -90,6 +90,12 @@ class OverallState(TypedDict):
     evidence: Annotated[list[Evidence], upsert_evidence]
     sources: Annotated[list[Source], union_sources]
     audit: Audit
+    trl: dict[str, TRL]
+    synthesis: dict
+    report: str
+
+
+class ControlState(TypedDict):
     retry_count: dict[str, int]
     next_agent: Literal["paper_analysis", "market_research", "stakeholder_research", "evaluation_synthesis"]
     # Supervisor control metadata.  Payload fields above remain owned by their
@@ -101,7 +107,9 @@ class OverallState(TypedDict):
     last_audited_step: int
     last_decision: dict
     last_error: str | None
+    last_errors: dict[str, str]
     node_attempts: dict[str, int]
-    trl: dict[str, TRL]
-    synthesis: dict
-    report: str
+
+
+class OverallState(PayloadState, ControlState):
+    """Specialist payload plus Supervisor-owned execution metadata."""

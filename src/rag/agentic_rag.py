@@ -9,13 +9,13 @@ from src.state import Claim, Evidence, OverallState, Source
 
 # Six cloud serving axes for each technology, plus paper research maturity.
 AXES = (
-    ("DOM-01", "KIVI", "memory_footprint", "What measured GPU memory footprint does KIVI report?"),
+    ("DOM-01", "KIVI", "memory_footprint", "What peak memory usage reduction does KIVI report relative to the FP16 baseline?"),
     ("DOM-02", "CXL-PNM", "memory_footprint", "How does CXL-PNM store the KV cache beyond GPU memory?"),
     ("DOM-03", "KIVI", "bandwidth_transfer", "How does KIVI affect KV cache memory transfer bandwidth?"),
     ("DOM-04", "CXL-PNM", "bandwidth_transfer", "How does CXL-PNM eliminate costly KV-cache recall overhead?"),
     ("DOM-05", "KIVI", "throughput_latency", "What throughput or latency measurements does KIVI report?"),
     ("DOM-06", "CXL-PNM", "throughput_latency", "What throughput improvement do PNM-KV and PnG-KV report relative to the baseline?"),
-    ("DOM-07", "KIVI", "accuracy", "What accuracy degradation or limitations does KIVI acknowledge?"),
+    ("DOM-07", "KIVI", "accuracy", "What accuracy drop or limitation does KIVI report for Llama and Mistral models with 2-bit KV cache?"),
     ("DOM-08", "CXL-PNM", "accuracy", "What model accuracy degradation or retrieval-quality limitations does CXL-PNM report for its own design?"),
     ("DOM-09", "KIVI", "infrastructure", "What is KIVI's key and value quantization mechanism and its GPU kernel requirements?"),
     ("DOM-10", "CXL-PNM", "infrastructure", "What is the CXL-PNM KV cache management mechanism and its required hardware?"),
@@ -202,13 +202,48 @@ def _mat_r02_evidence(db, llm) -> tuple[str, list[Document]]:
     return quote, used_docs
 
 
-_PAPER_CITATION = re.compile(r"\s*\[\d+(?:\s*[,–-]\s*\d+)*\]")
+def _mat_r01_evidence(db, llm) -> tuple[str, list[Document]]:
+    """Collect KIVI evaluation conditions that the paper splits across sections."""
+    queries = (
+        "Which models tasks and context lengths are used in the KIVI evaluation?",
+        "What GPU hardware is used for KIVI peak memory and throughput evaluation?",
+    )
+    docs = []
+    for query in queries:
+        try:
+            results = db.similarity_search(query, k=5, filter={"tech": "KIVI"})
+        except Exception as exc:
+            print(f"⚠️ [경고/Fallback] Paper retrieval failed: {exc}")
+            return "", []
+        for doc in results:
+            if (doc.metadata.get("tech") == "KIVI"
+                    and all(doc.page_content != old.page_content for old in docs)):
+                docs.append(doc)
 
-
-def strip_paper_citations(text: str) -> str:
-    """논문 원문 인용구에 딸려 온 논문 자체의 참고문헌 번호([7], [12, 13], [3-5])를 지우고 줄바꿈을 합친다.
-    보고서의 [n]은 REFERENCE 번호만 가리켜야 하므로, 남겨두면 없는 출처를 인용한 것처럼 보인다."""
-    return " ".join(_PAPER_CITATION.sub("", text or "").split())
+    patterns = (
+        r"\b(?:Llama(?:-?2)?|Falcon|Mistral)\b.*\bmodels?\b|\bModels\.\s+We evaluate KIVI\b",
+        r"\b(?:context length|sequence length)\b.*\b\d+[Kk]?\b.*\b(?:tokens?|Mistral|models?)\b",
+        r"\b(?:NVIDIA\s+)?A100\s+GPU\s*\(80GB\)|\bA100(?:-80GB|\s+80GB)?\s+GPU\b",
+    )
+    found = []
+    for pattern in patterns:
+        match = next(((sentence, doc) for doc in docs
+                      for sentence in re.split(r"(?<=[.!?])\s+(?=[A-Z])", doc.page_content)
+                      if re.search(pattern, sentence, re.I | re.S)), None)
+        if not match:
+            return "", []
+        found.append(match)
+    quote = "\n".join(sentence for sentence, _ in found)
+    gate = _ask(llm, "Answer YES or NO only. Do these verbatim paper excerpts collectively "
+                "state the evaluated models, context length, and GPU hardware? "
+                f"Do not infer missing conditions.\nExcerpts:\n{quote}")
+    if gate.upper() != "YES":
+        return "", []
+    used_docs = []
+    for _, doc in found:
+        if all(doc.page_content != old.page_content for old in used_docs):
+            used_docs.append(doc)
+    return quote, used_docs
 
 
 def _claim(axis, quote: str) -> Claim:
@@ -259,12 +294,12 @@ def paper_analysis_node(state: OverallState) -> dict:
                                else "insufficient"})
             continue
         mat_docs = []
-        if claim_id == "MAT-R02" and db and llm:
-            quote, mat_docs = _mat_r02_evidence(db, llm)
+        if claim_id in {"MAT-R01", "MAT-R02"} and db and llm:
+            helper = _mat_r01_evidence if claim_id == "MAT-R01" else _mat_r02_evidence
+            quote, mat_docs = helper(db, llm)
             doc = mat_docs[0] if mat_docs else None
         else:
             quote, doc = _grounded_quote(query, tech, db, llm) if db and llm else ("", None)
-        quote = strip_paper_citations(quote)
         claim = _claim(axis, quote)
         if mat_docs:
             claim["evidence_ids"] = [f"EV-{claim_id}-{i}" for i in range(1, len(mat_docs) + 1)]

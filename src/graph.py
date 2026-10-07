@@ -13,21 +13,27 @@ from src.synthesis.quality import quality_evaluation_node, route_quality
 def _supervised(node, agent: str):
     """Mark the specialist's payload as available before returning to Supervisor."""
     def wrapped(state: OverallState) -> dict:
+        attempts = dict(state.get("node_attempts") or {})
+        attempts[agent] = attempts.get(agent, 0) + 1
         try:
             result = node(state)
         except Exception as error:
             status = dict(state.get("node_status") or {})
-            attempts = dict(state.get("node_attempts") or {})
-            attempts[agent] = attempts.get(agent, 0) + 1
             status[agent] = "pending" if attempts[agent] <= 1 else "failed"
-            return {"node_status": status, "node_attempts": attempts, "last_error": f"{agent}: {error}"}
+            message = f"{agent}: {error}"
+            return {"node_status": status, "node_attempts": attempts,
+                    "last_error": message,
+                    "last_errors": {**(state.get("last_errors") or {}), agent: message}}
         status = dict(state.get("node_status") or {})
         status[agent] = "complete"
-        return {**result, "node_status": status}
+        if (agent == "market" and status.get("stakeholder") == "complete"
+                and (state.get("last_decision") or {}).get("reason") in {"audit", "quality"}):
+            status["stakeholder"] = "stale"
+        return {**result, "node_status": status, "node_attempts": attempts}
     return wrapped
 
 
-def build_evaluation_graph():
+def build_evaluation_graph(checkpointer=None):
     """Builds compiled StateGraph conforming to LangGraph 1.2.12 anti-pattern rules."""
     builder = StateGraph(OverallState)
 
@@ -59,4 +65,4 @@ def build_evaluation_graph():
         "supervisor": "supervisor", "report_generation": "report_generation", "END": END,
     })
 
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer)

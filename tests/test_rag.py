@@ -306,6 +306,60 @@ def test_dom08_query_stays_on_accuracy_axis():
     assert "overhead" not in query.lower()
 
 
+def test_kivi_queries_use_terms_that_retrieve_reported_result_and_limitations():
+    memory_query = agentic_rag.AXIS_BY_ID["DOM-01"][3].lower()
+    accuracy_query = agentic_rag.AXIS_BY_ID["DOM-07"][3].lower()
+    assert "peak memory" in memory_query and "reduction" in memory_query
+    assert "accuracy drop" in accuracy_query and "llama" in accuracy_query
+
+
+def test_mat_r01_combines_model_context_and_hardware_documents():
+    settings = Document(
+        page_content=("We evaluate KIVI on Llama-2, Falcon, and Mistral models. "
+                      "The input context length is 2048 tokens."),
+        metadata={"tech": "KIVI", "section": "4.1 Settings", "page": 6},
+    )
+    hardware = Document(
+        page_content="Peak memory and throughput are measured on an NVIDIA A100 80GB GPU.",
+        metadata={"tech": "KIVI", "section": "4.2 Efficiency", "page": 8},
+    )
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            assert filter == {"tech": "KIVI"}
+            return [hardware] if "hardware" in query.lower() else [settings]
+
+    class LLM:
+        def invoke(self, prompt):
+            return type("Response", (), {"content": "YES"})()
+
+    quote, docs = agentic_rag._mat_r01_evidence(DB(), LLM())
+    assert docs == [settings, hardware]
+    assert "Llama-2" in quote and "2048 tokens" in quote and "A100 80GB" in quote
+
+
+@pytest.mark.parametrize("claim_id", ["DOM-03", "DOM-08"])
+def test_paper_axis_without_direct_evidence_remains_insufficient(claim_id):
+    _, tech, _, query = agentic_rag.AXIS_BY_ID[claim_id]
+    unrelated = Document(
+        page_content=("KIVI reports 3.47 times higher throughput." if claim_id == "DOM-03"
+                      else "CXL-PNM expands KV cache capacity beyond GPU limits."),
+        metadata={"tech": tech},
+    )
+
+    class DB:
+        def similarity_search(self, query, k, filter):
+            return [unrelated]
+
+    class LLM:
+        def invoke(self, prompt):
+            if prompt.startswith("Answer YES"):
+                return type("Response", (), {"content": "NO"})()
+            return type("Response", (), {"content": query})()
+
+    assert agentic_rag._grounded_quote(query, tech, DB(), LLM()) == ("", None)
+
+
 @pytest.mark.parametrize(("claim_id", "drifted"), [
     ("DOM-01", "What throughput increase does KIVI report?"),
     ("DOM-03", "What throughput increase does KIVI report?"),
@@ -523,9 +577,3 @@ def test_summary_fields_use_matching_paper_questions(monkeypatch):
     assert "limitation" in by_id["DOM-08"].lower()
     assert "experimental conditions" in by_id["MAT-R01"].lower()
     assert "experimental conditions" in by_id["MAT-R02"].lower()
-
-
-def test_strip_paper_citations_removes_paper_internal_reference_numbers():
-    text = "Workloads span 128K–1M tokens [7], InfiniteBench En.Sum [13, 14] and\nLongBench [3-5]."
-    assert agentic_rag.strip_paper_citations(text) == "Workloads span 128K–1M tokens, InfiniteBench En.Sum and LongBench."
-    assert agentic_rag.strip_paper_citations("") == ""

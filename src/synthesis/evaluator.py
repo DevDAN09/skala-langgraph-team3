@@ -4,8 +4,10 @@ from src.state import OverallState, TRL
 def evaluate_trl(tech: str, claims: list[dict]) -> TRL:
     """Derive dual TRL from verified research and adoption claims for one technology."""
     verified = [claim for claim in claims if claim.get("tech") == tech and claim.get("status") == "ok"]
-    research = [claim for claim in verified if claim.get("perspective") in {"domain", "maturity"}]
-    adoption = [claim for claim in verified if claim.get("perspective") == "market"]
+    # MAT-A는 maturity 관점이지만 시장 채택 근거에서 파생되므로 연구 단계(tech_trl)가 아니라 채택 단계로 분류한다.
+    is_adoption = lambda claim: claim.get("perspective") == "market" or str(claim.get("id", "")).startswith("MAT-A")
+    research = [claim for claim in verified if claim.get("perspective") in {"domain", "maturity"} and not is_adoption(claim)]
+    adoption = [claim for claim in verified if is_adoption(claim)]
 
     if not verified:
         return {

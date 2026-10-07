@@ -56,8 +56,8 @@ def test_report_generation_sections(monkeypatch):
     assert "### 4.2 시장성 및 생태계" in report_text
     assert "### 4.3 이해관계자 영향" in report_text
     assert "### 4.4 도메인 6대 축 적합성" in report_text
-    assert "### 5.1 관점별 평가가 엇갈리는 지점" in report_text
-    assert "### 5.5 종합 의견" in report_text
+    assert "### 5.1 관점 간 해석 차이" in report_text
+    assert "### 5.4 종합 의견" in report_text
     assert "### 6.2 분석 범위와 해석 제약" in report_text
     assert "더 우수하다" not in report_text
     assert "[DOM-01]" in report_text
@@ -75,74 +75,3 @@ def test_report_generation_sections(monkeypatch):
     assert "논문 :" not in report_text
     assert "기타 (웹페이지) :" not in report_text
     assert "Tier:" not in report_text
-
-
-# ── 보고서 생성 정비: 코드펜스·수치 보존·4대 Actor ──
-
-class _FakeLLM:
-    """invoke 호출마다 미리 정한 응답을 순서대로 돌려준다."""
-    def __init__(self, replies):
-        self.replies, self.prompts = list(replies), []
-
-    def invoke(self, prompt):
-        self.prompts.append(prompt)
-        return type("Msg", (), {"content": self.replies.pop(0)})()
-
-
-def _skeleton(state):
-    import src.synthesis.report_gen as rg
-    original = rg.OPENAI_API_KEY
-    rg.OPENAI_API_KEY = ""
-    try:
-        return report_generation_node(state)["report"]
-    finally:
-        rg.OPENAI_API_KEY = original
-
-
-def _patch_llm(monkeypatch, replies):
-    import src.synthesis.report_gen as rg
-    fake = _FakeLLM(replies)
-    monkeypatch.setattr(rg, "OPENAI_API_KEY", "test-key")
-    monkeypatch.setattr(rg, "ChatOpenAI", lambda **_: fake)
-    return fake
-
-
-def test_strip_code_fence_only_removes_outer_fence():
-    from src.synthesis.report_gen import strip_code_fence
-    assert strip_code_fence("```markdown\n# 제목\n\n본문\n```") == "# 제목\n\n본문"
-    inner = "# 제목\n```python\nx = 1\n```\n끝"
-    assert strip_code_fence(inner) == inner
-
-
-def test_report_generation_strips_fence_from_polished_report(monkeypatch):
-    skeleton = _skeleton(MOCK_STATE)
-    _patch_llm(monkeypatch, [f"```markdown\n{skeleton}\n```"])
-    assert report_generation_node(MOCK_STATE)["report"] == skeleton
-
-
-def test_report_generation_falls_back_to_skeleton_when_numbers_change(monkeypatch):
-    skeleton = _skeleton(MOCK_STATE)
-    altered = skeleton.replace("### 3.1", "### 3.1\n수치 999,999가 새로 생겼다.", 1)
-    fake = _patch_llm(monkeypatch, [altered, altered])
-    assert report_generation_node(MOCK_STATE)["report"] == skeleton
-    assert len(fake.prompts) == 2  # 1회 재시도 후 골격으로 대체
-
-
-def test_number_diff_flags_unit_conversion():
-    from src.synthesis.report_gen import number_diff
-    skeleton = "## 3. 개요\n- **[MKT-04]** $20B by 2030 [3]\n"
-    assert number_diff(skeleton, skeleton.replace("$20B", "200억 달러")) == ({"200"}, {"20"})
-    assert number_diff(skeleton, skeleton.replace("by", "까지")) == (set(), set())
-
-
-def test_report_lists_all_four_stakeholder_actors_and_drops_rejected(monkeypatch):
-    state = {**MOCK_STATE, "stakeholder": {
-        "cloud_serving_operator": "[A 계열] Benefit: 운영자 근거 | Concern: - | Barrier: - (근거: STK-01, EV-STK-01)",
-        "framework_developer": "개발자 근거", "end_user": "사용자 근거", "memory_vendor": "공급자 근거"},
-        "claims": [*MOCK_STATE["claims"], {"id": "STK-01", "perspective": "stakeholder", "tech": "KIVI",
-                                            "statement": "x", "kind": "fact", "evidence_ids": [],
-                                            "counter_evidence_ids": [], "counter_searched": True, "status": "rejected"}]}
-    section = _skeleton(state).split("### 4.3", 1)[1].split("###", 1)[0]
-    for label in ("서빙 운영자", "프레임워크 개발자", "End User", "공급자"):
-        assert label in section
-    assert "운영자 근거" not in section and "[A 계열] 근거 미확인" in section

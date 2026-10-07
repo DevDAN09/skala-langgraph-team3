@@ -1,5 +1,4 @@
 """src/research/stakeholder.py - Stakeholder research node, chained from market context."""
-import re
 from src.state import OverallState, Claim, Evidence, Source
 from src.research.client import (
     search_pair,
@@ -328,25 +327,6 @@ def _slot_text(slot: str, claims_by_id: dict[str, Claim], snippets: dict[str, st
 
 
 SLOTS = tuple(dict.fromkeys(q["slot"] for q in STAKEHOLDER_QUERY_PLAN))
-
-_SLOT_PART = re.compile(r"^(\[[^\]]+ 계열\]) .*\(근거: ([A-Z]{3}-\d{2})")
-
-
-def drop_unverified_actors(stakeholder: dict, claims: list[Claim]) -> dict:
-    """요약을 만든 뒤 근거 검증에서 ok가 아니게 된(rejected·insufficient) Claim의 Actor 칸을 '근거 미확인'으로 되돌린다.
-    stakeholder 요약은 검증 전에 만들어지므로, 보고서에 쓰기 직전에 최종 status로 한 번 더 거른다."""
-    ok_ids = {c["id"] for c in claims if c.get("status") == "ok"}
-    cleaned = {}
-    for key, text in (stakeholder or {}).items():
-        if not isinstance(text, str):
-            cleaned[key] = text
-            continue
-        parts = []
-        for part in text.split(" / "):
-            match = _SLOT_PART.match(part)
-            parts.append(f"{match.group(1)} 근거 미확인" if match and match.group(2) not in ok_ids else part)
-        cleaned[key] = " / ".join(parts)
-    return cleaned
 
 
 def _summarize(claims_by_id: dict[str, Claim], snippets: dict[str, str], family_labels: dict[str, str],
