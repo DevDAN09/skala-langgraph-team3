@@ -57,7 +57,6 @@ def evidence_audit_node(state: OverallState) -> dict:
             issue = issue_by_claim.get(c.get("id"))
             if not issue or c.get("status") in TERMINAL_CLAIM_STATUSES:
                 continue
-            agent = issue["target_agent"]
             updated_claims.append({**c, "status": "flagged"})
         if updated_claims:
             result["claims"] = updated_claims

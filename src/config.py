@@ -21,7 +21,6 @@ EMBEDDING_MODEL = "intfloat/e5-small-v2"
 # Directory & File Paths
 DATA_DIR = PROJECT_ROOT / "data"
 PAPERS_DIR = DATA_DIR / "papers"
-FONTS_DIR = DATA_DIR / "fonts"
 FAISS_INDEX_DIR = str(DATA_DIR / "faiss_index")
 REPORT_MD_PATH = PROJECT_ROOT / "final_evaluation_report.md"
 REPORT_PDF_PATH = PROJECT_ROOT / "final_evaluation_report.pdf"
