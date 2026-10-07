@@ -60,9 +60,12 @@ def supervisor_node(state: OverallState) -> dict:
         }
 
     selected = select_agent(candidates, audited)
-    targeted = {issue.get("target_agent") for issue in _issues(audited)}
+    audit_targets = {issue.get("target_agent") for issue in _issues(audited)}
+    quality_targets = set((state.get("quality") or {}).get("rework_targets") or [])
+    targeted = audit_targets | quality_targets
     retry_count = dict(state.get("retry_count") or {})
-    result = {**audit_result, "last_audited_step": step, "next_agent": NODE_NAMES[selected], "step_count": step + 1, "last_decision": {"next": NODE_NAMES[selected], "reason": "audit" if selected in targeted else "initial_or_quality"}}
+    reason = "audit" if selected in audit_targets else "quality" if selected in quality_targets else "initial"
+    result = {**audit_result, "last_audited_step": step, "next_agent": NODE_NAMES[selected], "step_count": step + 1, "last_decision": {"next": NODE_NAMES[selected], "reason": reason}}
     if selected in targeted and (state.get("node_status") or {}).get(selected) == "complete":
         retry_count[selected] = retry_count.get(selected, 0) + 1
         result["retry_count"] = retry_count
@@ -70,10 +73,6 @@ def supervisor_node(state: OverallState) -> dict:
     if selected in quality.get("rework_targets", []):
         quality["rework_targets"] = [agent for agent in quality["rework_targets"] if agent != selected]
         result["quality"] = quality
-    status = dict(state.get("node_status") or {})
-    if selected == "market" and status.get("stakeholder") == "complete":
-        status["stakeholder"] = "stale"
-        result["node_status"] = status
     return result
 
 

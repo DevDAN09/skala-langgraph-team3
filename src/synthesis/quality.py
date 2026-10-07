@@ -37,6 +37,33 @@ def _source_diversity_ok(claims: list[dict], evidence: dict, sources: dict) -> b
     return True
 
 
+def _coverage_gaps(verified: list[dict]) -> tuple[set[str], list[str]]:
+    targets: set[str] = set()
+    gaps: list[str] = []
+    for tech in ("KIVI", "CXL-PNM"):
+        if not any(c.get("perspective") == "maturity" and c.get("tech") == tech for c in verified):
+            targets.add("paper")
+            gaps.append(f"maturity:{tech}")
+        if not any(c.get("perspective") == "market" and c.get("tech") == tech for c in verified):
+            targets.add("market")
+            gaps.append(f"market:{tech}")
+        count = sum(c.get("perspective") == "domain" and c.get("tech") == tech for c in verified)
+        if count < 3:
+            targets.add("paper")
+            gaps.append(f"domain:{tech}({count}/3)")
+    valid_ids = {c.get("id") for c in verified}
+    for actor, claim_ids in {
+        "cloud_serving_operator": {"STK-01", "STK-05"},
+        "framework_developer": {"STK-02", "STK-06"},
+        "end_user": {"STK-03", "STK-07"},
+        "memory_vendor": {"STK-04", "STK-08"},
+    }.items():
+        if not valid_ids.intersection(claim_ids):
+            targets.add("stakeholder")
+            gaps.append(f"stakeholder:{actor}")
+    return targets, gaps
+
+
 def quality_evaluation_node(state: OverallState) -> dict:
     report = state.get("report", "")
     required_sections = ("SUMMARY", "REFERENCE")
@@ -46,8 +73,8 @@ def quality_evaluation_node(state: OverallState) -> dict:
     claims = state.get("claims", [])
     verified = [claim for claim in claims if claim.get("status") == "ok"]
     grounded = bool(verified) and all(claim.get("evidence_ids") and all(evidence.get(eid, {}).get("source_id") in sources for eid in claim["evidence_ids"]) for claim in verified)
-    perspectives = {claim.get("perspective") for claim in claims}
-    coverage = perspectives >= {"maturity", "market", "stakeholder", "domain"}
+    coverage_targets, coverage_gaps = _coverage_gaps(verified)
+    coverage = not coverage_gaps
     neutrality = _neutral(report)
     counter_required = [claim for claim in claims if claim.get("perspective") in {"market", "stakeholder"} or claim.get("id", "").startswith("MAT-A")]
     bias_control = all(claim.get("counter_searched") for claim in counter_required) and _source_diversity_ok(claims, evidence, sources)
@@ -63,10 +90,11 @@ def quality_evaluation_node(state: OverallState) -> dict:
         for claim in verified:
             if claim.get("perspective") in {"market", "stakeholder"} or claim.get("id", "").startswith("MAT-A"):
                 rework_targets.add("market" if claim.get("id", "").startswith("MAT-A") else owner[claim["perspective"]])
-    for perspective, agent in owner.items():
-        if perspective not in perspectives: rework_targets.add(agent)
+    rework_targets.update(coverage_targets)
     attempts = (state.get("quality") or {}).get("attempts", 0)
-    return {"quality": {"passed": not failures, "scores": scores, "failures": failures, "rework_targets": sorted(rework_targets), "attempts": attempts + 1}}
+    return {"quality": {"passed": not failures, "scores": scores, "failures": failures,
+                        "coverage_gaps": coverage_gaps,
+                        "rework_targets": sorted(rework_targets), "attempts": attempts + 1}}
 
 
 def route_quality(state: OverallState) -> str:
