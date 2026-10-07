@@ -1,4 +1,5 @@
 """tests/test_graph.py - Supervisor 패턴 그래프 조립, decide() 라우팅, 흐름 테스트"""
+import pytest
 from langgraph.graph import END
 from src.graph import build_evaluation_graph
 from src.supervisor import supervisor as sup
@@ -195,6 +196,8 @@ def test_flow_failing_node_is_retried_then_skipped(monkeypatch):
     assert calls[-1] == "report_generation"
 
 
+@pytest.mark.deprecated
+@pytest.mark.skip(reason="deprecated: 외부 API 요청")
 def test_graph_end_to_end_execution():
     graph = build_evaluation_graph()
     final_state = graph.invoke(INITIAL_INPUT_STATE)

@@ -32,3 +32,6 @@ packages = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "deprecated: 외부 API 요청 테스트 (deprecated)",
+]
