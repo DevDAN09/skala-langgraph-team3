@@ -26,6 +26,7 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "supervisor_route": [],
 }
 
 def main():

@@ -1,289 +1,175 @@
-"""tests/test_graph.py - Unit and integration tests for LangGraph StateGraph assembly and routers"""
+"""Supervisor architecture tests for the LangGraph workflow."""
+from copy import deepcopy
+
 import pytest
-from langgraph.graph import END
-from src.graph import build_evaluation_graph, route_audit_decision, route_after_paper
-from tests.mock_data import MOCK_STATE, INITIAL_INPUT_STATE
+from langgraph.graph import END, START
+
+from main import INITIAL_INPUT_STATE
+from src.graph import build_evaluation_graph
+from src.orchestration.supervisor import decide_next
 
 
-def test_graph_compilation():
-    graph = build_evaluation_graph()
-    assert graph is not None
-    node_keys = set(graph.nodes.keys())
-    expected_nodes = {
-        "paper_analysis",
-        "market_research",
-        "stakeholder_research",
-        "evidence_audit",
-        "evaluation_synthesis",
-        "report_generation",
-    }
-    assert expected_nodes.issubset(node_keys)
+WORKERS = {
+    "paper_analysis",
+    "market_research",
+    "stakeholder_research",
+    "evidence_audit",
+    "evaluation_synthesis",
+    "report_generation",
+}
 
 
-def test_route_after_paper_first_run():
-    # On initial run, audit.issues is empty -> routes to END
-    state = {**MOCK_STATE, "audit": {"issues": []}}
-    assert route_after_paper(state) == END
+def _researched_state() -> dict:
+    state = deepcopy(INITIAL_INPUT_STATE)
+    state.update({
+        "tech_sw": {"name": "KIVI"},
+        "tech_hw": {"name": "CXL-PNM"},
+        "domain": {"memory_footprint": {}},
+        "market": {"key_vendors": []},
+        "stakeholder": {"actors_surveyed": []},
+    })
+    return state
 
 
-def test_route_after_paper_with_issue():
-    # On targeted retry, routes back to evidence_audit
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "paper",
-                    "rule": "R1",
-                    "action": "search_evidence",
-                    "claim_id": "DOM-01",
-                    "issue": "",
-                }
-            ]
-        },
-    }
-    assert route_after_paper(state) == "evidence_audit"
+def _issue(target: str) -> dict:
+    return {"claim_id": "X", "rule": "R1", "issue": "missing",
+            "target_agent": target, "action": "search_evidence"}
 
 
-def test_route_after_paper_non_paper_issue():
-    # When issue is for market or stakeholder, paper branch still closes to END
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "market",
-                    "rule": "R3",
-                    "action": "search_counter_evidence",
-                    "claim_id": "MKT-01",
-                    "issue": "",
-                }
-            ]
-        },
-    }
-    assert route_after_paper(state) == END
+def test_graph_starts_at_supervisor_only():
+    edges = build_evaluation_graph().get_graph().edges
+    assert {edge.target for edge in edges if edge.source == START} == {"supervisor"}
 
 
-def test_route_after_paper_none_or_missing_audit():
-    assert route_after_paper({}) == END
-    assert route_after_paper({"audit": None}) == END
-    assert route_after_paper({"audit": {"issues": None}}) == END
+def test_supervisor_selects_initial_independent_research():
+    assert decide_next(INITIAL_INPUT_STATE) == ["paper_analysis", "market_research"]
 
 
-def test_route_audit_decision_clear():
-    state = {**MOCK_STATE, "audit": {"issues": []}}
-    assert route_audit_decision(state) == "evaluation_synthesis"
+def test_supervisor_waits_for_market_before_stakeholder():
+    paper_only = deepcopy(INITIAL_INPUT_STATE)
+    paper_only.update({"tech_sw": {"name": "KIVI"},
+                       "tech_hw": {"name": "CXL-PNM"},
+                       "domain": {"memory_footprint": {}}})
+    assert decide_next(paper_only) == ["market_research"]
+
+    state = deepcopy(paper_only)
+    state["market"] = {"key_vendors": []}
+    assert decide_next(state) == ["stakeholder_research"]
 
 
-def test_route_audit_decision_cascade_market():
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "market",
-                    "rule": "R3",
-                    "action": "search_counter_evidence",
-                    "claim_id": "MKT-01",
-                    "issue": "",
-                },
-                {
-                    "target_agent": "stakeholder",
-                    "rule": "R1",
-                    "action": "search_evidence",
-                    "claim_id": "STK-01",
-                    "issue": "",
-                },
-            ]
-        },
-        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
-    }
-    assert route_audit_decision(state) == ["market_research"]
+def test_supervisor_routes_audit_issue_to_target_agent():
+    state = _researched_state()
+    state.update({"audit": {"issues": [_issue("paper")]},
+                  "retry_count": {"paper": 1, "market": 0, "stakeholder": 0},
+                  "supervisor_route": ["evidence_audit"]})
+    assert decide_next(state) == ["paper_analysis"]
 
 
-def test_route_audit_decision_stakeholder_only():
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "stakeholder",
-                    "rule": "R1",
-                    "action": "search_evidence",
-                    "claim_id": "STK-01",
-                    "issue": "",
-                },
-            ]
-        },
-        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
-    }
-    assert route_audit_decision(state) == ["stakeholder_research"]
+def test_supervisor_cascades_market_retry_through_stakeholder_then_audit():
+    state = _researched_state()
+    state.update({"audit": {"issues": [_issue("market")]},
+                  "retry_count": {"paper": 0, "market": 1, "stakeholder": 0},
+                  "supervisor_route": ["evidence_audit"]})
+    assert decide_next(state) == ["market_research"]
+    state["supervisor_route"] = ["market_research"]
+    assert decide_next(state) == ["stakeholder_research"]
+    state["supervisor_route"] = ["stakeholder_research"]
+    assert decide_next(state) == ["evidence_audit"]
 
 
-def test_route_audit_decision_paper_only():
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "paper",
-                    "rule": "R1",
-                    "action": "search_evidence",
-                    "claim_id": "DOM-01",
-                    "issue": "",
-                },
-            ]
-        },
-        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
-    }
-    assert route_audit_decision(state) == ["paper_analysis"]
+def test_supervisor_stops_retrying_at_limit():
+    state = _researched_state()
+    state.update({"audit": {"issues": [_issue("paper")]},
+                  "retry_count": {"paper": 2, "market": 0, "stakeholder": 0},
+                  "supervisor_route": ["evidence_audit"]})
+    assert decide_next(state) == ["evaluation_synthesis"]
 
 
-def test_route_audit_decision_parallel_market_and_paper():
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "market",
-                    "rule": "R3",
-                    "action": "search_counter_evidence",
-                    "claim_id": "MKT-01",
-                    "issue": "",
-                },
-                {
-                    "target_agent": "paper",
-                    "rule": "R1",
-                    "action": "search_evidence",
-                    "claim_id": "DOM-01",
-                    "issue": "",
-                },
-            ]
-        },
-        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
-    }
-    assert route_audit_decision(state) == ["market_research", "paper_analysis"]
+def test_supervisor_progresses_from_clean_audit_to_report_and_end():
+    state = _researched_state()
+    state.update({"audit": {"issues": []},
+                  "supervisor_route": ["evidence_audit"]})
+    assert decide_next(state) == ["evaluation_synthesis"]
+    state["synthesis"] = {"tradeoffs": {}}
+    assert decide_next(state) == ["report_generation"]
+    state["report"] = "# report"
+    assert decide_next(state) == [END]
 
 
-def test_route_audit_decision_retries_exhausted():
-    state = {
-        **MOCK_STATE,
-        "audit": {
-            "issues": [
-                {
-                    "target_agent": "market",
-                    "rule": "R3",
-                    "action": "search_counter_evidence",
-                    "claim_id": "MKT-01",
-                    "issue": "",
-                },
-            ]
-        },
-        "retry_count": {"paper": 0, "market": 2, "stakeholder": 0},
-    }
-    assert route_audit_decision(state) == "evaluation_synthesis"
+def test_every_worker_returns_only_to_supervisor():
+    edges = build_evaluation_graph().get_graph().edges
+    for worker in WORKERS:
+        assert {edge.target for edge in edges if edge.source == worker} == {"supervisor"}
+    assert not any(edge.source in WORKERS and edge.target in WORKERS for edge in edges)
+
+
+def _run_with_stub_nodes(monkeypatch, audit_targets=()):
+    import src.graph as graph_module
+
+    calls = []
+    audit_runs = 0
+
+    def paper(_):
+        calls.append("paper_analysis")
+        return {"tech_sw": {"name": "KIVI"}, "tech_hw": {"name": "CXL-PNM"},
+                "domain": {"memory_footprint": {}}}
+
+    def market(_):
+        calls.append("market_research")
+        return {"market": {"key_vendors": []}}
+
+    def stakeholder(_):
+        calls.append("stakeholder_research")
+        return {"stakeholder": {"actors_surveyed": []}}
+
+    def audit(state):
+        nonlocal audit_runs
+        calls.append("evidence_audit")
+        audit_runs += 1
+        if audit_runs > 1 or not audit_targets:
+            return {"audit": {"issues": []}}
+        counts = dict(state["retry_count"])
+        for target in audit_targets:
+            counts[target] += 1
+        return {"audit": {"issues": [_issue(target) for target in audit_targets]},
+                "retry_count": counts}
+
+    def synthesis(_):
+        calls.append("evaluation_synthesis")
+        return {"synthesis": {"tradeoffs": {}}}
+
+    def report(_):
+        calls.append("report_generation")
+        return {"report": "# report"}
+
+    monkeypatch.setattr(graph_module, "WORKERS", {
+        "paper_analysis": paper,
+        "market_research": market,
+        "stakeholder_research": stakeholder,
+        "evidence_audit": audit,
+        "evaluation_synthesis": synthesis,
+        "report_generation": report,
+    })
+    result = graph_module.build_evaluation_graph().invoke(deepcopy(INITIAL_INPUT_STATE))
+    return calls, result
+
+
+def test_graph_normal_flow_is_supervisor_driven(monkeypatch):
+    calls, result = _run_with_stub_nodes(monkeypatch)
+    assert sorted(calls[:2]) == ["market_research", "paper_analysis"]
+    assert calls[2:] == ["stakeholder_research", "evidence_audit",
+                         "evaluation_synthesis", "report_generation"]
+    assert result["report"] == "# report"
+
+
+def test_graph_market_retry_returns_via_supervisor(monkeypatch):
+    calls, _ = _run_with_stub_nodes(monkeypatch, ("market",))
+    assert calls[4:] == ["market_research", "stakeholder_research", "evidence_audit",
+                         "evaluation_synthesis", "report_generation"]
 
 
 @pytest.mark.deprecated
 @pytest.mark.skip(reason="deprecated: 외부 API 요청")
 def test_graph_end_to_end_execution():
-    graph = build_evaluation_graph()
-    final_state = graph.invoke(INITIAL_INPUT_STATE)
-    assert final_state is not None
-    assert "report" in final_state
-    assert len(final_state["report"]) > 0
-    assert "trl" in final_state
-    assert "KIVI" in final_state["trl"]
-    assert "CXL-PNM" in final_state["trl"]
-    assert "claims" in final_state
-    assert len(final_state["claims"]) >= 4
-
-
-def _run_with_stub_nodes(monkeypatch, first_audit_targets):
-    """노드 6개를 실행 순서만 기록하는 스텁으로 바꿔 그래프 흐름만 검증한다."""
-    import src.graph as graph_module
-
-    calls = []
-    audit_runs = {"n": 0}
-
-    def recorder(name):
-        def node(state):
-            calls.append(name)
-            return {}
-        return node
-
-    def stub_audit(state):
-        calls.append("evidence_audit")
-        audit_runs["n"] += 1
-        if audit_runs["n"] > 1:
-            return {"audit": {"issues": []}}
-        retry = dict(state["retry_count"])
-        issues = []
-        for target in first_audit_targets:
-            retry[target] += 1
-            issues.append({"claim_id": "X", "rule": "R1", "issue": "",
-                           "target_agent": target, "action": "search_evidence"})
-        return {"audit": {"issues": issues}, "retry_count": retry}
-
-    for attr, name in [
-        ("paper_analysis_node", "paper_analysis"),
-        ("market_research_node", "market_research"),
-        ("stakeholder_research_node", "stakeholder_research"),
-        ("evaluation_synthesis_node", "evaluation_synthesis"),
-        ("report_generation_node", "report_generation"),
-    ]:
-        monkeypatch.setattr(graph_module, attr, recorder(name))
-    monkeypatch.setattr(graph_module, "evidence_audit_node", stub_audit)
-
-    graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
-    return calls
-
-
-def test_flow_first_run_order(monkeypatch):
-    calls = _run_with_stub_nodes(monkeypatch, [])
-    assert sorted(calls[:2]) == ["market_research", "paper_analysis"]
-    assert calls[2:] == ["stakeholder_research", "evidence_audit",
-                         "evaluation_synthesis", "report_generation"]
-
-
-def test_flow_market_retry_cascades_to_stakeholder(monkeypatch):
-    calls = _run_with_stub_nodes(monkeypatch, ["market"])
-    assert calls[4:] == ["market_research", "stakeholder_research", "evidence_audit",
-                         "evaluation_synthesis", "report_generation"]
-
-
-def test_flow_paper_only_retry_goes_to_audit(monkeypatch):
-    calls = _run_with_stub_nodes(monkeypatch, ["paper"])
-    assert calls[4:] == ["paper_analysis", "evidence_audit",
-                         "evaluation_synthesis", "report_generation"]
-
-
-def test_flow_parallel_market_and_paper_retry_audits_once(monkeypatch):
-    calls = _run_with_stub_nodes(monkeypatch, ["market", "paper"])
-    assert calls.count("evidence_audit") == 2
-    assert calls.count("report_generation") == 1
-    retry = calls[4:]
-    assert sorted(retry[:2]) == ["market_research", "paper_analysis"]
-    assert retry[2:] == ["stakeholder_research", "evidence_audit",
-                         "evaluation_synthesis", "report_generation"]
-
-
-def test_flow_parallel_stakeholder_and_paper_retry_audits_once(monkeypatch):
-    calls = _run_with_stub_nodes(monkeypatch, ["stakeholder", "paper"])
-    assert calls.count("evidence_audit") == 2
-    assert calls.count("report_generation") == 1
-    retry = calls[4:]
-    assert sorted(retry[:2]) == ["paper_analysis", "stakeholder_research"]
-    assert retry[2:] == ["evidence_audit", "evaluation_synthesis", "report_generation"]
-
-
-def test_route_after_paper_defers_to_stakeholder_edge_when_market_also_retries():
-    issue = {"rule": "R1", "action": "search_evidence", "claim_id": "X", "issue": ""}
-    state = {
-        **MOCK_STATE,
-        "audit": {"issues": [{**issue, "target_agent": "paper"}, {**issue, "target_agent": "market"}]},
-        "retry_count": {"paper": 1, "market": 1, "stakeholder": 0},
-    }
-    assert route_after_paper(state) == END
-    state["retry_count"] = {"paper": 1, "market": 2, "stakeholder": 0}
-    assert route_after_paper(state) == "evidence_audit"
+    final_state = build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
+    assert final_state["report"]

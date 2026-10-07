@@ -3,8 +3,8 @@ from src.state import OverallState, AuditIssue
 from src.audit.rules import run_static_rules, TERMINAL_CLAIM_STATUSES
 from src.audit import judge
 
-# common.md §7①.4: "에이전트당 재시도 2회". The router (graph.py, owned by A) enforces
-# this for re-routing, but it cannot write State — so D's audit node is the only place
+# common.md §7①.4: "에이전트당 재시도 2회". The Supervisor enforces this for
+# re-routing, while D's audit node remains the only place
 # that can finalize a Claim's status once its target agent has exhausted the limit
 # (issue #4 §1).
 RETRY_LIMIT = 2

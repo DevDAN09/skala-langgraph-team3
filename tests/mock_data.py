@@ -20,6 +20,7 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "supervisor_route": [],
 }
 
 MOCK_STATE = {
@@ -183,4 +184,5 @@ MOCK_STATE = {
         "evidence_gaps": [],
     },
     "report": "",
+    "supervisor_route": [],
 }

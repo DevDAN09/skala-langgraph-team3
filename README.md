@@ -8,7 +8,7 @@
 
 ## Overview
 - **Objective** : KV cache 병목을 다루는 SW·HW 대표 기술을 4개 관점(TRL · 시장성 · 이해관계자 · 도메인 적합성)에서 근거 기반으로 비교 평가
-- **Method** : Multi-Agent(LangGraph 병렬 Fan-out · Chaining · 조건부 재실행) + Agentic RAG(충분성 게이트 · Query Rewrite) + 2단계 Fast-Fail 근거 검증
+- **Method** : Supervisor 기반 Multi-Agent(State 기반 라우팅 · 선택적 재실행) + Agentic RAG(충분성 게이트 · Query Rewrite) + 2단계 Fast-Fail 근거 검증
 - **Tools** : LangGraph, FAISS, Tavily Search, Jinja2, Streamlit, xhtml2pdf
 
 
@@ -58,6 +58,7 @@
 ## Agents
 | Agent / Node | 담당 | 역할 | 출력 State |
 | :--- | :---: | :--- | :--- |
+| `supervisor` | A | 현재 State와 Audit 결과를 바탕으로 다음 전문 Agent·재작업·종합·보고서·종료를 결정 | `supervisor_route` |
 | `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
 | `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | `market`, `claims(MKT-*, MAT-A*)` |
 | `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | `stakeholder`, `claims(STK-01~08)` |
@@ -67,31 +68,37 @@
 
 
 ## Architecture
+실행 패턴은 **Supervisor**다. 평가 과제와 전문 Agent는 미리 정해져 있으므로 동적 작업 생성보다 현재 근거와 Audit 결과에 따른 중앙 라우팅이 중요하다. 전문 Agent끼리는 직접 연결하지 않으며, 모든 작업은 Supervisor로 복귀한다. Supervisor는 고정 Step 수 대신 State 완성도와 재시도 한도를 보고 synthesis/report 진입을 결정한다.
+
 ```mermaid
 flowchart TD
-    START([START]) --> paper_analysis["paper_analysis (B)<br/>Agentic RAG"]
-    START --> market_research["market_research (C)<br/>시장성 조사"]
-    market_research --> stakeholder_research["stakeholder_research (C)<br/>이해관계자"]
-    stakeholder_research --> evidence_audit["evidence_audit (D)<br/>Fast-Fail 검증"]
-    paper_analysis -.->|재시도 시| evidence_audit
-    paper_analysis -.->|첫 실행| END_BRANCH([END])
-    evidence_audit -.->|조건부 피드백| market_research
-    evidence_audit -.->|조건부 피드백| stakeholder_research
-    evidence_audit -.->|조건부 피드백| paper_analysis
-    evidence_audit -->|통과/한도초과| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
-    evaluation_synthesis --> report_generation["report_generation (E)<br/>보고서 생성"]
-    report_generation --> END([END])
+    START([START]) --> supervisor{Supervisor}
+    supervisor -->|초기 독립 조사| paper_analysis["paper_analysis (B)<br/>Agentic RAG"]
+    supervisor -->|초기 독립 조사| market_research["market_research (C)<br/>시장성 조사"]
+    supervisor -->|market 확보 후| stakeholder_research["stakeholder_research (C)<br/>이해관계자"]
+    supervisor --> evidence_audit["evidence_audit (D)<br/>Fast-Fail 검증"]
+    supervisor -->|검증 통과/한도 소진| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
+    supervisor --> report_generation["report_generation (E)<br/>보고서 생성"]
+    supervisor --> END([END])
+    paper_analysis --> supervisor
+    market_research --> supervisor
+    stakeholder_research --> supervisor
+    evidence_audit --> supervisor
+    evaluation_synthesis --> supervisor
+    report_generation --> supervisor
 ```
 
+근거가 부족하면 Supervisor가 Audit issue의 `target_agent`와 `retry_count`를 확인해 해당 전문 Agent만 선택적으로 재실행한다. Market 재조사 뒤에는 갱신된 시장 컨텍스트를 반영하도록 Supervisor를 거쳐 Stakeholder를 다시 실행한다.
+
 ### 데이터 흐름 (End-to-End Data Flow)
-파이프라인 실행 시 14개의 전역 State 필드가 각 노드를 거치며 축적·검증·종합되는 흐름은 다음과 같다.
+파이프라인 실행 시 기존 14개 payload 필드와 최소 제어 필드 `supervisor_route`가 각 노드를 거치며 축적·검증·종합되는 흐름은 다음과 같다. State Schema의 본격적인 보완은 후속 작업 범위다.
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
-| **Step 1<br/>초기화 & 병렬 분기** | `START` (A) | `INITIAL_INPUT_STATE` | • 대상 기술(KIVI vs CXL-PNM) 및 기술 계열 선정 사유 주입<br/>• `paper_analysis` 및 `market_research`로 병렬 Fan-out | `selected`, `retry_count: 0` |
+| **Step 1<br/>초기화 & Supervisor 판단** | `START → supervisor` (A) | `INITIAL_INPUT_STATE` | • 대상 기술(KIVI vs CXL-PNM) 및 기술 계열 선정 사유 주입<br/>• State를 확인해 독립적인 `paper_analysis`, `market_research`를 초기 병렬 선택 | `selected`, `retry_count: 0`, `supervisor_route` |
 | **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(실측/시뮬레이션 구분) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
-| **Step 3<br/>시장성 및 이해관계자** | `market_research`<br/>→ `stakeholder_research` (C) | `selected`<br/>(+ `market` 컨텍스트) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 컨텍스트 체이닝을 통해 시장 데이터를 반영한 정량/정성 Claim 생성 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
-| **Step 4<br/>Fast-Fail 근거 검증** | `evidence_audit` (D) | `claims`, `evidence`, `sources` | • **1단계 규칙 검증**: 형식·출처(T1~T4)·수치 왜곡 4대 룰 체크<br/>• **2단계 LLM 심사**: `gpt-4o` 기반 Claim-Snippet 사실 일치 판정<br/>• 검증 미달 항목 피드백 발행 및 라우팅 (최대 2회 재시도) | `audit.issues`, `retry_count`,<br/>`claims[*].status` (ok/flagged/insufficient/rejected) |
+| **Step 3<br/>시장성 및 이해관계자** | `market_research → supervisor → stakeholder_research` (C) | `selected`<br/>(+ `market` 컨텍스트) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• Supervisor가 market 확보를 확인한 뒤 Stakeholder 실행<br/>• 4대 Actor × 기술 계열 2개 관점 영향도 분석 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
+| **Step 4<br/>Fast-Fail 근거 검증** | `supervisor → evidence_audit` (D) | `claims`, `evidence`, `sources` | • **1단계 규칙 검증**: 형식·출처(T1~T4)·수치 왜곡 4대 룰 체크<br/>• **2단계 LLM 심사**: `gpt-4o` 기반 Claim-Snippet 사실 일치 판정<br/>• Audit은 문제와 보완 대상을 반환하고, Supervisor가 재실행 여부·대상·한도를 판단 | `audit.issues`, `retry_count`,<br/>`claims[*].status` (ok/flagged/insufficient/rejected) |
 | **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
 | **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • Jinja2 템플릿 기반 마크다운 렌더링 및 인용 넘버링 연동<br/>• LLM(`gpt-4o`) 문체 정제 및 `final_evaluation_report.md` 생성<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 자동 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
 
@@ -122,8 +129,9 @@ flowchart TD
 │   ├── eval_queries.json  # 임베딩 벤치마크 질의 20개
 │   └── faiss_index/       # FAISS 로컬 인덱스 (indexer.py로 생성, git 제외)
 ├── src/                   # Agent 모듈
-│   ├── state.py           # OverallState 14개 키 + Custom Reducer
-│   ├── graph.py           # LangGraph StateGraph 조립 · 조건부 라우터
+│   ├── state.py           # OverallState payload + 최소 Supervisor route 상태
+│   ├── graph.py           # LangGraph StateGraph 노드·Edge 조립
+│   ├── orchestration/     # Supervisor 상태 기반 실행·재작업·종료 판단
 │   ├── config.py          # 모델명 · 경로 · API 키
 │   ├── rag/               # [B] indexer · benchmark · agentic_rag (paper_analysis)
 │   ├── research/          # [C] client · market · stakeholder

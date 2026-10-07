@@ -94,3 +94,5 @@ class OverallState(TypedDict):
     trl: dict[str, TRL]
     synthesis: dict
     report: str
+    # Minimal control state. Payload/schema expansion is intentionally deferred.
+    supervisor_route: list[str]
