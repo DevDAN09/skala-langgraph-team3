@@ -85,7 +85,7 @@ flowchart TD
 ```
 
 ### 데이터 흐름 (End-to-End Data Flow)
-파이프라인은 19개 State field(14 payload + 5 control)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
+파이프라인은 23개 State field(12 payload + 11 control)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
