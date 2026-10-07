@@ -398,6 +398,9 @@ def market_research_node(state: OverallState) -> dict:
         "deployment": " | ".join(deployment_parts) if deployment_parts else "인용 가능한 공개 배포 근거 미확인",
         "ecosystem": " | ".join(ecosystem_parts) if ecosystem_parts else "인용 가능한 생태계 근거 미확인",
         "barriers": " | ".join(barrier_parts) if barrier_parts else "counter-evidence not found",
+        # 보고서 4.2 배포 장벽에 인용 번호를 붙이기 위해 장벽 문장과 출처 Claim을 함께 남긴다
+        "barrier_claims": [{"tech": c["tech"], "claim_id": c["id"], "text": barrier_by_claim_id[c["id"]]}
+                           for c in claims if c["id"] in barrier_by_claim_id],
     }
 
     return {

@@ -78,11 +78,14 @@ def test_quality_node_runs_judge_after_rules_pass(judge_llm, rules_pass, monkeyp
     assert result["passed"] is False
     assert result["failures"] == ["judge_neutrality"]
     assert result["rework_targets"] == []  # 서술 문제는 재수집 대상이 아니다
+    # report_generation은 품질 피드백을 읽지 않아 같은 보고서가 다시 나오므로 재작성하지 않고 종료한다 (#70)
     monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
     state = {**rules_pass, "quality": result, "node_status": {
         "paper": "complete", "market": "complete", "stakeholder": "complete",
         "synthesis": "complete", "report": "complete", "quality": "complete"}}
-    assert supervisor.supervisor_node(state)["next_agent"] == "report_generation"
+    decision = supervisor.supervisor_node(state)
+    assert decision["next_agent"] == "END"
+    assert decision["last_decision"]["reason"] == "quality_writing_exhausted"
 
 
 def test_quality_node_passes_when_rules_and_judge_pass(judge_llm, rules_pass):

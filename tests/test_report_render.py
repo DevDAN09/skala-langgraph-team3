@@ -228,3 +228,14 @@ def test_reference_author_drops_leaked_urls():
 def test_summary_shows_first_sentence_only():
     assert report_gen.summary_sentence("첫 문장이다. 둘째 문장이다.") == "첫 문장이다. …"
     assert report_gen.summary_sentence("한 문장이다.") == "한 문장이다."
+
+
+def test_market_barriers_cite_counter_evidence_of_their_claim():
+    """4.2 배포 장벽은 해당 Claim의 반대 근거 출처로 인용 번호가 붙는다 (#75)."""
+    from src.synthesis.report_gen import _Citations, _market_view
+    claims = [{"id": "MKT-01", "tech": "KIVI", "status": "ok", "counter_evidence_ids": ["EV-MKT-01-C"]}]
+    evidence = [{"evidence_id": "EV-MKT-01-C", "source_id": "S1", "snippet": "risk"}]
+    sources = [{"source_id": "S1", "title": "t", "url": "https://x", "source_type": "web", "source_tier": "T2"}]
+    market = {"barrier_claims": [{"tech": "KIVI", "claim_id": "MKT-01", "text": "정확도 저하 우려가 있다."}]}
+    view = _market_view(market, [], _Citations(evidence, sources), claims)
+    assert view["barriers"] == [{"text": "KIVI: 정확도 저하 우려가 있다.", "ev": ["EV-MKT-01-C"]}]
