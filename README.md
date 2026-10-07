@@ -9,7 +9,7 @@
 ## Overview
 - **Objective** : KV cache 병목을 다루는 SW·HW 대표 기술을 4개 관점(TRL · 시장성 · 이해관계자 · 도메인 적합성)에서 근거 기반으로 비교 평가
 - **Pattern** : Supervisor — Worker 수 확장보다 수집 근거의 충분성을 판단하고 부족한 관점만 재조사하는 품질 제어가 핵심이다. 기존 evidence audit/retry를 Supervisor의 중앙 제어로 확장해 specialized research role을 유지한 채 State 기반 targeted rework를 수행한다.
-- **동적 처리** : Supervisor가 매 step의 current State를 확인하여 audit issue, quality rework target, `node_status`, `retry_count`, dependency에 따라 다음 Agent를 runtime에 결정한다. `paper → market → stakeholder` 고정 순서를 사용하지 않으므로 실행마다 방문 Agent·순서·retry 횟수가 달라질 수 있다.
+- **동적 처리** : Supervisor가 매 step의 current State를 확인하여 audit issue, quality rework target, `node_status`, `retry_count`, dependency에 따라 다음 Agent를 runtime에 결정한다. 수집이 끝난 뒤에도 평가 종합·보고서 생성·품질 평가·종료를 Supervisor가 `node_status`와 품질 결과로 고른다. `paper → market → stakeholder` 고정 순서를 사용하지 않으므로 실행마다 방문 Agent·순서·retry 횟수가 달라질 수 있다.
 - **Tools** : LangGraph, FAISS, Tavily Search, Jinja2, Streamlit, xhtml2pdf
 
 
@@ -77,7 +77,7 @@
 | `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
 | `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | `market`, `claims(MKT-*, MAT-A*)` |
 | `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | `stakeholder`, `claims(STK-01~08)` |
-| `supervisor` | A/D | 조정 계층. 새 수집 결과가 있으면 내부에서 근거 검증(R1~R4 규칙 → R5 Judge)을 실행하고, audit issue·품질 재작업 대상·`node_status`·의존성으로 다음 Research Agent 1개 또는 평가 종합을 선택한다. 실제 재작업 dispatch 때만 `retry_count` 증가 | `audit`, `claims[*].status`, `next_agent`, `retry_count`, `step_count`, `last_decision` |
+| `supervisor` | A/D | 조정 계층. 새 수집 결과가 있으면 내부에서 근거 검증(R1~R4 규칙 → R5 Judge)을 실행하고, audit issue·품질 재작업 대상·`node_status`·의존성으로 다음 Research Agent 1개를 선택한다. 수집이 끝나면 평가 종합 → 보고서 생성 → 품질 평가를 차례로 고르고, 품질 결과에 따라 재수집·보고서 재작성·종료(`END`)를 결정한다. 실제 재작업 dispatch 때만 `retry_count` 증가 | `audit`, `claims[*].status`, `next_agent`, `retry_count`, `step_count`, `last_decision` |
 | `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
 | `report_generation` | E | 검증된 Claim으로 보고서 view 구성 → 근거 문장 필드 번역 → Jinja2 렌더링 | `report` |
 | `quality_eval` | E | 3안 Hybrid 품질 평가 결과와 미달 원인·재작업 후보를 State에 기록하며, 다음 Node는 Supervisor가 결정 | `quality` |
@@ -116,7 +116,7 @@
 - **관측성 위치** : 결정 로그 본문은 State에 쌓지 않는다. State에는 최신 결정 `last_decision`(`next`, `reason`)만 덮어쓰고, 전체 결정 이력은 LangSmith trace에서 확인한다.
 - **지속성 비용** : 대용량 로그·검색 원문을 State에 누적하지 않는다. `claims`/`evidence`/`sources`는 ID·URL 기준 reducer로 최신 구조화 결과만 유지해, 재작업을 반복해도 checkpoint마다 무한히 늘지 않는다.
 - **상관** : `make_initial_state()`가 실행마다 UUID `trace_id`를 만들고, `main.py`가 이를 LangGraph `thread_id`로 전달해 State·checkpoint·LangSmith trace를 같은 키로 잇는다.
-- **재개/복구** : `node_status`(`pending`/`complete`/`stale`/`failed`), `node_attempts`, `last_error`/`last_errors`, `retry_count`, `step_count`, `last_audited_step`으로 중단·실패·재시도 상태를 판단한다. Worker 첫 실패는 `pending`으로 되돌려 1회 재시도하고, 반복 실패는 `failed`로 둔다. `main.py`는 `InMemorySaver` checkpointer로 실행한다.
+- **재개/복구** : `node_status`(수집 `paper`·`market`·`stakeholder`와 보고서 단계 `synthesis`·`report`·`quality`, 값은 `pending`/`complete`/`stale`/`failed`), `node_attempts`, `last_error`/`last_errors`, `retry_count`, `step_count`, `last_audited_step`으로 중단·실패·재시도 상태를 판단한다. Worker 첫 실패는 `pending`으로 되돌려 1회 재시도하고, 반복 실패는 `failed`로 둔다. `main.py`는 `InMemorySaver` checkpointer로 실행한다.
 - **동시 처리** : Supervisor는 한 번에 Research Agent 하나만 dispatch해 제어 field의 동시 쓰기를 없앴다. 재작업으로 같은 Claim이 다시 들어와도 `upsert_claims`(Claim ID), `upsert_evidence`(Evidence ID), `union_sources`(Source ID·URL 중복 제거) reducer가 덮어써 오염을 막는다. market → stakeholder 의존은 엣지가 아니라 `node_status`로 표현하고, market 재작업 시 stakeholder를 `stale`로 바꿔 다시 수집한다.
 - **종료 보장** : 관점별 재작업 `RETRY_LIMIT=2`, Research dispatch `MAX_STEPS=10`, 보고서 품질 평가 `MAX_QUALITY_ATTEMPTS=2`, Worker 실패 1회 재시도로 모든 루프를 제한한다. 마지막 재작업 후에도 검증 이슈가 남은 Claim만 `insufficient`/`rejected`로 확정해 6장 Evidence Gap에 공개한다.
 
