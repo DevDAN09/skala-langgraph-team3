@@ -39,8 +39,12 @@ def convert_markdown_to_pdf(markdown_text: str, output_pdf_path: Path | str) -> 
         return False
 
     try:
+        cleaned_markdown = markdown_text.strip()
+        if cleaned_markdown.startswith("```markdown\n") and cleaned_markdown.endswith("\n```"):
+            cleaned_markdown = cleaned_markdown[len("```markdown\n"):-len("\n```")]
+
         html_body = markdown.markdown(
-            markdown_text,
+            cleaned_markdown,
             extensions=["tables", "fenced_code"],
         )
 
@@ -50,8 +54,7 @@ def convert_markdown_to_pdf(markdown_text: str, output_pdf_path: Path | str) -> 
 
         if font_path:
             try:
-                rel_path = font_path.relative_to(Path.cwd())
-                font_src = str(rel_path)
+                font_src = font_path.as_uri()
             except ValueError:
                 font_src = font_path.as_uri()
 
@@ -155,8 +158,13 @@ hr {{
 </body>
 </html>
 """
+        def link_callback(uri: str, _rel: str) -> str:
+            if uri.startswith("file://"):
+                return uri.removeprefix("file://")
+            return str((Path.cwd() / uri).resolve())
+
         with open(output_path, "wb") as f:
-            pisa_status = pisa.CreatePDF(html_content, dest=f)
+            pisa_status = pisa.CreatePDF(html_content, dest=f, link_callback=link_callback)
 
         if pisa_status.err == 0 and output_path.exists() and output_path.stat().st_size > 0:
             return True
