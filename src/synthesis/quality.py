@@ -1,7 +1,8 @@
-"""Deterministic post-generation report quality gate."""
+"""Post-generation report quality gate: deterministic rules, then LLM Judge (3안 Hybrid)."""
 import re
 from src.audit.auditor import RETRY_LIMIT
 from src.state import OverallState
+from src.synthesis.quality_judge import run_report_judge
 
 MAX_QUALITY_ATTEMPTS = 2
 
@@ -115,6 +116,10 @@ def quality_evaluation_node(state: OverallState) -> dict:
     diverse = _source_diversity_ok(claims, evidence, sources)
     scores = {"groundedness": grounded, "neutrality": neutrality, "bias_control": diverse, "coverage": coverage}
     failures = [key for key, passed in scores.items() if not passed] + missing
+    # 규칙 미달이면 Judge를 부르지 않는다 (Fast-Fail). Judge 미달은 보고서 서술 문제라 rework_targets를 만들지 않는다.
+    judge = None if failures else run_report_judge(report, state)
+    if judge:
+        failures += [f"judge_{name}" for name, item in judge.items() if not item["passed"]]
     rework_targets = set()
     owner = {"maturity": "paper", "domain": "paper", "market": "market", "stakeholder": "stakeholder"}
     for claim in verified:
@@ -129,7 +134,9 @@ def quality_evaluation_node(state: OverallState) -> dict:
     exhausted = sorted(agent for agent in rework_targets if retry_count.get(agent, 0) >= RETRY_LIMIT)
     rework_targets -= set(exhausted)
     attempts = (state.get("quality") or {}).get("attempts", 0)
+    method = "rules" if judge is None else "hybrid"
     return {"quality": {"passed": not failures, "scores": scores, "failures": failures,
+                        "method": method, "judge": judge,
                         "coverage_gaps": coverage_gaps, "disclosed_gaps": disclosed_gaps,
                         "rework_targets": sorted(rework_targets), "exhausted_targets": exhausted,
                         "attempts": attempts + 1}}
