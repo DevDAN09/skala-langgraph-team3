@@ -116,7 +116,8 @@ def citation_author(source: dict, allow_publisher: bool = True) -> str:
     authors = source.get("authors")
     if not _is_placeholder(authors):
         names = authors if isinstance(authors, list) else str(authors).split(";")
-        names = [str(item).strip() for item in names if str(item).strip()]
+        names = [re.sub(r",?\s*https?://\S+", "", str(item)).strip(" ,") for item in names]
+        names = [name for name in names if name]
         return f"{names[0]} et al." if len(names) >= 3 else ", ".join(names)
     if allow_publisher and not _is_placeholder(source.get("publisher")): return str(source["publisher"])
     return citation_site_name(source) if source.get("source_type") == "web" else "기관 또는 작성자 미상"
@@ -181,36 +182,86 @@ def _display(text: object) -> str:
     return re.sub(r"\[(\d+(?:\s*[,–-]\s*\d+)*)\]", r"(원문 인용 \1)", _one_line(text))
 
 
-_PROTECTED_MARKERS = re.compile(r"\[(?:\d+|[A-Z]+(?:-[A-Z])?-?\d+)\]|종합 해석|분석적 제안")
-
-
-def _preserves_markers(rendered: str, polished: str) -> bool:
-    """Polishing may reword sentences but must keep every citation, Claim ID and interpretation label."""
-    return sorted(_PROTECTED_MARKERS.findall(rendered)) == sorted(_PROTECTED_MARKERS.findall(polished))
-
-
-_LABELS = re.compile(r"종합 해석|분석적 제안")
-
-
-def _mask_labels(text: str) -> tuple[str, list[str]]:
-    """Hide interpretation labels behind opaque tokens so polishing cannot drop or move them."""
-    labels: list[str] = []
-    def replace(match: re.Match) -> str:
-        labels.append(match.group(0))
-        return f"⟦L{len(labels) - 1}⟧"
-    return _LABELS.sub(replace, text), labels
-
-
-def _unmask_labels(text: str, labels: list[str]) -> str:
-    for index, label in enumerate(labels):
-        text = text.replace(f"⟦L{index}⟧", label, 1)
-    return text
-
-
 def _strip_fence(text: str) -> str:
     stripped = text.strip()
-    match = re.fullmatch(r"```(?:markdown|md)?\n(.*)\n```", stripped, re.S)
+    match = re.fullmatch(r"```[A-Za-z]*\n(.*)\n```", stripped, re.S)
     return match.group(1).strip() if match else stripped
+
+
+_EXCERPT_LIMIT = 160
+
+
+def _excerpt(text: str) -> str:
+    """Keep table cells short: a long quote is cut at its first sentence and marked as an excerpt."""
+    if len(text) <= _EXCERPT_LIMIT:
+        return text
+    first = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+    return f"{first} …(발췌)" if len(first) < len(text) else text
+
+
+def summary_sentence(text: str) -> str:
+    """SUMMARY shows only the first sentence of a representative Claim; the full quote stays in 3장."""
+    first = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+    return f"{first} …" if len(first) < len(text) else text
+
+
+_TRANSLATE_KEYS = {"statement", "benefit", "concern", "barrier", "text"}
+_TRANSLATE_BATCH = 15
+_NUMBER = re.compile(r"\d+(?:\.\d+)?")
+
+
+def _needs_translation(text: str) -> bool:
+    letters = re.findall(r"[A-Za-z가-힣]", text)
+    return bool(letters) and sum("가" <= ch <= "힣" for ch in letters) < len(letters) * 0.3
+
+
+def _walk_texts(node: object, apply=None) -> list[str]:
+    """Collect (or replace via `apply`) every free-text field the report displays."""
+    found: list[str] = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in _TRANSLATE_KEYS and isinstance(value, str):
+                found.append(value)
+                if apply: node[key] = apply(value)
+            elif key == "barriers" and isinstance(value, list):
+                found.extend(value)
+                if apply: node[key] = [apply(item) for item in value]
+            else:
+                found.extend(_walk_texts(value, apply))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_walk_texts(item, apply))
+    return found
+
+
+def translate_texts(texts: list[str]) -> dict[str, str]:
+    """Translate evidence-derived sentences to Korean; a translation that changes any number is discarded."""
+    pending = [text for text in dict.fromkeys(texts) if _needs_translation(text)]
+    if not pending or not OPENAI_API_KEY:
+        return {}
+    llm = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0)
+    translated: dict[str, str] = {}
+    for start in range(0, len(pending), _TRANSLATE_BATCH):
+        batch = pending[start:start + _TRANSLATE_BATCH]
+        prompt = f"""다음 JSON 배열의 각 문장을 한국어 보고서 문체(`-다.` 체)로 번역하라.
+- 배열 길이와 순서를 그대로 유지하고, JSON 문자열 배열만 반환하라.
+- 수치·단위·연도·괄호 안 표기·고유명사·제품명·기술 용어(KIVI, CXL, KV cache 등)는 바꾸지 마라.
+- 논문 원문의 1인칭(we/our)은 '저자들은'·'해당 연구는'처럼 옮겨라.
+- 내용을 추가·삭제·요약하지 마라.
+
+{json.dumps(batch, ensure_ascii=False)}"""
+        try:
+            result = json.loads(_strip_fence(llm.invoke(prompt).content))
+        except Exception as error:
+            print(f"⚠️ [경고/Fallback] Claim 번역 실패, 원문 유지: {error}")
+            continue
+        if not isinstance(result, list) or len(result) != len(batch):
+            print("⚠️ [경고/Fallback] Claim 번역 결과 형식 불일치, 원문 유지")
+            continue
+        for source, target in zip(batch, result):
+            if isinstance(target, str) and target.strip() and sorted(_NUMBER.findall(source)) == sorted(_NUMBER.findall(target)):
+                translated[source] = target.strip()
+    return translated
 
 
 def _verified(claims: list[dict]) -> list[dict]:
@@ -289,10 +340,11 @@ def _domain_rows(domain: dict, verified: list[dict], shown_ids: set[str], citati
         for tech in _TECHS:
             text = _one_line(value.get(tech)).replace("corpus 내 근거 미확인", "공개 근거 미확인") or "공개 근거 미확인"
             backing = next((c for c in verified if c.get("tech") == tech and _one_line(c["statement"]) == text), None)
+            shown = bool(backing and backing["id"] in shown_ids)
             cells.append({
-                "tech": tech, "text": _display(text), "id": backing["id"] if backing else None,
+                "tech": tech, "text": _excerpt(_display(text)), "id": backing["id"] if backing else None,
                 "ev": citations.use(backing.get("evidence_ids", [])) if backing else [],
-                "shown": bool(backing and backing["id"] in shown_ids),
+                "shown": shown,
             })
         rows.append({"label": label, "cells": cells})
     return rows
@@ -398,41 +450,21 @@ def report_generation_node(state: OverallState) -> dict:
     env.filters["citation_date"] = citation_date
     env.filters["citation_author"] = citation_author
     env.filters["citation_site_name"] = citation_site_name
+    env.filters["summary_sentence"] = summary_sentence
     template = env.get_template("report.md.j2")
+
+    # 문서 전체를 LLM에 넘기면 긴 문서 후반부가 번역되지 않거나 인용·표기가 바뀐다.
+    # 근거 문장 필드만 번역하고, 인용 번호·Claim ID·해석 표기는 템플릿이 결정적으로 렌더링한다.
+    view = build_report_view(state)
+    translations = translate_texts(_walk_texts(view))
+    if translations:
+        _walk_texts(view, lambda text: translations.get(text, text))
 
     rendered = template.render(
         selected=state.get("selected", {}),
         trl=state.get("trl", {}),
         synthesis=state.get("synthesis", {}),
         issued_on=date.today().isoformat(),
-        **build_report_view(state),
+        **view,
     )
-
-    if not OPENAI_API_KEY:
-        return {"report": rendered}
-
-    masked, labels = _mask_labels(rendered)
-    try:
-        prompt = f"""정적 근거 기반 기술 보고서 편집자입니다.
-다음 마크다운의 문장만 다듬으십시오.
-- SUMMARY, 1~6, REFERENCE 제목과 순서를 변경하지 마십시오.
-- 수치, TRL, Claim ID, URL, 출처 Tier, simulation 표기를 변경하거나 추가하지 마십시오.
-- 인용 번호([1] 등)와 ⟦L숫자⟧ 토큰을 삭제하거나 다른 문장으로 옮기지 말고 그대로 두십시오.
-- 기술 우열, 승자, 추천, 근거 없는 전망을 추가하지 마십시오.
-- 영어 원문 자료를 바탕으로 하더라도 보고서의 서술 문장은 한국어로 작성하십시오.
-- KIVI, CXL-PNM, LLM, KV Cache 같은 고유명사·기술 용어, 논문·특허·웹페이지 제목, 인용 번호는 원문 표기를 유지하십시오.
-- 영어 Claim 문장은 원문 그대로 남기지 말고 한국어로 번역하십시오. 단, 수치·단위·연도·Claim ID·인용 번호·고유명사·기술 용어는 변경하지 마십시오.
-- 보고서 본문 문체는 `-다.` 체로 통일하고, `-습니다.` 체를 사용하지 마십시오.
-- 마크다운 전문만 반환하십시오.
-
-{masked}"""
-        llm = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0.1)
-        for _ in range(2):
-            polished = _unmask_labels(_strip_fence(llm.invoke(prompt).content), labels)
-            if _preserves_markers(rendered, polished):
-                return {"report": polished}
-        print("⚠️ [경고/Fallback] Polishing 결과에서 인용 번호·Claim ID·해석 표기가 바뀌어 원본 렌더링을 사용한다.")
-        return {"report": rendered}
-    except Exception as error:
-        print(f"⚠️ [경고/Fallback] Polishing LLM 호출 실패: {error}")
-        return {"report": rendered}
+    return {"report": rendered}

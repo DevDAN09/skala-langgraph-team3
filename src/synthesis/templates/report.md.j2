@@ -17,7 +17,7 @@
 - **평가 목적**: 클라우드 LLM 서빙의 KV Cache 메모리 병목을 다루는 SW 기법(KIVI)과 HW 기법(CXL-PNM)을 기술 성숙도·시장성·이해관계자·도메인 4관점에서 비교한다.
 {% for tech, label in [("KIVI", "SW"), ("CXL-PNM", "HW")] %}
 {% set items = overview.get(tech, []) %}
-- **{{ tech }} ({{ label }})**: {% if items %}{{ claim_line(items[0]) }}{% else %}검증된 메커니즘 Claim이 없다.{% endif %}
+- **{{ tech }} ({{ label }})**: {% if items %}**[{{ items[0].id }}]** {{ items[0].statement|summary_sentence }}{% if items[0].kind %} ({{ items[0].kind }}){% endif %}{{ cite(items[0].ev) }}{% else %}검증된 메커니즘 Claim이 없다.{% endif %}
 
 {% endfor %}
 - **성숙도 단계**: KIVI는 tech_trl {{ trl.get("KIVI", {}).get("tech_trl", "Unknown") }} / family_trl {{ trl.get("KIVI", {}).get("family_trl", "Unknown") }}, CXL-PNM은 tech_trl {{ trl.get("CXL-PNM", {}).get("tech_trl", "Unknown") }} / family_trl {{ trl.get("CXL-PNM", {}).get("family_trl", "Unknown") }}이다(4.1 참조).
