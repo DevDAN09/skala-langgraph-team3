@@ -201,8 +201,8 @@ def summarize_snippet(content: str, focus: str) -> str:
             return ""
         return summarized if len(summarized) >= 20 and "\n" not in summarized else ""
     except Exception as e:
-        print(f"⚠️ [경고/Fallback] statement 요약 LLM 호출 실패, 원문 인용으로 대체: {e}")
-        return _clip_to_sentence(text)
+        print(f"⚠️ [경고/Fallback] statement 요약 LLM 호출 실패, 근거 미확인 처리: {e}")
+        return ""
 
 
 TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}

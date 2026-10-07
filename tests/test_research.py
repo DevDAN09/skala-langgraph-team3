@@ -391,6 +391,7 @@ def test_stakeholder_records_counter_evidence_not_found(monkeypatch):
     """반대 쿼리 결과가 없으면 Concern·Barrier에 counter-evidence not found를 기록한다 (설계 표 11)."""
     import src.research.stakeholder as stk
     monkeypatch.setattr(stk, "search_pair", _fake_search(counter=False))
+    monkeypatch.setattr(stk, "summarize_snippet", lambda text, focus: "Framework developers evaluate serving support.")
     text = stakeholder_research_node(INITIAL_INPUT_STATE)["stakeholder"]["framework_developer"]
     assert "Concern: counter-evidence not found | Barrier: counter-evidence not found" in text
 

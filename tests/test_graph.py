@@ -1,4 +1,5 @@
 """tests/test_graph.py - Unit and integration tests for LangGraph StateGraph assembly and routers"""
+import pytest
 from langgraph.graph import END
 from src.graph import build_evaluation_graph, route_audit_decision, route_after_paper
 from tests.mock_data import MOCK_STATE, INITIAL_INPUT_STATE
@@ -183,6 +184,8 @@ def test_route_audit_decision_retries_exhausted():
     assert route_audit_decision(state) == "evaluation_synthesis"
 
 
+@pytest.mark.deprecated
+@pytest.mark.skip(reason="deprecated: 외부 API 요청")
 def test_graph_end_to_end_execution():
     graph = build_evaluation_graph()
     final_state = graph.invoke(INITIAL_INPUT_STATE)
