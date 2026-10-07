@@ -184,7 +184,7 @@ TAVILY_API_KEY=
 
 | 환경 변수 | 필수 여부 | 기본/예시 값 | 설명 |
 | :--- | :---: | :--- | :--- |
-| `OPENAI_API_KEY` | 선택 (권장) | `sk-...` | **OpenAI API Key**: 2단계 Fast-Fail 검증 심사(`JudgeDecision` - `gpt-4o`), 최종 보고서 윤문(Polishing - `gpt-4o`), 리서치 쿼리 생성 등에 사용됩니다. (미설정 시 Rule-based Mock/Fallback 모드로 자동 전환) |
+| `OPENAI_API_KEY` | 선택 (권장) | `sk-...` | **OpenAI API Key**: 근거 검증 R5 Judge와 보고서 품질 평가 2단계 Judge(`gpt-4o`), 보고서 근거 문장 번역(`gpt-4o`), 리서치 질의 생성·요약·Claim 추출(`gpt-4o-mini`)에 사용됩니다. (미설정 시 Judge·번역 없이 규칙 기반 Fallback으로 동작) |
 | `LANGCHAIN_API_KEY` | 선택 | `lsv2_pt_...` | **LangSmith API Key**: LangGraph 멀티 에이전트 실행 흐름, 노드 간 State 전이 및 LLM 호출 트레이싱 모니터링에 사용됩니다. |
 | `LANGCHAIN_TRACING_V2` | 선택 | `true` | **LangSmith V2 트레이싱 활성화**: 실행 로그 및 그래프 트레이스를 LangSmith로 전송할지 여부 (`true` / `false`). |
 | `LANGCHAIN_ENDPOINT` | 선택 | `https://api.smith.langchain.com` | **LangSmith 엔드포인트 URL**: 트레이싱 데이터를 수신하는 LangSmith 서버 주소. |
