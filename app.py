@@ -1,6 +1,5 @@
 """app.py - Streamlit Interactive Dashboard for LangGraph Multi-Agent Evaluation"""
 import time
-import json
 import streamlit as st
 from pathlib import Path
 
@@ -82,7 +81,7 @@ if run_btn:
         status_box = st.status("파이프라인 실행 중...", expanded=True)
         with status_box:
             for chunk in graph.stream(INITIAL_INPUT_STATE, stream_mode="updates"):
-                for node_name, node_output in chunk.items():
+                for node_name in chunk:
                     step_count += 1
                     label = node_labels.get(node_name, f"노드 실행: {node_name}")
                     st.write(label)

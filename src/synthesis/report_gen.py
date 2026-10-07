@@ -118,12 +118,6 @@ def citation_author(source: dict, allow_publisher: bool = True) -> str:
     return citation_site_name(source) if source.get("source_type") == "web" else "기관 또는 작성자 미상"
 
 
-def domain_axis_value(domain: dict, field: str) -> str:
-    value = next((domain.get(key) for key in _DOMAIN_FIELD_ALIASES[field] if domain.get(key) is not None), None)
-    if not isinstance(value, dict): return str(value or "공개 근거 미확인").replace("corpus 내 근거 미확인", "공개 근거 미확인")
-    return "<br>".join(f"**{tech}**: {str(value.get(tech) or '공개 근거 미확인').replace('corpus 내 근거 미확인', '공개 근거 미확인')}" for tech in ("KIVI", "CXL-PNM"))
-
-
 _DOMAIN_FIELD_ALIASES = {
     "memory_footprint": ("memory_footprint",),
     "bandwidth_transfer": ("bandwidth_transfer",),

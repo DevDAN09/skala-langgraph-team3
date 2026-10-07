@@ -1,11 +1,11 @@
 """src/research/market.py - Market research node: SW vs HW adoption/ecosystem/barrier evidence via Tavily."""
 from src.state import OverallState, Claim, Evidence, Source
 from src.research.client import (
+    build_source,
     search_pair,
     classify_tier,
     infer_kind,
     rank_results,
-    resolve_source_id,
     rewrite_query,
     summarize_snippet,
     vendor_label,
@@ -112,23 +112,6 @@ MAT_A_PLAN = [
 ]
 
 
-def _build_source(url: str, title: str, date: str, tier: str, proposed_id: str, sources_pool: list[Source]):
-    """URL 중복이면 기존 source_id를 재사용(신규 Source 미생성), 아니면 새 Source를 만든다."""
-    resolved_id = resolve_source_id(url, sources_pool, proposed_id)
-    if resolved_id != proposed_id:
-        return resolved_id, None
-    new_source: Source = {
-        "source_id": proposed_id,
-        "title": title or "Untitled",
-        "publisher": vendor_label(url) or "Web",
-        "date": date or "n.d.",
-        "url": url,
-        "source_type": "web",
-        "source_tier": tier,
-    }
-    return proposed_id, new_source
-
-
 def _market_search_pair(support_query: str, counter_query: str) -> tuple[dict, dict | None]:
     """market 쿼리 전용 search_pair 래퍼. 채택/배포 현황처럼 시의성이 중요한 축이라
     최근 1년(time_range="year") 콘텐츠로 좁혀 오래된 정보를 걸러낸다."""
@@ -193,7 +176,7 @@ def _run_market_query(
     top, snippet_text, statement = _select_evidence(support_results, focus, exclude_urls)
     url = top.get("url", "")
     tier = classify_tier(url)
-    resolved_src_id, new_src = _build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
+    resolved_src_id, new_src = build_source(url, top.get("title", ""), top.get("published_date", ""), tier, src_id, sources_pool)
     if new_src:
         new_sources.append(new_src)
 
@@ -213,7 +196,7 @@ def _run_market_query(
         c_url = c_top.get("url", "")
         c_tier = classify_tier(c_url)
         c_ev_id, c_src_id = f"{ev_id}-C", f"{src_id}-C"
-        resolved_c_src_id, new_c_src = _build_source(
+        resolved_c_src_id, new_c_src = build_source(
             c_url, c_top.get("title", ""), c_top.get("published_date", ""), c_tier, c_src_id, sources_pool + new_sources
         )
         if new_c_src:
@@ -311,7 +294,7 @@ def _handle_retry(claim_id: str, action: str | None, state: OverallState, source
         )
         c_url = c_top.get("url", "")
         c_ev_id, c_src_id = f"EV-{claim_id}-C", f"SRC-{claim_id}-C"
-        resolved_c_src_id, new_c_src = _build_source(
+        resolved_c_src_id, new_c_src = build_source(
             c_url, c_top.get("title", ""), c_top.get("published_date", ""), classify_tier(c_url), c_src_id, sources_pool
         )
         new_sources = [new_c_src] if new_c_src else []
