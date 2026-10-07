@@ -12,6 +12,16 @@ def test_graph_compilation_includes_supervisor_and_quality_gate():
             "evaluation_synthesis", "report_generation", "quality_eval"} <= set(graph.nodes)
 
 
+def test_compiled_topology_routes_research_only_through_supervisor():
+    edges = {(edge.source, edge.target) for edge in build_evaluation_graph().get_graph().edges}
+    research = {"paper_analysis", "market_research", "stakeholder_research"}
+    assert ("__start__", "supervisor") in edges
+    assert {(agent, "supervisor") for agent in research} <= edges
+    assert not {(source, target) for source, target in edges if source in research and target in research}
+    assert ("evaluation_synthesis", "report_generation") in edges
+    assert ("report_generation", "quality_eval") in edges
+
+
 def test_supervisor_selects_an_initial_research_agent():
     result = supervisor_node(INITIAL_INPUT_STATE)
     assert result["next_agent"] in {"paper_analysis", "market_research"}
@@ -70,6 +80,32 @@ def test_quality_reference_and_neutrality_rules():
     assert quality_evaluation_node({**base, "report": "KIVI를 추천한다"})["quality"]["scores"]["neutrality"] is False
 
 
+def test_quality_bias_control_requires_diverse_sources_for_multiple_external_claims():
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [claim for claim in MOCK_STATE["claims"] if claim["id"] in {"MKT-01", "MKT-02"}]
+    evidence = [item for item in MOCK_STATE["evidence"] if item["evidence_id"] in {"EV-MKT-01", "EV-MKT-02"}]
+    evidence[1] = {**evidence[1], "source_id": "SRC-MKT-01"}
+    result = quality_evaluation_node({**MOCK_STATE, "claims": claims, "evidence": evidence, "sources": [MOCK_STATE["sources"][2]], "report": "# SUMMARY\n# REFERENCE"})["quality"]
+    assert result["scores"]["bias_control"] is False
+
+
+def test_quality_bias_control_allows_diverse_or_single_external_claims_without_counter_evidence():
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [claim for claim in MOCK_STATE["claims"] if claim["id"] in {"MKT-01", "MKT-02"}]
+    evidence = [item for item in MOCK_STATE["evidence"] if item["evidence_id"] in {"EV-MKT-01", "EV-MKT-02"}]
+    sources = [item for item in MOCK_STATE["sources"] if item["source_id"] in {"SRC-MKT-01", "SRC-MKT-02"}]
+    state = {**MOCK_STATE, "claims": claims, "evidence": evidence, "sources": sources, "report": "# SUMMARY\n# REFERENCE"}
+    assert quality_evaluation_node(state)["quality"]["scores"]["bias_control"] is True
+    assert quality_evaluation_node({**state, "claims": claims[:1]})["quality"]["scores"]["bias_control"] is True
+
+
+def test_quality_bias_control_does_not_require_counter_search_for_paper_claims():
+    from src.synthesis.quality import quality_evaluation_node
+    claim = next(claim for claim in MOCK_STATE["claims"] if claim["id"] == "DOM-01")
+    result = quality_evaluation_node({**MOCK_STATE, "claims": [claim], "report": "# SUMMARY\n# REFERENCE"})["quality"]
+    assert result["scores"]["bias_control"] is True
+
+
 def test_supervisor_audits_once_per_research_step(monkeypatch):
     import src.supervisor as supervisor
     calls = []
@@ -88,6 +124,42 @@ def test_worker_error_isolated_and_returns_to_supervisor(monkeypatch):
     assert "paper: boom" in result["last_error"]
 
 
+def test_worker_repeated_error_becomes_failed_without_further_retry():
+    import src.graph as graph_module
+    wrapped = graph_module._supervised(lambda state: (_ for _ in ()).throw(RuntimeError("boom")), "paper")
+    first = wrapped(INITIAL_INPUT_STATE)
+    second = wrapped({**INITIAL_INPUT_STATE, **first})
+    assert second["node_status"]["paper"] == "failed"
+    assert second["node_attempts"]["paper"] == 2
+
+
+def test_supervisor_terminalizes_only_after_second_retry_returns_and_fails(monkeypatch):
+    import src.supervisor as supervisor
+    issue = {"claim_id": "DOM-01", "rule": "R1", "issue": "", "target_agent": "paper", "action": "search_evidence"}
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": [issue]}})
+    state = {**MOCK_STATE, "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}}
+    retry_one = supervisor_node(state)
+    assert retry_one["retry_count"]["paper"] == 1
+    retry_two = supervisor_node({**state, **retry_one, "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}})
+    assert retry_two["retry_count"]["paper"] == 2
+    assert "claims" not in retry_two or all(claim["status"] == "flagged" for claim in retry_two["claims"])
+    final = supervisor_node({**state, **retry_two, "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}})
+    assert final["next_agent"] == "evaluation_synthesis"
+    assert next(claim for claim in final["claims"] if claim["id"] == "DOM-01")["status"] == "insufficient"
+
+
+def test_second_retry_can_restore_ok_before_terminalization(monkeypatch):
+    import src.supervisor as supervisor
+    issue = {"claim_id": "DOM-01", "rule": "R1", "issue": "", "target_agent": "paper", "action": "search_evidence"}
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": [issue]} if state["retry_count"]["paper"] < 2 else []})
+    state = {**MOCK_STATE, "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"}}
+    retry_one = supervisor_node(state)
+    retry_two = supervisor_node({**state, **retry_one, "node_status": state["node_status"]})
+    resolved_claims = [{**claim, "status": "ok"} if claim["id"] == "DOM-01" else claim for claim in MOCK_STATE["claims"]]
+    final = supervisor_node({**state, **retry_two, "claims": resolved_claims, "node_status": state["node_status"]})
+    assert next(claim for claim in final["claims"] if claim["id"] == "DOM-01")["status"] == "ok"
+
+
 def test_compiled_graph_mocked_e2e(monkeypatch):
     import src.graph as graph_module
     calls = []
@@ -103,6 +175,22 @@ def test_compiled_graph_mocked_e2e(monkeypatch):
     assert {"paper_analysis", "market_research", "stakeholder_research", "evaluation_synthesis", "report_generation", "quality_eval"} <= set(calls)
     assert final_state["report"] and final_state["quality"]["attempts"] == 1
     assert final_state["step_count"] <= MAX_STEPS and final_state["next_agent"] == "evaluation_synthesis"
+
+
+def test_compiled_graph_quality_research_rework_returns_through_supervisor(monkeypatch):
+    import src.graph as graph_module
+    calls = []
+    monkeypatch.setattr(graph_module, "paper_analysis_node", lambda state: calls.append("paper") or {})
+    monkeypatch.setattr(graph_module, "market_research_node", lambda state: calls.append("market") or {})
+    monkeypatch.setattr(graph_module, "stakeholder_research_node", lambda state: calls.append("stakeholder") or {})
+    monkeypatch.setattr(graph_module, "evaluation_synthesis_node", lambda state: calls.append("synthesis") or {})
+    monkeypatch.setattr(graph_module, "report_generation_node", lambda state: calls.append("report") or {"report": "# SUMMARY\n# REFERENCE"})
+    outcomes = iter(({"quality": {"passed": False, "failures": ["groundedness"], "rework_targets": ["paper"], "attempts": 1}}, {"quality": {"passed": True, "failures": [], "attempts": 2}}))
+    monkeypatch.setattr(graph_module, "quality_evaluation_node", lambda state: calls.append("quality") or next(outcomes))
+    final = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
+    assert calls.count("paper") == 2 and calls.count("quality") == 2
+    assert calls.index("synthesis") < calls.index("report") < calls.index("quality")
+    assert final["quality"]["passed"] is True and final["step_count"] <= MAX_STEPS
 
 
 def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():
