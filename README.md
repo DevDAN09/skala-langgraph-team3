@@ -32,10 +32,11 @@
   | :--- | :--- |
   | Groundedness | 검증된(`ok`) Claim 전부가 Evidence → Source로 연결되는가 |
   | 중립성 | 보고서에 우열·추천 표현(예: "~를 추천한다", "~가 더 우수하다", "the winner is")이 없는가 |
-  | 편향 통제 | 외부 조사 Claim(market·stakeholder·MAT-A) 전부 반대 쿼리를 수행했는가, 같은 관점의 검증 Claim이 2건 이상이면 출처가 2개 이상인가 |
-  | 관점 커버리지 | 기술별로 성숙도 ≥1, 시장성 ≥1, 도메인 ≥3 검증 Claim, 이해관계자 4대 Actor별 ≥1 검증 Claim. 재수집 한도를 다 쓰고 6장 Evidence Gap에 공개한 칸은 통과 |
+  | 편향 통제 | 외부 조사(market·stakeholder·MAT-A)에서 같은 관점의 검증 Claim이 2건 이상이면 출처가 2개 이상인가. 반대 쿼리 수행 여부는 Supervisor 근거 검증 R3가 보장하므로 다시 검사하지 않는다 |
+  | 관점 커버리지 | 기술별로 성숙도 ≥1, 시장성 ≥1, 도메인 ≥3 검증 Claim, 이해관계자 4대 Actor별 ≥1 검증 Claim. 그 칸의 Claim을 만드는 에이전트(예: MAT-A는 market, MAT-R·DOM은 paper)가 재수집 한도를 다 썼고 6장 Evidence Gap에 공개했으면 통과 |
   | 필수 목차 | `SUMMARY`, `REFERENCE` 포함 |
-  - 근거 부족(Groundedness·편향·커버리지)이면 재작업 대상 관점과 함께 Supervisor로, 서술 문제(중립성·목차)만이면 `report_generation`으로 돌아간다.
+  - 재수집할 수 있는 대상(재시도 한도가 남은 에이전트)이 있으면 Supervisor로 보낸다. 근거 부족인데 대상이 모두 한도에 도달했으면 다시 돌아도 결과가 같으므로 종료하고, 서술 문제(중립성·목차)만 있으면 `report_generation`으로 돌아간다.
+  - `main.py`는 최종 품질 평가 결과(통과 여부·미달 항목·미충족 칸·6장 공개 칸)를 출력하고 `final_quality_result.json`으로 저장한다.
 - **확증 편향 방지 전략** :
   - 모든 외부 조사 항목에 지지 쿼리와 반대 쿼리를 병행(R3). 반대 근거가 없으면 `counter-evidence not found`로 기록하고 상충을 만들지 않음
   - 출처 Tier(T1~T4) 부여, T4(커뮤니티·개인 블로그) 단독 근거 금지(R2)
@@ -90,7 +91,7 @@
 | `supervisor → paper_analysis / market_research / stakeholder_research / evaluation_synthesis` | 조건부 (`route_supervisor`) | Supervisor가 State로 선택한 `next_agent` |
 | `paper_analysis / market_research / stakeholder_research → supervisor` | 고정 | Research Agent는 항상 Supervisor로 복귀 (Agent 간 직접 통신 없음) |
 | `evaluation_synthesis → report_generation → quality_eval` | 고정 | — |
-| `quality_eval → supervisor / report_generation / END` | 조건부 (`route_quality`) | 품질 판정 결과: 근거 부족 → Supervisor, 서술 문제 → 재작성, 통과 또는 평가 2회 → 종료 |
+| `quality_eval → supervisor / report_generation / END` | 조건부 (`route_quality`) | 품질 판정 결과: 재수집 가능 대상 있음 → Supervisor, 서술 문제만 → 재작성, 통과·평가 2회·재수집 대상 한도 소진 → 종료 |
 
 ### 데이터 흐름 (End-to-End Data Flow)
 파이프라인은 24개 State field(Payload 13 + Control 11)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
@@ -103,7 +104,7 @@
 | **Step 4<br/>Supervisor audit & routing** | `supervisor` (A/D) | `claims`, `evidence`, `sources`, control State | • R1~R5 audit 후 current State에서 한 Agent만 선택<br/>• 실제 retry dispatch만 count하며 market refresh는 stakeholder를 stale 처리 | `audit.issues`, `next_agent`, `retry_count`, `node_status` |
 | **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
 | **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • 검증된 Claim으로 보고서 view 구성, 본문 인용 번호와 REFERENCE를 일치시킴<br/>• LLM(`gpt-4o`)은 근거 문장 필드만 번역, Jinja2 템플릿이 최종 마크다운 렌더링<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
-| **Step 7<br/>보고서 품질 평가** | `quality_eval` | `report`, `claims`, `evidence`, `sources`, `retry_count` | • Groundedness·중립성·편향 통제·관점 커버리지·필수 목차 판정<br/>• 근거 부족 → Supervisor(재작업 대상 관점), 서술 문제 → `report_generation`, 통과 또는 2회 평가 → 종료 | `quality` |
+| **Step 7<br/>보고서 품질 평가** | `quality_eval` | `report`, `claims`, `evidence`, `sources`, `retry_count` | • Groundedness·중립성·편향 통제·관점 커버리지·필수 목차 판정<br/>• 재수집 가능 대상 있음 → Supervisor, 서술 문제만 → `report_generation`, 통과·2회 평가·재수집 대상 한도 소진 → 종료 | `quality` → `final_quality_result.json` |
 
 
 ## State Schema
@@ -155,6 +156,7 @@
 ├── main.py                  # 실행 스크립트 (non-interactive)
 ├── app.py                   # Streamlit 대시보드
 ├── final_evaluation_report.md / .pdf   # 평가 결과 (실행 시 생성, git 제외)
+├── final_quality_result.json           # 최종 품질 평가 결과 (실행 시 생성, git 제외)
 └── README.md
 ```
 
@@ -203,7 +205,7 @@ pytest tests/ -v
 
 ### 3. 실행
 ```bash
-python main.py                  # 평가 파이프라인 실행 → final_evaluation_report.md / .pdf 생성
+python main.py                  # 평가 파이프라인 실행 → final_evaluation_report.md / .pdf, final_quality_result.json 생성
 ```
 
 대시보드(선택)는 `streamlit`이 `requirements.txt`에 포함되어 있지 않아 별도 설치 후 실행한다.
