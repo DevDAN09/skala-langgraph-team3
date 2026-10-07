@@ -1,5 +1,5 @@
 # Subject
-본 프로젝트는 KV cache 최적화 기술을 소프트웨어(SW)와 하드웨어(HW) 두 진영에서 하나씩 선정하여, 기술 성숙도(TRL)·시장성·이해관계자·도메인 적합성 관점에서 평가하는 Agentic RAG 기반 멀티 에이전트 시스템을 개발하는 프로젝트이다.
+본 프로젝트는 KV cache 최적화 기술을 소프트웨어(SW)와 하드웨어(HW) 두 진영에서 하나씩 선정하여, 기술 성숙도(TRL)·시장성·이해관계자·도메인 적합성 관점에서 평가하는 **Supervisor 패턴** 기반 멀티 에이전트 시스템을 LangGraph로 설계·개발하는 프로젝트이다.
 
 > SKALA 4기 판교 9반 · 팀 3 · 평가 도메인: **클라우드 LLM 서빙**  
 > 기술 비교: **KIVI** (SW, 2-bit KV 양자화) vs **CXL-PNM** (HW, CXL 메모리 내 근접 연산)  
@@ -25,8 +25,17 @@
 - **외부 웹 조사** : Tavily로 시장성(채택·배포·생태계·도입 장벽)과 이해관계자(4대 Actor × 기술 계열)를 조사한다. 시장성 결과는 State에 저장되며 Supervisor가 dependency를 확인한 뒤 이해관계자를 선택한다.
 - **Supervisor 기반 근거 검증** : Supervisor가 R1~R5 감사 결과, 재시도 상태, 시장→이해관계자 의존성을 보고 다음 Research Agent를 동적으로 선택(관점별 최대 2회, 전체 최대 10 step)
 - **TRL 이원화** : 개별 기술 성숙도(`tech_trl`)와 기술 계열 생태계 성숙도(`family_trl`)를 분리 산출
-- **보고서 자동 생성** : Jinja2 골격 + Strict Grounding Polishing → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
-- **보고서 품질 평가** : `report_generation` 뒤 `quality_eval`이 Groundedness·중립성·편향 통제·관점 커버리지를 평가한다. research 원인은 Supervisor로, writing 원인은 `report_generation`으로 loop한다.
+- **보고서 자동 생성** : 검증된 Claim으로 보고서 view를 만들고 Jinja2 템플릿으로 결정적으로 렌더링한다. LLM(`gpt-4o`)은 근거 문장 필드만 한국어로 번역하고, 인용 번호·Claim ID·수치 표기는 템플릿이 결정한다 → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
+- **보고서 품질 평가** : `report_generation` 뒤 `quality_eval`이 규칙 기반(결정적, LLM 미사용)으로 4개 항목을 판정하고, 미달이면 원인에 따라 loop한다 (최대 2회 평가).
+
+  | 항목 | 판정 기준 (`src/synthesis/quality.py`) |
+  | :--- | :--- |
+  | Groundedness | 검증된(`ok`) Claim 전부가 Evidence → Source로 연결되는가 |
+  | 중립성 | 보고서에 우열·추천 표현(예: "~를 추천한다", "~가 더 우수하다", "the winner is")이 없는가 |
+  | 편향 통제 | 외부 조사 Claim(market·stakeholder·MAT-A) 전부 반대 쿼리를 수행했는가, 같은 관점의 검증 Claim이 2건 이상이면 출처가 2개 이상인가 |
+  | 관점 커버리지 | 기술별로 성숙도 ≥1, 시장성 ≥1, 도메인 ≥3 검증 Claim, 이해관계자 4대 Actor별 ≥1 검증 Claim. 재수집 한도를 다 쓰고 6장 Evidence Gap에 공개한 칸은 통과 |
+  | 필수 목차 | `SUMMARY`, `REFERENCE` 포함 |
+  - 근거 부족(Groundedness·편향·커버리지)이면 재작업 대상 관점과 함께 Supervisor로, 서술 문제(중립성·목차)만이면 `report_generation`으로 돌아간다.
 - **확증 편향 방지 전략** :
   - 모든 외부 조사 항목에 지지 쿼리와 반대 쿼리를 병행(R3). 반대 근거가 없으면 `counter-evidence not found`로 기록하고 상충을 만들지 않음
   - 출처 Tier(T1~T4) 부여, T4(커뮤니티·개인 블로그) 단독 근거 금지(R2)
@@ -39,8 +48,8 @@
 | 구분 | 사용 기술 |
 | :--- | :--- |
 | Framework | LangGraph 1.2.12 (Python 3.11, uv) |
-| LLM / Generator | `gpt-4o-mini` (질의·요약·Claim 추출), `gpt-4o` (보고서 Polishing) |
-| LLM / Judge | `gpt-4o` (R5 LLM-as-a-Judge, Pydantic Structured Output) |
+| LLM / Generator | `gpt-4o-mini` (질의 생성·Query Rewrite·웹 근거 요약·Claim 추출), `gpt-4o` (보고서 근거 문장 번역) |
+| LLM / Judge | `gpt-4o` (근거 검증 R5: Claim–Evidence 일치 판정, Pydantic Structured Output). 보고서 품질 평가는 규칙 기반이라 LLM을 쓰지 않는다 |
 | Retrieval | FAISS (로컬 인덱스, top-k 5, `tech` 메타데이터 필터) — **Hit@5 0.80, MRR 0.596** (코퍼스 기반 20개 질의) |
 | Embedding | `intfloat/e5-small-v2` (비교: `BAAI/bge-small-en-v1.5` Hit@5 0.75, MRR 0.548 → Hit@5 ≥ 0.8 기준으로 채택) |
 | Web Search | Tavily Search |
@@ -64,31 +73,27 @@
 | `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
 | `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | `market`, `claims(MKT-*, MAT-A*)` |
 | `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | `stakeholder`, `claims(STK-01~08)` |
-| `supervisor` | A/D | 내부 evidence-audit(R1~R5), State 기반 다음 Agent 선택, 실제 재작업 dispatch 때만 retry 증가 | `audit`, `next_agent`, `retry_count`, `node_status` |
+| `supervisor` | A/D | 조정 계층. 새 수집 결과가 있으면 내부에서 근거 검증(R1~R4 규칙 → R5 Judge)을 실행하고, audit issue·품질 재작업 대상·`node_status`·의존성으로 다음 Research Agent 1개 또는 평가 종합을 선택한다. 실제 재작업 dispatch 때만 `retry_count` 증가 | `audit`, `claims[*].status`, `next_agent`, `retry_count`, `step_count`, `last_decision` |
 | `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
-| `report_generation` | E | Jinja2 골격 조립 → Strict Grounding Polishing | `report` |
+| `report_generation` | E | 검증된 Claim으로 보고서 view 구성 → 근거 문장 필드 번역 → Jinja2 렌더링 | `report` |
+| `quality_eval` | E | 보고서 품질 평가(Groundedness·중립성·편향 통제·관점 커버리지·필수 목차), 미달 원인별 재작업 대상 산출 | `quality` |
 
 
 ## Architecture
-```mermaid
-flowchart TD
-    START([START]) --> supervisor["supervisor (A/D)<br/>audit · coverage · routing"]
-    supervisor -->|dynamic| paper_analysis["paper_analysis (B)<br/>Agentic RAG"]
-    supervisor -->|dynamic| market_research["market_research (C)<br/>시장성 조사"]
-    supervisor -->|dynamic / dependency satisfied| stakeholder_research["stakeholder_research (C)<br/>이해관계자"]
-    paper_analysis --> supervisor
-    market_research --> supervisor
-    stakeholder_research --> supervisor
-    supervisor -->|sufficient / limit| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
-    evaluation_synthesis --> report_generation["report_generation (E)<br/>보고서 생성"]
-    report_generation --> quality_eval["quality_eval<br/>groundedness · neutrality<br/>bias control · coverage"]
-    quality_eval -->|research gap| supervisor
-    quality_eval -->|writing gap| report_generation
-    quality_eval -->|pass / rewrite limit| END([END])
-```
+![Architecture](docs/images/architecture.png)
+
+> `build_evaluation_graph().get_graph().draw_mermaid_png()`로 실제 코드에서 생성한 그래프 (`docs/images/architecture.png`). 실선은 고정 엣지, 점선은 조건부 분기다.
+
+| 엣지 | 종류 | 결정 주체 |
+| :--- | :--- | :--- |
+| `START → supervisor` | 고정 | — |
+| `supervisor → paper_analysis / market_research / stakeholder_research / evaluation_synthesis` | 조건부 (`route_supervisor`) | Supervisor가 State로 선택한 `next_agent` |
+| `paper_analysis / market_research / stakeholder_research → supervisor` | 고정 | Research Agent는 항상 Supervisor로 복귀 (Agent 간 직접 통신 없음) |
+| `evaluation_synthesis → report_generation → quality_eval` | 고정 | — |
+| `quality_eval → supervisor / report_generation / END` | 조건부 (`route_quality`) | 품질 판정 결과: 근거 부족 → Supervisor, 서술 문제 → 재작성, 통과 또는 평가 2회 → 종료 |
 
 ### 데이터 흐름 (End-to-End Data Flow)
-파이프라인은 24개 State field(12 payload + 12 control)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
+파이프라인은 24개 State field(Payload 13 + Control 11)를 사용하며, Research Agent 간 직접 통신 없이 Supervisor를 통해서만 제어된다.
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
@@ -97,59 +102,58 @@ flowchart TD
 | **Step 3<br/>시장성 및 이해관계자** | `market_research` 또는<br/>`stakeholder_research` (C) | `selected`<br/>(stakeholder는 `market` State 의존) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 시장 결과 저장 뒤 Supervisor가 dependency를 확인하여 이해관계자 작업을 선택 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
 | **Step 4<br/>Supervisor audit & routing** | `supervisor` (A/D) | `claims`, `evidence`, `sources`, control State | • R1~R5 audit 후 current State에서 한 Agent만 선택<br/>• 실제 retry dispatch만 count하며 market refresh는 stakeholder를 stale 처리 | `audit.issues`, `next_agent`, `retry_count`, `node_status` |
 | **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
-| **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • Jinja2 템플릿 기반 마크다운 렌더링 및 인용 넘버링 연동<br/>• LLM(`gpt-4o`) 문체 정제 및 `final_evaluation_report.md` 생성<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 자동 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
+| **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • 검증된 Claim으로 보고서 view 구성, 본문 인용 번호와 REFERENCE를 일치시킴<br/>• LLM(`gpt-4o`)은 근거 문장 필드만 번역, Jinja2 템플릿이 최종 마크다운 렌더링<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
+| **Step 7<br/>보고서 품질 평가** | `quality_eval` | `report`, `claims`, `evidence`, `sources`, `retry_count` | • Groundedness·중립성·편향 통제·관점 커버리지·필수 목차 판정<br/>• 근거 부족 → Supervisor(재작업 대상 관점), 서술 문제 → `report_generation`, 통과 또는 2회 평가 → 종료 | `quality` |
 
-### State 계약 및 충돌 방지 원칙 (Reducer)
-- **Control/Payload 분리**: Research payload와 `next_agent`/`node_status`/`step_count`/`quality` control State를 분리한다. `MAX_STEPS=10`, quality attempt limit로 종료를 보장한다.
 
-### State Schema
+## State Schema
+`src/state.py`의 `OverallState`는 `PayloadState`(13)와 `ControlState`(11)를 결합한 24개 field다.
 
-1. **제어 vs 페이로드 분리**: `PayloadState`(12)는 `selected`, `tech_sw`, `tech_hw`, `domain`, `market`, `stakeholder`, `claims`, `evidence`, `sources`, `trl`, `synthesis`, `report`이다. `ControlState`(12)는 `audit`, `retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality`, `last_audited_step`, `last_decision`, `last_error`, `last_errors`, `node_attempts`이다. `OverallState`는 두 State 계약을 결합한다.
-2. **관측성 위치**: trace 본문 전체는 State에 저장하지 않는다. 실행 UUID `trace_id`로 LangSmith external trace와 연결하고, `last_decision`에는 최신 routing decision/reason만 최소 저장한다. 전체 결정 이력은 LangSmith trace에서 확인한다.
-3. **지속성 비용**: 대용량 log/trace body를 State에 누적하지 않는다. `claims`/`evidence`/`sources`는 reducer가 최종 구조화 결과만 보존하며 append-only log를 만들지 않는다.
-4. **상관**: `make_initial_state()`가 실행마다 UUID `trace_id`를 생성해 State와 external trace의 correlation key로 사용한다.
-5. **재개/복구**: `node_status`(`pending`/`complete`/`stale`/`failed`), `retry_count`, `node_attempts`, `last_error`, `last_errors`, `step_count`로 중단·실패·재시도 상태를 판단한다. `node_attempts`는 성공·실패를 포함한 실제 실행 횟수이며, worker 첫 실패는 `pending`, 반복 실패는 `failed`이다. 실행 그래프는 in-process checkpoint를 지원한다.
-6. **동시 처리**: Supervisor는 한 번에 Research Agent 하나만 dispatch해 control overwrite를 제거한다. `claims`/`evidence`/`sources`는 upsert/union reducer를 유지한다. market → stakeholder는 direct edge가 아닌 State dependency다.
-7. **종료 보장**: `RETRY_LIMIT=2`, `MAX_STEPS=10`, `MAX_QUALITY_ATTEMPTS=2`와 worker failure fallback이 모든 feedback loop를 제한한다. 두 번째 실제 rework가 반환된 뒤에도 audit issue가 남을 때만 Claim을 terminal(`insufficient`/`rejected`)로 확정한다.
-- **멱등적 Reducer 적용**:
-  - `claims`: Claim ID 기준 멱등 업데이트 (`upsert_claims`)로 재시도 시 기존 Claim 정정
-  - `evidence`: Evidence ID 기준 멱등 업데이트 (`upsert_evidence`)
-  - `sources`: URL 기준 정규화 및 중복 제거 결합 (`union_sources`)
-
+- **제어 vs 페이로드 분리** : `PayloadState`는 Agent가 만든 작업 결과(`selected`, `tech_sw`, `tech_hw`, `domain`, `market`, `stakeholder`, `claims`, `evidence`, `sources`, `audit`, `trl`, `synthesis`, `report`)이고, `ControlState`는 Supervisor 조정·종료·재개에 필요한 최소 상태(`retry_count`, `next_agent`, `node_status`, `step_count`, `trace_id`, `quality`, `last_audited_step`, `last_decision`, `last_error`, `last_errors`, `node_attempts`)다. 라우팅은 `audit.issues`, `quality.rework_targets`, `node_status`, `retry_count`만 읽는다.
+- **관측성 위치** : 결정 로그 본문은 State에 쌓지 않는다. State에는 최신 결정 `last_decision`(`next`, `reason`)만 덮어쓰고, 전체 결정 이력은 LangSmith trace에서 확인한다.
+- **지속성 비용** : 대용량 로그·검색 원문을 State에 누적하지 않는다. `claims`/`evidence`/`sources`는 ID·URL 기준 reducer로 최신 구조화 결과만 유지해, 재작업을 반복해도 checkpoint마다 무한히 늘지 않는다.
+- **상관** : `make_initial_state()`가 실행마다 UUID `trace_id`를 만들고, `main.py`가 이를 LangGraph `thread_id`로 전달해 State·checkpoint·LangSmith trace를 같은 키로 잇는다.
+- **재개/복구** : `node_status`(`pending`/`complete`/`stale`/`failed`), `node_attempts`, `last_error`/`last_errors`, `retry_count`, `step_count`, `last_audited_step`으로 중단·실패·재시도 상태를 판단한다. Worker 첫 실패는 `pending`으로 되돌려 1회 재시도하고, 반복 실패는 `failed`로 둔다. `main.py`는 `InMemorySaver` checkpointer로 실행한다.
+- **동시 처리** : Supervisor는 한 번에 Research Agent 하나만 dispatch해 제어 field의 동시 쓰기를 없앴다. 재작업으로 같은 Claim이 다시 들어와도 `upsert_claims`(Claim ID), `upsert_evidence`(Evidence ID), `union_sources`(Source ID·URL 중복 제거) reducer가 덮어써 오염을 막는다. market → stakeholder 의존은 엣지가 아니라 `node_status`로 표현하고, market 재작업 시 stakeholder를 `stale`로 바꿔 다시 수집한다.
+- **종료 보장** : 관점별 재작업 `RETRY_LIMIT=2`, Research dispatch `MAX_STEPS=10`, 보고서 품질 평가 `MAX_QUALITY_ATTEMPTS=2`, Worker 실패 1회 재시도로 모든 루프를 제한한다. 마지막 재작업 후에도 검증 이슈가 남은 Claim만 `insufficient`/`rejected`로 확정해 6장 Evidence Gap에 공개한다.
 
 ## Evaluation Results
-최종 평가 보고서(`final_evaluation_report.pdf`, 2026-09-22 실행 결과) 기준이다. LLM·웹 검색 결과에 따라 실행마다 일부 Claim은 달라질 수 있다.
+최종 평가 보고서(`final_evaluation_report.pdf`, 2026-10-07 실행 결과) 기준이다. LLM·웹 검색 결과에 따라 실행마다 일부 Claim은 달라질 수 있다.
 
 ### TRL 추정 결과 (TRL 이원화)
 | 기술 | 개별 기술 성숙도 (`tech_trl`) | 계열 생태계 성숙도 (`family_trl`) | 신뢰도 | 근거 Claim |
 | :--- | :---: | :---: | :---: | :--- |
-| **KIVI** (SW) | 5-6 | 7-8 | high | 연구: DOM-05, DOM-09, DOM-11 / 채택: MKT-02 |
-| **CXL-PNM** (HW) | 3-4 | 7-8 | high | 연구: MAT-A02, DOM-02, DOM-04, DOM-06, DOM-10, DOM-12, MAT-R02 / 채택: MKT-03, MKT-04, MKT-06 |
+| **KIVI** (SW) | 5-6 | 7-8 | high | 연구: DOM-01, DOM-05, DOM-09, DOM-11, MAT-R01 / 채택: MKT-02 |
+| **CXL-PNM** (HW) | 3-4 | 7-8 | high | 연구: DOM-02, DOM-04, DOM-06, DOM-10, DOM-12, MAT-R02 / 채택: MKT-03, MKT-04, MKT-06, MAT-A02 |
+
+> 판정 규칙(`src/synthesis/evaluator.py`): 연구 근거(domain·MAT-R)에 `fact`가 있으면 `tech_trl` 5-6, `simulation`만 있으면 3-4. 채택 근거(market·MAT-A)에 `fact`가 있으면 `family_trl` 7-8, `vendor_claim`만 있으면 6-7.
 
 - 두 기술 모두 계열 생태계(KV 양자화 / CXL 메모리 확장)는 7-8 수준이지만, 개별 기술은 KIVI가 오픈소스 구현 단계(5-6), CXL-PNM이 시뮬레이션 연구 단계(3-4)로 **개별 기술과 계열 사이의 성숙도 간극**이 드러난다.
 
 ## Directory Structure
 ```
 ├── data/
-│   ├── papers/            # 문서 풀: KIVI·CXL-PNM 논문 PDF
-│   ├── fonts/             # PDF 보고서용 한글 폰트
-│   ├── eval_queries.json  # 임베딩 벤치마크 질의 20개
-│   └── faiss_index/       # FAISS 로컬 인덱스 (indexer.py로 생성, git 제외)
-├── src/                   # Agent 모듈
-│   ├── state.py           # OverallState 23개 field + Custom Reducer
-│   ├── graph.py           # LangGraph StateGraph 조립 · 조건부 라우터
-│   ├── config.py          # 모델명 · 경로 · API 키
-│   ├── rag/               # [B] indexer · benchmark · agentic_rag (paper_analysis)
-│   ├── research/          # [C] client · market · stakeholder
-│   ├── audit/             # [D] rules(R1~R4) · judge(R5) · auditor (evidence_audit)
-│   └── synthesis/         # [E] evaluator · report_gen · pdf_export
-│       └── templates/     # 보고서 템플릿 (report.md.j2)
-├── tests/                 # 모듈별 단위 테스트 + mock_data.py
-├── tasks/                 # 역할별 개발 가이드 · 공통 규칙
-├── docs/                  # 구현 계획·명세 문서
+│   ├── papers/              # 문서 풀: KIVI·CXL-PNM 논문 PDF
+│   ├── fonts/               # PDF 보고서용 한글 폰트
+│   ├── eval_queries.json    # 임베딩 벤치마크 질의 20개
+│   └── faiss_index/         # FAISS 로컬 인덱스 (indexer.py로 생성, git 제외)
+├── src/
+│   ├── supervisor.py        # [조정 계층] Supervisor: 근거 검증 호출 · State 기반 다음 Agent 선택
+│   ├── graph.py             # StateGraph 조립 (Supervisor 허브 · 품질 평가 loop)
+│   ├── state.py             # OverallState 24개 field (Payload 13 + Control 11) + Custom Reducer
+│   ├── config.py            # 모델명 · 경로 · API 키
+│   ├── rag/                 # [B] indexer · benchmark · agentic_rag (paper_analysis)
+│   ├── research/            # [C] client · market · stakeholder
+│   ├── audit/               # [D] 근거 검증 로직 rules(R1~R4) · judge(R5) · auditor (Supervisor 내부에서 호출)
+│   └── synthesis/           # [E] evaluator · report_gen · quality(quality_eval) · pdf_export
+│       └── templates/       # 보고서 템플릿 (report.md.j2)
+├── tests/                   # 모듈별 단위 테스트 + mock_data.py (외부 API mock)
+├── scripts/                 # OpenWiki 리포트 생성 스크립트
+├── tasks/                   # 역할별 개발 가이드 · 공통 규칙 · 코드 리뷰 프롬프트
+├── docs/                    # 구현 계획 · 명세 · 아키텍처 이미지(images/)
 ├── KV_cache_최적화_기술_평가_설계서_최종.md   # 설계서
-├── main.py                # 실행 스크립트 (non-interactive)
-├── app.py                 # Streamlit 대시보드
+├── main.py                  # 실행 스크립트 (non-interactive)
+├── app.py                   # Streamlit 대시보드
 ├── final_evaluation_report.md / .pdf   # 평가 결과 (실행 시 생성, git 제외)
 └── README.md
 ```
@@ -187,7 +191,8 @@ TAVILY_API_KEY=
 
 - **Trace A (정상)**: `Supervisor → research agents → Supervisor → synthesis → report → quality pass` 순서, conditional routing·방문 순서·`trace_id`·최종 종료를 캡처한다.
 - **Trace B (재작업)**: `Supervisor → targeted research agent → Supervisor → audit issue → targeted rework → Supervisor → synthesis → report → quality` 순서와 retry/rework 또는 quality loop를 캡처한다.
-- 최종 실행 뒤 `final_evaluation_report.pdf`가 **10p 이하**이며 `SUMMARY`, `REFERENCE` 목차를 포함하는지 수동 확인한다.
+- 캡처 파일명은 순서대로 `tracing-1.png`, `tracing-2.png`, …로 저장한다 (긴 경로는 여러 장으로 나눔).
+- 최종 실행 뒤 `final_evaluation_report.pdf`가 **10p 이하**이며 `SUMMARY`, `REFERENCE` 목차를 포함하는지 확인한다.
 
 ### 2. 설치 및 테스트
 ```bash
@@ -217,12 +222,12 @@ python -m src.rag.benchmark     # 임베딩 모델 Hit@5 · MRR 측정
 ## Contributors
 | 이름 (가나다순) | 역할 | 담당 영역 | 주요 수행 내용 요약 (Summary) |
 | :--- | :---: | :--- | :--- |
-| **강건호** | 담당 D | 2단계 Fast-Fail 검증 엔진 (`src/audit/**`) | • **2단계 검증 파이프라인 구축**: 규칙 기반 4대 룰(형식·출처·신뢰도) + LLM 심사(`gpt-4o`)<br/>• **오류 피드백 및 라우팅**: 검증 미달 Claim 대상 피드백 생성 및 재시도(최대 2회) 라우팅 연계<br/>• **환각 차단**: 출처 누락 및 사실 왜곡을 필터링하여 보고서 신뢰도 확보 |
-| **김효민** | 담당 C | 이해관계자 리서치 엔진 (`src/research/stakeholder.py`) | • **4대 액터 분석**: 서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자별 다각적 영향도 분석<br/>• **구조화 데이터 생성**: 기술 계열별 Benefit·Concern·Barrier·Evidence 정밀 구조화<br/>• **이해관계자 Claim 도출**: STK-01~08 정량/정성 Claim 및 출처 연계 |
-| **윤영민** | 담당 A | 시스템 아키텍처 & LangGraph 오케스트레이션 (`src/state.py`, `src/graph.py`, `main.py`, `app.py`) | • **State-driven dynamic routing**: Supervisor가 audit·quality target·dependency로 다음 worker를 선택하고 targeted rework 수행<br/>• **23-field State contract**: payload/control 분리와 reducer로 충돌을 제어하고 `trace_id`/decision/fallback 상태를 기록<br/>• **termination/fallback control**: retry·step·quality 한도와 worker failure fallback, Streamlit·PDF 산출 파이프라인 구현 |
-| **전경호** | 담당 C | 외부 웹 시장성 조사 엔진 (`src/research/market.py`, `src/research/client.py`) | • **실시간 시장성 조사**: Tavily Search 연동을 통한 최신 시장 동향 및 도입 장벽 데이터 수집<br/>• **자연어 쿼리 최적화**: 기술별 세부 카테고리 질의 생성 및 시장성 Claim(MKT-01~06, MAT-A01~02) 정제<br/>• **안정성 보장**: API 실패 및 키 미제공 상황에 대응하는 견고한 Fallback 로직 구축 |
-| **정은희** | 담당 E | 다관점 종합 & 보고서 생성 파이프라인 (`src/synthesis/**`) | • **TRL 이원화 종합 평가**: 개별 기술 TRL과 계열 산업 TRL을 분리 분석하는 프레임워크 구축<br/>• **보고서 템플릿 엔진**: Jinja2 기반 마크다운 템플릿 설계, 본문 Citation 번호와 References 자동 연동<br/>• **보고서 정제 및 윤문**: LLM(`gpt-4o`)을 활용한 논리적 흐름 정제 및 문체 통일 |
-| **최지윤** | 담당 B | 논문 분석 Agentic RAG 및 임베딩 벤치마크 (`src/rag/**`) | • **Agentic RAG 구축**: KIVI 및 CXL-PNM 논문 원문 PDF 파싱, 청킹 및 FAISS 인덱싱<br/>• **임베딩 벤치마크**: 임베딩 모델 정량 평가(`bge-small-en-v1.5` vs `e5-small-v2`, 20개 질의) 수행 및 최적 모델(`intfloat/e5-small-v2`) 채택<br/>• **논문 근거 추출**: KIVI 2.6× peak memory 절감(모델 가중치 포함) 등 정량 지표 Claim 및 원문 Evidence 추출 |
+| **강건호** | 담당 D | 2단계 Fast-Fail 검증 엔진 (`src/audit/**`) | • **2단계 검증 파이프라인 구축**: 규칙 기반 4대 룰(형식·출처·신뢰도) + LLM 심사(`gpt-4o`)<br/>• **오류 피드백 및 라우팅**: 검증 미달 Claim 대상 피드백 생성 및 재시도(최대 2회) 라우팅 연계<br/>• **환각 차단**: 출처 누락 및 사실 왜곡을 필터링하여 보고서 신뢰도 확보<br/>• **[Agent 과제] 코드 정리·리뷰 기준**: AI 생성 코드 불필요 코드 정리와 코드 리뷰 프롬프트 작성(#62·#64), Supervisor 브랜치 잔여 코드 정리(#58) |
+| **김효민** | 담당 C | 이해관계자 리서치 엔진 (`src/research/stakeholder.py`) | • **4대 액터 분석**: 서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자별 다각적 영향도 분석<br/>• **구조화 데이터 생성**: 기술 계열별 Benefit·Concern·Barrier·Evidence 정밀 구조화<br/>• **이해관계자 Claim 도출**: STK-01~08 정량/정성 Claim 및 출처 연계<br/>• **[Agent 과제] Supervisor 전환·품질 평가 설계**: 근거 검증 확장형 Supervisor 전환안 구현(#45), 보고서 품질 평가 설계 문서와 규칙+Judge 2단계 구현(#60), 통합 브랜치 코드 리뷰·산출물 점검(#61, #67~#75), README 정리 |
+| **윤영민** | 담당 A | 시스템 아키텍처 & LangGraph 오케스트레이션 (`src/state.py`, `src/graph.py`, `main.py`, `app.py`) | • **State-driven dynamic routing**: Supervisor가 audit·quality target·dependency로 다음 worker를 선택하고 targeted rework 수행<br/>• **24-field State contract**: payload/control 분리와 reducer로 충돌을 제어하고 `trace_id`/decision/fallback 상태를 기록<br/>• **termination/fallback control**: retry·step·quality 한도와 worker failure fallback, Streamlit·PDF 산출 파이프라인 구현<br/>• **[Agent 과제] Supervisor 승격 시안**: evidence_audit의 Supervisor 승격과 Hybrid 품질 게이트 시안(#56) |
+| **전경호** | 담당 C | 외부 웹 시장성 조사 엔진 (`src/research/market.py`, `src/research/client.py`) | • **실시간 시장성 조사**: Tavily Search 연동을 통한 최신 시장 동향 및 도입 장벽 데이터 수집<br/>• **자연어 쿼리 최적화**: 기술별 세부 카테고리 질의 생성 및 시장성 Claim(MKT-01~06, MAT-A01~02) 정제<br/>• **안정성 보장**: API 실패 및 키 미제공 상황에 대응하는 견고한 Fallback 로직 구축<br/>• **[Agent 과제] Supervisor·품질 게이트**: Supervisor 패턴 + Layered State 시안(#47), 품질 게이트 커버리지 'Gap 공개' 예외(#65) |
+| **정은희** | 담당 E | 다관점 종합 & 보고서 생성 파이프라인 (`src/synthesis/**`) | • **TRL 이원화 종합 평가**: 개별 기술 TRL과 계열 산업 TRL을 분리 분석하는 프레임워크 구축<br/>• **보고서 템플릿 엔진**: Jinja2 기반 마크다운 템플릿 설계, 본문 Citation 번호와 References 자동 연동<br/>• **보고서 정제 및 윤문**: LLM(`gpt-4o`)을 활용한 논리적 흐름 정제 및 문체 통일<br/>• **[Agent 과제] Supervisor 통합 구현**: State 기반 Supervisor 연구 흐름과 품질 게이트, 근거 Claim 기반 보고서 재구성·필드 단위 번역·PDF 개선(#48 통합 브랜치) |
+| **최지윤** | 담당 B | 논문 분석 Agentic RAG 및 임베딩 벤치마크 (`src/rag/**`) | • **Agentic RAG 구축**: KIVI 및 CXL-PNM 논문 원문 PDF 파싱, 청킹 및 FAISS 인덱싱<br/>• **임베딩 벤치마크**: 임베딩 모델 정량 평가(`bge-small-en-v1.5` vs `e5-small-v2`, 20개 질의) 수행 및 최적 모델(`intfloat/e5-small-v2`) 채택<br/>• **논문 근거 추출**: KIVI 2.6× peak memory 절감(모델 가중치 포함) 등 정량 지표 Claim 및 원문 Evidence 추출<br/>• **[Agent 과제] 통합 구조 RAG 개선**: Supervisor 오케스트레이션 보완 시안(#46), Supervisor 통합 구조에 RAG·실행 정책 개선 반영(#66) |
 
 ### 평가 보고서의 핵심 포인트
 | 이름 (가나다순) | 담당 | 평가 보고서 핵심 포인트 (Key Takeaway) | 비고 |
