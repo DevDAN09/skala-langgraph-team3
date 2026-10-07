@@ -1,7 +1,10 @@
+import pytest
 import main
 from tests.mock_data import INITIAL_INPUT_STATE
 from src.graph import build_evaluation_graph
 
+@pytest.mark.deprecated
+@pytest.mark.skip(reason="deprecated: 외부 API 요청")
 def test_full_pipeline_smoke():
     graph = build_evaluation_graph()
     result = graph.invoke(INITIAL_INPUT_STATE)
