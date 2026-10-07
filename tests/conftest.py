@@ -91,6 +91,14 @@ class MockChatOpenAI:
                 return mock_structured
         except Exception:
             pass
+        try:
+            from src.quality.judge import JudgeItem, JudgeVerdict
+            if schema == JudgeVerdict:
+                ok = JudgeItem(score=5, reason="Mocked pass", quotes=[])
+                mock_structured.invoke.return_value = JudgeVerdict(groundedness=ok, neutrality=ok, bias=ok, coverage=ok)
+                return mock_structured
+        except Exception:
+            pass
         mock_structured.invoke.return_value = MagicMock()
         return mock_structured
 
@@ -106,7 +114,8 @@ def mock_openai(monkeypatch):
 
     monkeypatch.setattr(langchain_openai, "ChatOpenAI", MockChatOpenAI)
 
-    for mod_name in ("src.research.client", "src.synthesis.report_gen", "src.audit.judge", "src.rag.agentic_rag"):
+    for mod_name in ("src.research.client", "src.synthesis.report_gen", "src.audit.judge", "src.rag.agentic_rag",
+                     "src.quality.judge"):
         try:
             import sys
             mod = sys.modules.get(mod_name)

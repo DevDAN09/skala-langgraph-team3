@@ -281,3 +281,10 @@ def test_pick_target_priority():
     assert pick_target({"retry_count": {}}, ["market"]) == "market_research"
     assert pick_target({"retry_count": {"market": 2}}, ["market"]) == "report_generation"
     assert pick_target({"retry_count": {"market": 2, "report": criteria.REPORT_REVISION_LIMIT}}, ["market"]) is None
+
+
+def test_conftest_mock_judge_returns_passing_verdict(monkeypatch):
+    """conftest의 전역 OpenAI mock이 품질 Judge에도 적용되어 실제 API를 부르지 않는다."""
+    monkeypatch.setattr(judge_mod, "OPENAI_API_KEY", "test-key")
+    items = run_quality_judge(GOOD_MD, good_state())
+    assert items is not None and all(i["passed"] and i["score"] == 5 for i in items.values())
