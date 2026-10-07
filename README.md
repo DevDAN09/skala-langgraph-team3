@@ -26,7 +26,7 @@
 - **Supervisor 기반 근거 검증** : Supervisor가 R1~R5 감사 결과, 재시도 상태, 시장→이해관계자 의존성을 보고 다음 Research Agent를 동적으로 선택(관점별 최대 2회, 전체 최대 10 step)
 - **TRL 이원화** : 개별 기술 성숙도(`tech_trl`)와 기술 계열 생태계 성숙도(`family_trl`)를 분리 산출
 - **보고서 자동 생성** : 검증된 Claim으로 보고서 view를 만들고 Jinja2 템플릿으로 결정적으로 렌더링한다. LLM(`gpt-4o`)은 근거 문장 필드만 한국어로 번역하고, 인용 번호·Claim ID·수치 표기는 템플릿이 결정한다 → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
-- **보고서 품질 평가** : `report_generation` 뒤 `quality_eval`이 규칙 기반(결정적, LLM 미사용)으로 4개 항목을 판정하고, 미달이면 원인에 따라 loop한다 (최대 2회 평가).
+- **보고서 품질 평가** : `report_generation` 뒤 `quality_eval`이 **3안 Hybrid**로 판정한다. 1단계 규칙(결정적)이 아래 항목을 검사하고, 통과한 보고서만 2단계 LLM Judge가 본문을 채점한다. 미달이면 원인에 따라 loop한다 (최대 2회 평가).
 
   | 항목 | 판정 기준 (`src/synthesis/quality.py`) |
   | :--- | :--- |
@@ -35,7 +35,9 @@
   | 편향 통제 | 외부 조사 Claim(market·stakeholder·MAT-A) 전부 반대 쿼리를 수행했는가, 같은 관점의 검증 Claim이 2건 이상이면 출처가 2개 이상인가 |
   | 관점 커버리지 | 기술별로 성숙도 ≥1, 시장성 ≥1, 도메인 ≥3 검증 Claim, 이해관계자 4대 Actor별 ≥1 검증 Claim. 재수집 한도를 다 쓰고 6장 Evidence Gap에 공개한 칸은 통과 |
   | 필수 목차 | `SUMMARY`, `REFERENCE` 포함 |
-  - 근거 부족(Groundedness·편향·커버리지)이면 재작업 대상 관점과 함께 Supervisor로, 서술 문제(중립성·목차)만이면 `report_generation`으로 돌아간다.
+  | **LLM Judge** (`src/synthesis/quality_judge.py`) | 규칙 통과 보고서의 본문을 Groundedness·중립성·편향 통제·커버리지·**일관성(내부 모순)** 5개 항목 1–5점 기준표로 채점 (4점 이상 통과) |
+  - 근거 부족(Groundedness·편향·커버리지)이면 재작업 대상 관점과 함께 Supervisor로, 서술 문제(중립성·목차·Judge 미달)만이면 `report_generation`으로 돌아간다.
+  - **3안 선정 이유** : 1안(규칙만)은 형식만 검사해 보고서 생성 단계의 근거 없는 서술, 정규식 밖 우열 뉘앙스, 절 사이 모순을 놓친다. 2안(Judge만)은 비결정적이고 매번 호출 비용이 든다. 규칙 미달이면 Judge를 부르지 않는 Fast-Fail로 비용을 줄이고, Judge 미달 판정에는 보고서 원문 인용을 요구해(없으면 1회 재질의 후 무효) 지어낸 지적을 막는다. API 키가 없거나 호출이 실패하면 규칙 판정만 사용한다.
 - **확증 편향 방지 전략** :
   - 모든 외부 조사 항목에 지지 쿼리와 반대 쿼리를 병행(R3). 반대 근거가 없으면 `counter-evidence not found`로 기록하고 상충을 만들지 않음
   - 출처 Tier(T1~T4) 부여, T4(커뮤니티·개인 블로그) 단독 근거 금지(R2)
@@ -49,7 +51,7 @@
 | :--- | :--- |
 | Framework | LangGraph 1.2.12 (Python 3.11, uv) |
 | LLM / Generator | `gpt-4o-mini` (질의 생성·Query Rewrite·웹 근거 요약·Claim 추출), `gpt-4o` (보고서 근거 문장 번역) |
-| LLM / Judge | `gpt-4o` (근거 검증 R5: Claim–Evidence 일치 판정, Pydantic Structured Output). 보고서 품질 평가는 규칙 기반이라 LLM을 쓰지 않는다 |
+| LLM / Judge | `gpt-4o` (근거 검증 R5: Claim–Evidence 일치 판정, Pydantic Structured Output). 보고서 품질 평가 2단계 Judge: 규칙 통과 보고서 본문 5개 항목 채점 |
 | Retrieval | FAISS (로컬 인덱스, top-k 5, `tech` 메타데이터 필터) — **Hit@5 0.80, MRR 0.596** (코퍼스 기반 20개 질의) |
 | Embedding | `intfloat/e5-small-v2` (비교: `BAAI/bge-small-en-v1.5` Hit@5 0.75, MRR 0.548 → Hit@5 ≥ 0.8 기준으로 채택) |
 | Web Search | Tavily Search |
