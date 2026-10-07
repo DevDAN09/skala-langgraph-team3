@@ -17,6 +17,10 @@ INITIAL_INPUT_STATE = {
     "sources": [],
     "audit": {"issues": []},
     "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    "node_status": {"paper": "pending", "market": "pending", "stakeholder": "pending"},
+    "step_count": 0,
+    "trace_id": "pipeline",
+    "quality": {"passed": False, "failures": [], "attempts": 0},
     "trl": {},
     "synthesis": {},
     "report": "",
@@ -160,6 +164,10 @@ MOCK_STATE = {
     ],
     "audit": {"issues": []},
     "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
+    "node_status": {"paper": "complete", "market": "complete", "stakeholder": "complete"},
+    "step_count": 3,
+    "trace_id": "test",
+    "quality": {"passed": False, "failures": [], "attempts": 0},
     "trl": {
         "KIVI": {
             "tech_trl": "5-6",

@@ -91,6 +91,12 @@ class OverallState(TypedDict):
     sources: Annotated[list[Source], union_sources]
     audit: Audit
     retry_count: dict[str, int]
+    # Supervisor control metadata.  Payload fields above remain owned by their
+    # specialist nodes; these fields describe orchestration only.
+    node_status: dict[str, str]
+    step_count: int
+    trace_id: str
+    quality: dict
     trl: dict[str, TRL]
     synthesis: dict
     report: str

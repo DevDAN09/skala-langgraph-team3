@@ -22,7 +22,7 @@
 - **PDF 원문 기반 정보 추출** : KIVI·CXL-PNM 논문 PDF를 청킹·임베딩해 FAISS로 검색하고, 검색된 원문 청크를 Evidence snippet으로 Claim에 연결
 - **Agentic RAG Loop** : `tech` 필터 top-5 검색 → 충분성 게이트 → Query Rewrite(최대 2회, 평가 축이 바뀐 Rewrite는 거부) → 실패 시 `insufficient`(corpus 내 근거 미확인)
 - **외부 웹 조사** : Tavily로 시장성(채택·배포·생태계·도입 장벽)과 이해관계자(4대 Actor × 기술 계열)를 조사하고, 시장성 결과를 이해관계자 쿼리에 체이닝
-- **2단계 Fast-Fail 근거 검증** : 1단계 정적 규칙(R1~R4)을 통과한 Claim에 한해 2단계 LLM Judge(R5) 실행, 위반 관점만 표적 재실행(최대 2회)
+- **Supervisor 기반 근거 검증** : Supervisor가 R1~R5 감사 결과, 재시도 상태, 시장→이해관계자 의존성을 보고 다음 Research Agent를 동적으로 선택(관점별 최대 2회, 전체 최대 10 step)
 - **TRL 이원화** : 개별 기술 성숙도(`tech_trl`)와 기술 계열 생태계 성숙도(`family_trl`)를 분리 산출
 - **보고서 자동 생성** : Jinja2 골격 + Strict Grounding Polishing → `final_evaluation_report.md` / `.pdf`, Streamlit 대시보드 제공
 - **확증 편향 방지 전략** :
@@ -69,18 +69,19 @@
 ## Architecture
 ```mermaid
 flowchart TD
-    START([START]) --> paper_analysis["paper_analysis (B)<br/>Agentic RAG"]
-    START --> market_research["market_research (C)<br/>시장성 조사"]
-    market_research --> stakeholder_research["stakeholder_research (C)<br/>이해관계자"]
-    stakeholder_research --> evidence_audit["evidence_audit (D)<br/>Fast-Fail 검증"]
-    paper_analysis -.->|재시도 시| evidence_audit
-    paper_analysis -.->|첫 실행| END_BRANCH([END])
-    evidence_audit -.->|조건부 피드백| market_research
-    evidence_audit -.->|조건부 피드백| stakeholder_research
-    evidence_audit -.->|조건부 피드백| paper_analysis
-    evidence_audit -->|통과/한도초과| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
+    START([START]) --> supervisor["supervisor (A/D)<br/>audit · coverage · routing"]
+    supervisor -->|dynamic| paper_analysis["paper_analysis (B)<br/>Agentic RAG"]
+    supervisor -->|dynamic| market_research["market_research (C)<br/>시장성 조사"]
+    supervisor -->|market complete| stakeholder_research["stakeholder_research (C)<br/>이해관계자"]
+    paper_analysis --> supervisor
+    market_research --> supervisor
+    stakeholder_research --> supervisor
+    supervisor -->|sufficient / limit| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
     evaluation_synthesis --> report_generation["report_generation (E)<br/>보고서 생성"]
-    report_generation --> END([END])
+    report_generation --> quality_eval["quality_eval<br/>groundedness · coverage"]
+    quality_eval -->|research gap| supervisor
+    quality_eval -->|writing gap| report_generation
+    quality_eval -->|pass / rewrite limit| END([END])
 ```
 
 ### 데이터 흐름 (End-to-End Data Flow)
@@ -88,7 +89,7 @@ flowchart TD
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
-| **Step 1<br/>초기화 & 병렬 분기** | `START` (A) | `INITIAL_INPUT_STATE` | • 대상 기술(KIVI vs CXL-PNM) 및 기술 계열 선정 사유 주입<br/>• `paper_analysis` 및 `market_research`로 병렬 Fan-out | `selected`, `retry_count: 0` |
+| **Step 1<br/>초기화 & 동적 선택** | `START` → `supervisor` (A/D) | `INITIAL_INPUT_STATE` | • 대상 기술 및 제어 metadata 주입<br/>• audit/coverage/retry/dependency를 읽어 다음 Research Agent를 한 개 선택 | `selected`, `node_status`, `retry_count`, `step_count` |
 | **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(실측/시뮬레이션 구분) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
 | **Step 3<br/>시장성 및 이해관계자** | `market_research`<br/>→ `stakeholder_research` (C) | `selected`<br/>(+ `market` 컨텍스트) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 컨텍스트 체이닝을 통해 시장 데이터를 반영한 정량/정성 Claim 생성 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
 | **Step 4<br/>Fast-Fail 근거 검증** | `evidence_audit` (D) | `claims`, `evidence`, `sources` | • **1단계 규칙 검증**: 형식·출처(T1~T4)·수치 왜곡 4대 룰 체크<br/>• **2단계 LLM 심사**: `gpt-4o` 기반 Claim-Snippet 사실 일치 판정<br/>• 검증 미달 항목 피드백 발행 및 라우팅 (최대 2회 재시도) | `audit.issues`, `retry_count`,<br/>`claims[*].status` (ok/flagged/insufficient/rejected) |
