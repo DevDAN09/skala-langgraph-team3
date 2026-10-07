@@ -114,3 +114,4 @@ class OverallState(TypedDict):
     collect_seq: Annotated[int, operator.add]
     audited_seq: int
     step_count: Annotated[int, operator.add]
+    trace_id: str

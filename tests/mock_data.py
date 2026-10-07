@@ -28,6 +28,7 @@ INITIAL_INPUT_STATE = {
     "collect_seq": 0,
     "audited_seq": -1,
     "step_count": 0,
+    "trace_id": "",
 }
 
 MOCK_STATE = {
@@ -199,4 +200,5 @@ MOCK_STATE = {
     "collect_seq": 0,
     "audited_seq": -1,
     "step_count": 0,
+    "trace_id": "",
 }

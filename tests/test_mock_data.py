@@ -25,6 +25,7 @@ def test_mock_state_keys():
         "collect_seq",
         "audited_seq",
         "step_count",
+        "trace_id",
     }
     assert set(MOCK_STATE.keys()) == expected_keys
     assert set(INITIAL_INPUT_STATE.keys()) == expected_keys

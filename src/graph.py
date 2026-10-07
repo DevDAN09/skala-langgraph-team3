@@ -52,6 +52,21 @@ def route_quality(state: OverallState) -> str:
     return "report_generation"
 
 
+def stream_once(graph, initial, config=None, on_step=None):
+    """One stream. values is the final state; do not invoke again."""
+    final = initial
+    steps = []
+    for mode, chunk in graph.stream(initial, config or {}, stream_mode=["updates", "values"]):
+        if mode == "values":
+            final = chunk
+            continue
+        for name in chunk:
+            steps.append(name)
+            if on_step:
+                on_step(name)
+    return final, steps
+
+
 def route_supervisor(state: OverallState) -> list[str] | str:
     """Translate the Supervisor decision. This function does not choose the order."""
     decision = state.get("supervisor") or {}

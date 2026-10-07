@@ -1,10 +1,10 @@
 """app.py - Streamlit Interactive Dashboard for LangGraph Multi-Agent Evaluation"""
 import time
-import json
+import uuid
 import streamlit as st
 from pathlib import Path
 
-from src.graph import build_evaluation_graph
+from src.graph import build_evaluation_graph, stream_once
 from src.config import (
     REPORT_OUTPUT_PATH,
     REPORT_MD_PATH,
@@ -70,6 +70,7 @@ if run_btn:
         "evidence_audit": "🛡️ [근거 검증] R1~R4 정적 룰 및 R5 심사기 검증",
         "evaluation_synthesis": "⚖️ [평가 종합] TRL 이원화 및 트레이드오프 종합",
         "report_generation": "📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링",
+        "quality_eval": "🔎 [품질 평가] Groundedness·중립성·편향·커버리지",
     }
     
     total_expected_steps = 6
@@ -78,20 +79,25 @@ if run_btn:
     try:
         start_time = time.time()
         graph = build_evaluation_graph()
+        trace_id = uuid.uuid4().hex[:12]
+        config = {
+            "run_name": f"supervisor-eval-{trace_id}",
+            "metadata": {"trace_id": trace_id, "pattern": "supervisor"},
+        }
         
         status_box = st.status("파이프라인 실행 중...", expanded=True)
         with status_box:
-            for chunk in graph.stream(INITIAL_INPUT_STATE, stream_mode="updates"):
-                for node_name, node_output in chunk.items():
-                    step_count += 1
-                    label = node_labels.get(node_name, f"노드 실행: {node_name}")
-                    st.write(label)
-                    st.session_state["run_logs"].append(label)
-                    progress = min(step_count / total_expected_steps, 1.0)
-                    progress_bar.progress(progress, text=f"{label} 완료")
-            
-            # 최종 State 확보
-            final_state = graph.invoke(INITIAL_INPUT_STATE)
+            def on_step(node_name, _progress=progress_bar):
+                nonlocal step_count
+                step_count += 1
+                label = node_labels.get(node_name, f"노드 실행: {node_name}")
+                st.write(label)
+                st.session_state["run_logs"].append(label)
+                _progress.progress(min(step_count / total_expected_steps, 1.0), text=f"{label} 완료")
+
+            final_state, _node_names = stream_once(
+                graph, {**INITIAL_INPUT_STATE, "trace_id": trace_id}, config, on_step=on_step
+            )
             elapsed = time.time() - start_time
             REPORT_MD_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
             if REPORT_OUTPUT_PATH.suffix.lower() == ".pdf":
@@ -241,5 +247,5 @@ else:
     # ----------------- Tab 4: Raw State -----------------
     with tab4:
         st.subheader("🔍 LangGraph OverallState 전체 데이터")
-        st.caption("그래프 전체에서 공유 및 축적된 14개 키의 전체 State 덤프입니다.")
+        st.caption("그래프 전체에서 공유 및 축적된 State 덤프입니다.")
         st.json(state)

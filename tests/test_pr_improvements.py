@@ -2,7 +2,7 @@
 from langgraph.graph import END
 
 from src.audit.auditor import build_supervisor_decision, evidence_audit_node
-from src.graph import MAX_QUALITY_ROUNDS, MAX_STEPS, route_quality
+from src.graph import MAX_QUALITY_ROUNDS, MAX_STEPS, route_quality, stream_once
 from src.quality.quality_eval import check_groundedness, quality_eval_node
 from tests.mock_data import INITIAL_INPUT_STATE
 
@@ -122,6 +122,21 @@ def test_audit_skips_rules_when_collect_seq_not_newer(monkeypatch):
     result = evidence_audit_node(state)
     assert result["supervisor"]["sufficient"] is True
     assert result["audited_seq"] == 2
+
+
+def test_stream_once_does_not_invoke():
+    class Graph:
+        def stream(self, initial, config=None, stream_mode=None):
+            assert config["metadata"]["trace_id"] == "abc"
+            yield ("updates", {"evidence_audit": {}})
+            yield ("values", {"report": "done", "trace_id": initial["trace_id"]})
+
+        def invoke(self, *_args, **_kwargs):
+            raise AssertionError("graph invoked twice")
+
+    final, steps = stream_once(Graph(), {"trace_id": "abc"}, {"metadata": {"trace_id": "abc"}})
+    assert final["report"] == "done"
+    assert steps == ["evidence_audit"]
 
 
 def test_groundedness_requires_citation():
