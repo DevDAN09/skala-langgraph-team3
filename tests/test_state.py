@@ -172,9 +172,11 @@ def test_overall_state_schema_keys():
         "trl",
         "synthesis",
         "report",
+        "quality",
+        "quality_round",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 17
+    assert len(expected_keys) == 19
 
 
 def test_config_exports():

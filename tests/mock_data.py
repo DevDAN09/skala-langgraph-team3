@@ -23,6 +23,8 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "quality": {},
+    "quality_round": 0,
 }
 
 MOCK_STATE = {
@@ -189,4 +191,6 @@ MOCK_STATE = {
         "evidence_gaps": [],
     },
     "report": "",
+    "quality": {},
+    "quality_round": 0,
 }

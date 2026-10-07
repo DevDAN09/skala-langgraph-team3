@@ -89,7 +89,7 @@ def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]
             url_index[url] = sid
     return list(src_map.values())
 
-# 3. Overall State (14개 키)
+# 3. Overall State
 class OverallState(TypedDict):
     selected: dict
     tech_sw: dict
@@ -108,3 +108,5 @@ class OverallState(TypedDict):
     trl: dict[str, TRL]
     synthesis: dict
     report: str
+    quality: dict
+    quality_round: int

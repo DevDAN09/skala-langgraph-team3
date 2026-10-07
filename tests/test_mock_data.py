@@ -20,6 +20,8 @@ def test_mock_state_keys():
         "trl",
         "synthesis",
         "report",
+        "quality",
+        "quality_round",
     }
     assert set(MOCK_STATE.keys()) == expected_keys
     assert set(INITIAL_INPUT_STATE.keys()) == expected_keys

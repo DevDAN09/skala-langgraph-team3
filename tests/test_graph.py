@@ -26,6 +26,7 @@ def test_graph_compilation():
         "evidence_audit",
         "evaluation_synthesis",
         "report_generation",
+        "quality_eval",
     }
     assert expected_nodes.issubset(node_keys)
 
@@ -36,6 +37,8 @@ def test_graph_has_no_worker_to_worker_edges():
     assert ("__start__", "paper_analysis") not in edges
     assert ("__start__", "market_research") not in edges
     assert ("__start__", "evidence_audit") in edges
+    assert ("report_generation", "quality_eval") in edges
+    assert ("report_generation", "__end__") not in edges
     for worker in ("paper_analysis", "market_research", "stakeholder_research"):
         assert (worker, "evidence_audit") in edges
 
@@ -95,6 +98,10 @@ def _run_supervisor_flow(monkeypatch, market_claims):
         calls.append("report_generation")
         return {"report": "ok"}
 
+    def quality(state):
+        calls.append("quality_eval")
+        return {"quality": {"passed": True, "feedback": []}, "quality_round": 1}
+
     real_audit = graph_module.evidence_audit_node
 
     def audit(state):
@@ -106,6 +113,7 @@ def _run_supervisor_flow(monkeypatch, market_claims):
     monkeypatch.setattr(graph_module, "stakeholder_research_node", stakeholder)
     monkeypatch.setattr(graph_module, "evaluation_synthesis_node", synthesis)
     monkeypatch.setattr(graph_module, "report_generation_node", report)
+    monkeypatch.setattr(graph_module, "quality_eval_node", quality)
     monkeypatch.setattr(graph_module, "evidence_audit_node", audit)
     graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
     return calls
@@ -117,7 +125,7 @@ def test_flow_starts_at_supervisor_and_does_not_chain_workers(monkeypatch):
     assert sorted(calls[1:3]) == ["market_research", "paper_analysis"]
     assert calls[3] == "evidence_audit"
     assert calls[4] == "stakeholder_research"
-    assert calls[5:] == ["evidence_audit", "evaluation_synthesis", "report_generation"]
+    assert calls[5:] == ["evidence_audit", "evaluation_synthesis", "report_generation", "quality_eval"]
 
 
 def test_flow_rework_does_not_call_other_workers(monkeypatch):
@@ -143,7 +151,7 @@ def test_flow_rework_does_not_call_other_workers(monkeypatch):
     assert sorted(calls[1:3]) == ["market_research", "paper_analysis"]
     assert calls[3] == "evidence_audit"
     assert sorted(calls[4:6]) == ["market_research", "stakeholder_research"]
-    assert calls[6:] == ["evidence_audit", "evaluation_synthesis", "report_generation"]
+    assert calls[6:] == ["evidence_audit", "evaluation_synthesis", "report_generation", "quality_eval"]
 
 
 def test_worker_exception_retries_twice_then_skips(monkeypatch):
@@ -171,15 +179,20 @@ def test_worker_exception_retries_twice_then_skips(monkeypatch):
         calls.append("report_generation")
         return {"report": "ok"}
 
+    def quality(state):
+        calls.append("quality_eval")
+        return {"quality": {"passed": True, "feedback": []}, "quality_round": 1}
+
     monkeypatch.setattr(graph_module, "paper_analysis_node", paper)
     monkeypatch.setattr(graph_module, "market_research_node", market)
     monkeypatch.setattr(graph_module, "stakeholder_research_node", stakeholder)
     monkeypatch.setattr(graph_module, "evaluation_synthesis_node", synthesis)
     monkeypatch.setattr(graph_module, "report_generation_node", report)
+    monkeypatch.setattr(graph_module, "quality_eval_node", quality)
 
     final = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
     assert calls.count("paper_analysis") == 3
     assert final["retry_count"]["paper"] == 2
     assert final["node_status"]["paper"] == "skipped"
     assert "index down" in final["last_error"]["paper"]
-    assert calls[-2:] == ["evaluation_synthesis", "report_generation"]
+    assert calls[-3:] == ["evaluation_synthesis", "report_generation", "quality_eval"]
