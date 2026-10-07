@@ -275,3 +275,25 @@ def test_graph_end_to_end_execution():
     assert final_state["report"]
     assert final_state["quality"]["attempts"] >= 1
     assert final_state["step_count"] <= MAX_STEPS
+
+
+def _gap_claim(cid, perspective, tech, status="ok"):
+    return {"id": cid, "perspective": perspective, "tech": tech, "statement": "s", "kind": "fact",
+            "evidence_ids": [], "counter_evidence_ids": [], "counter_searched": True, "status": status}
+
+
+def test_quality_accepts_coverage_gap_disclosed_after_retries_exhausted():
+    """재수집 기회를 다 쓰고도 근거가 없어 6장에 공개한 칸은 coverage 미달이 아니다 (정보 부족 ≠ 편향)."""
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [_gap_claim("MKT-01", "market", "KIVI", status="insufficient")]
+    report = "## SUMMARY\n## 6. 한계점 및 Evidence Gap\n- **[MKT-01]** 공개 근거 미확인\n## REFERENCE\n"
+    state = {**MOCK_STATE, "claims": claims, "report": report}
+
+    quality = quality_evaluation_node({**state, "retry_count": {"market": 1}})["quality"]
+    assert "market:KIVI" in quality["coverage_gaps"] and "market" in quality["rework_targets"]
+
+    quality = quality_evaluation_node({**state, "retry_count": {"market": 2}})["quality"]
+    assert "market:KIVI" in quality["disclosed_gaps"] and "market:KIVI" not in quality["coverage_gaps"]
+
+    undisclosed = {**state, "report": report.replace("- **[MKT-01]** 공개 근거 미확인", "- 없음"), "retry_count": {"market": 2}}
+    assert "market:KIVI" in quality_evaluation_node(undisclosed)["quality"]["coverage_gaps"]
