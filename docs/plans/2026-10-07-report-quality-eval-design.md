@@ -1,6 +1,6 @@
 # 보고서 품질 평가 설계 (`quality_eval`)
 
-> 상태: **초안 (팀 확정 필요)** · 기준 브랜치: `feat/hyomin-supervisor-pattern` (PR #45)
+> 상태: **구현 완료 (기준값은 팀 보정 필요, 11절)** · 구현 브랜치: **`feat/quality-eval`** (기반: `feat/hyomin-supervisor-pattern`, PR #45)
 > 근거: 과제 지시사항 "D. 보고서 품질 평가" · 설계서 3.7–3.8, 6장 · [`2026-10-07-supervisor-plan2.md`](2026-10-07-supervisor-plan2.md)
 
 ---
@@ -247,6 +247,7 @@ else:                judge = run_quality_judge(report, state)
 | C3 | 4.3절에 Actor가 2개(클라우드 운영자, 하드웨어 벤더)만 나온다 | `report.md.j2`가 하위 호환 별칭 `cloud_ops`, `hw_vendors`만 읽는다. stakeholder 노드는 4개 슬롯을 만들지만 `framework_developer`, `end_user`는 출력되지 않는다 | E (템플릿) |
 | F2 | 4.4절 셀에 `{'KIVI': '…', 'CXL-PNM': '…'}`처럼 dict가 그대로 출력된다 | `domain_axis_value`가 기술별 dict를 문자열로 그대로 반환한다 | E |
 | F1 | 3.1절과 4.2절 안에 `### Why Your LLM Inference Is Slow …` 같은 웹 기사 제목이 헤딩으로 섞여 있다 | 웹 snippet의 마크다운 헤딩이 걸러지지 않고 statement와 market 요약에 들어간다 | C (statement 정제) |
+| F2 | 보고서 전체가 ```` ```markdown ```` 코드 블록으로 감싸져 PDF가 코드로 렌더링된다 | Polishing LLM이 응답을 코드 블록으로 감싼다. `report_gen.py`에서 바깥 펜스를 벗겨야 한다 | E |
 | B5 | (확인 필요) 3.1과 3.2의 분량 차이 | Claim 수 차이 | 측정 후 기준 조정 |
 
 ---
@@ -266,6 +267,8 @@ else:                judge = run_quality_judge(report, state)
 
 ## 9. 미결정 사항 (팀 결정 필요)
 
+> 결정 방법과 담당은 **11절**을 따른다. 값은 모두 `src/quality/criteria.py`에 있다.
+
 | 항목 | 초안 값 | 결정할 것 |
 |---|---|---|
 | Judge 통과 점수 | 항목별 4점 이상 | 4점으로 할지, 평균 기준으로 할지 |
@@ -277,7 +280,88 @@ else:                judge = run_quality_judge(report, state)
 
 ---
 
-## 10. README 반영 문구 (초안)
+## 10. 구현 메모 (설계와 달라진 점)
+
+| 항목 | 설계 초안 | 구현 | 이유 |
+|---|---|---|---|
+| N1·N2 검사 범위 | 보고서 전체 | **SUMMARY와 5장만** | 3–4장은 Claim 원문 번역이라 "outperform", "우수한" 같은 논문 표현이 사실 서술로 들어간다. 판정 대상은 LLM·종합 노드가 쓴 서술이다 |
+| B1·B2 계산 기준 | 4.2·4.3절 인용 번호 | **State의 외부 Claim(MKT·STK·MAT-A) 근거 출처** | 템플릿의 4.2·4.3절에는 `[n]` 인용 번호가 없어 본문만으로는 출처를 셀 수 없다 |
+| F2 | 렌더링 오류 패턴 | 패턴 + **보고서 전체가 ```` ``` ```` 코드 블록으로 감싸진 경우** | 최근 생성본이 polishing 결과를 ```` ```markdown ````로 감싸서 PDF가 코드로 렌더링됐다 |
+| C5 maturity 재수집 대상 | 미정 | `paper_analysis` | MAT-R(연구 근거)이 원문 분석에서 나온다 |
+| Judge 인용 무효 처리 | 1회 재호출 | 1회 재호출 후에도 인용이 없으면 **해당 항목은 통과 처리**(failures에 "무효" 기록) | 지어낸 지적으로 재작업 루프가 도는 것을 막는다 |
+| `retry_count["report"]` | 품질 개정 횟수 | 품질 개정 + `report_generation` 실행 실패 재시도가 **같은 카운터를 공유** | `track_node` 실패 재시도와 키 체계를 하나로 유지 |
+| 기준값 위치 | 미정 | **`src/quality/criteria.py` 한 파일** | 11절 보정 작업이 이 파일만 고치면 되도록 |
+| 보정 도구 | 없음 | `main.py`가 `final_state.json`을 저장하고, `scripts/eval_report.py`로 같은 State에 다른 보고서를 평가 | 11절 측정 절차용 |
+
+---
+
+## 11. 팀원 작업 지침: 9절 기준값 보정
+
+> **작업 브랜치**: `feat/quality-eval`에서 각자 브랜치를 따서 PR을 `feat/quality-eval`로 올린다.
+> 예) `feat/quality-eval-judge-score`, `feat/quality-eval-b1-ratio`
+> PR #45(`feat/hyomin-supervisor-pattern`)가 main에 머지되면 `feat/quality-eval`의 base도 main으로 바뀐다.
+
+### 11.1 무엇을 고치나
+
+**코드 수정은 `src/quality/criteria.py`의 `[팀 결정]` 블록 값만** 바꾸는 것이 원칙이다. 규칙 로직(`rules.py`, `judge.py`, `node.py`)을 바꿔야 하면 PR 설명에 이유를 적는다.
+
+| 항목 | 상수 | 현재값 | 담당 (제안) |
+|---|---|---|---|
+| Judge 통과 점수 | `JUDGE_PASS_SCORE` | 4 | B 최지윤 |
+| Judge 모델 | `JUDGE_MODEL` | `JUDGE_LLM_MODEL`(gpt-4o) | B 최지윤 |
+| B1 단일 출처 비율 | `SINGLE_SOURCE_MAX_RATIO` | 0.4 | C 전경호 |
+| B5 분량 비율 | `LENGTH_RATIO_RANGE` | (0.5, 2.0) | E 정은희 |
+| 보고서 개정 한도 | `REPORT_REVISION_LIMIT` | 2 | A 윤영민 |
+| 7절 사전 정비 | (템플릿·statement 정제) | 미정비 | E 정은희(C3·F2), C 전경호(F1) |
+
+### 11.2 측정 준비 (공통, 30분)
+
+1. `feat/quality-eval`을 받아 `python main.py`를 실행한다. → `final_evaluation_report.md`, `final_state.json` 생성
+2. 비교용 보고서 3개를 만든다.
+
+| 파일 | 만드는 법 | 기대 결과 |
+|---|---|---|
+| A. `final_evaluation_report.md` | 그대로 (7절 사전 정비 후 생성본이면 더 좋다) | 통과 (사전 정비 전이면 C3·F1·F2 실패가 정상) |
+| B. `biased.md` | A의 5.5절에 "KIVI가 현실적인 선택이다."를 넣고, 3.2절 CXL-PNM 한계 문장 1개를 삭제 | 중립성·편향 통제 미달 |
+| C. `hallucinated.md` | A의 SUMMARY에 근거표에 없는 수치 문장을 넣음 (예: "CXL-PNM은 처리량을 5배 높인다.") | Groundedness 미달 (G4 또는 Judge) |
+
+3. 각 보고서를 평가한다.
+
+```bash
+python scripts/eval_report.py --report final_evaluation_report.md --judge-repeat 3
+python scripts/eval_report.py --report biased.md --judge-repeat 3
+python scripts/eval_report.py --report hallucinated.md --judge-repeat 3
+```
+
+### 11.3 항목별 결정 절차
+
+| 항목 | 측정 | 결정 규칙 |
+|---|---|---|
+| `JUDGE_PASS_SCORE` | A·B·C 각 3회 Judge 점수 | ① A의 모든 항목 ≥ 기준 ② B·C의 해당 항목 < 기준 ③ 같은 보고서 점수 변동 ≤ 1점. ③이 안 되면 `judge.py`의 `RUBRIC` 문구를 먼저 고친다 |
+| `JUDGE_MODEL` | B·C가 현재 모델로 제대로 미달 판정되는지 | 잡으면 유지하고 README 한계점에 "Judge와 Polishing 모델 동일"을 적는다. 못 잡으면 다른 OpenAI 모델로 바꾸고 다시 측정한다 |
+| `SINGLE_SOURCE_MAX_RATIO` | `main.py` 2–3회 실행, B1 메시지의 실제 비율 | 실측 최댓값 + 여유(예: 실측 35% → 0.5). 정상 실행이 B1로 실패하면 안 된다 |
+| `LENGTH_RATIO_RANGE` | A의 B5 비율과 3.1/3.2 Claim 수 비율 | 분량 차이가 Claim 수 차이로 설명되면 `None`(B5 끔, Judge 편향 항목에 맡김). 아니면 실측 범위 + 여유 |
+| `REPORT_REVISION_LIMIT` | `main.py` 실행 로그에서 보고서 재작성 + 품질 평가 1회 소요 시간 | 1회 5분 이하면 2, 넘으면 1. `MAX_STEPS=30` 안에 들어가는지 확인 |
+
+### 11.4 완료 조건
+
+- [ ] `criteria.py` 값 변경 + 아래 결정 기록표 갱신 (같은 PR)
+- [ ] `pytest tests/test_quality.py tests/test_graph.py` 통과 (기준값을 바꿔 테스트가 깨지면 테스트 기대값도 같이 수정)
+- [ ] 정상본 A가 통과하고, B·C가 의도한 항목에서 미달하는 `eval_report.py` 출력을 PR 설명에 붙인다
+
+### 11.5 결정 기록표 (README "보고서 품질 평가"에 옮김)
+
+| 항목 | 최종값 | 측정 근거 | 결정자 · 날짜 |
+|---|---|---|---|
+| `JUDGE_PASS_SCORE` | | | |
+| `JUDGE_MODEL` | | | |
+| `SINGLE_SOURCE_MAX_RATIO` | | | |
+| `LENGTH_RATIO_RANGE` | | | |
+| `REPORT_REVISION_LIMIT` | | | |
+
+---
+
+## 12. README 반영 문구 (초안)
 
 > **보고서 품질 평가**: 보고서 생성 후 `quality_eval` 노드가 2단계 Fast-Fail로 평가한다.
 > - 1단계 규칙 검사: 인용 연결, 수치 보존, 금지어, 출처 편중, 목차와 관점 커버리지, 10장 상한

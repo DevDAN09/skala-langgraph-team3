@@ -144,9 +144,9 @@ def domain_axis_value(domain: dict, field: str) -> str:
         for tech in ("KIVI", "CXL-PNM")
     )
 
-def report_generation_node(state: OverallState) -> dict:
-    """Renders the final report for the orchestration layer to persist."""
-    print("📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링 실행")
+
+def render_skeleton(state: OverallState) -> str:
+    """1단계: State → Jinja2 마크다운 골격 (polishing 전). 품질 평가의 수치 보존 검사(G4)도 이 결과를 쓴다."""
     templates_dir = Path(__file__).parent / "templates"
     env = Environment(loader=FileSystemLoader(str(templates_dir)))
     env.filters["citation_date"] = citation_date
@@ -169,9 +169,25 @@ def report_generation_node(state: OverallState) -> dict:
         evidence=state.get("evidence", []),
         claims=state.get("claims", [])
     )
+    return rendered
+
+
+def report_generation_node(state: OverallState) -> dict:
+    """Renders the final report for the orchestration layer to persist."""
+    print("📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링 실행")
+    rendered = render_skeleton(state)
 
     if not OPENAI_API_KEY:
         return {"report": rendered}
+
+    report_eval = state.get("report_eval") or {}
+    feedback = ""
+    if report_eval and not report_eval.get("passed") and report_eval.get("feedback"):
+        print("📝 [보고서 생성] 품질 평가 피드백을 반영해 재작성")
+        feedback = f"""
+- 아래 품질 평가 피드백을 반드시 반영하십시오. 단, 위 제약(수치·Claim ID·인용 번호 보존)이 우선합니다.
+{report_eval["feedback"]}
+"""
 
     try:
         prompt = f"""정적 근거 기반 기술 보고서 편집자입니다.
@@ -184,7 +200,7 @@ def report_generation_node(state: OverallState) -> dict:
 - 영어 Claim 문장은 원문 그대로 남기지 말고 한국어로 번역하십시오. 단, 수치·단위·연도·Claim ID·인용 번호·고유명사·기술 용어는 변경하지 마십시오.
 - 보고서 본문 문체는 `-다.` 체로 통일하고, `-습니다.` 체를 사용하지 마십시오.
 - 마크다운 전문만 반환하십시오.
-
+{feedback}
 {rendered}"""
         polished = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0.1).invoke(prompt).content
         return {"report": polished}

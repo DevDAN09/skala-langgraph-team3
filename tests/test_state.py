@@ -169,6 +169,7 @@ def test_overall_state_schema_keys():
         "trl",
         "synthesis",
         "report",
+        "report_eval",
         "run_id",
         "step_count",
         "node_status",
@@ -178,7 +179,7 @@ def test_overall_state_schema_keys():
         "last_error",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 21
+    assert len(expected_keys) == 22
 
 
 def test_config_exports():

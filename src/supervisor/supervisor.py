@@ -11,11 +11,13 @@ MAX_STEPS = 30  # Supervisor 방문 상한. 재시도 한도와 별개인 최종
 
 # 수집 노드 → audit.issues[].target_agent / retry_count 키
 COLLECTORS = {"paper_analysis": "paper", "market_research": "market", "stakeholder_research": "stakeholder"}
-WORKERS = [*COLLECTORS, "evaluation_synthesis", "report_generation"]
+WORKERS = [*COLLECTORS, "evaluation_synthesis", "report_generation", "quality_eval"]
+DOWNSTREAM = ("evaluation_synthesis", "report_generation", "quality_eval")  # 재수집 시 다시 거칠 단계
 
 
 def _retry_key(node: str) -> str:
-    return COLLECTORS.get(node, node)
+    """retry_count 키: 수집 노드는 관점명, report_generation은 'report'(품질 개정 횟수와 공유)."""
+    return COLLECTORS.get(node) or {"report_generation": "report"}.get(node, node)
 
 
 def _can_retry(state: OverallState, node: str) -> bool:
@@ -73,10 +75,13 @@ def decide(state: OverallState) -> tuple[list[str] | str, str, dict]:
     targets = {i["target_agent"] for i in issues if retry.get(i["target_agent"], 0) < RETRY_LIMIT}
     if targets:
         nodes = []
+        stale = {n: "stale" for n in DOWNSTREAM if st(n) == "done"}  # 품질 평가 후 재수집이면 이후 단계도 다시
         if "market" in targets:
             nodes.append("market_research")
             # market이 바뀌면 이를 입력으로 쓰는 stakeholder도 다시 돌아야 한다 (Cascade)
-            extra["node_status"] = {**extra.get("node_status", {}), "stakeholder_research": "stale"}
+            stale["stakeholder_research"] = "stale"
+        if stale:
+            extra["node_status"] = {**extra.get("node_status", {}), **stale}
         elif "stakeholder" in targets:
             nodes.append("stakeholder_research")
         if "paper" in targets:
@@ -85,16 +90,40 @@ def decide(state: OverallState) -> tuple[list[str] | str, str, dict]:
         return nodes, f"근거 부족 재작업 요청 {sorted(targets)}: {claim_ids}", extra
 
     # 6. 근거 충분(이슈 없음) 또는 재작업 한도 소진 → 평가 종합
-    if st("evaluation_synthesis") == "pending":
+    if st("evaluation_synthesis") in ("pending", "stale"):
         if issues:
             exhausted = sorted({i["target_agent"] for i in issues})
             return ["evaluation_synthesis"], f"재작업 한도 소진 {exhausted} → 미해결 Claim은 Evidence Gap으로 격리하고 평가 종합", extra
         return ["evaluation_synthesis"], "검증 이슈 없음, 근거 충분 → 평가 종합", extra
 
-    if st("report_generation") == "pending":
+    if st("report_generation") in ("pending", "stale"):
         return ["report_generation"], "평가 종합 완료 → 보고서 생성", extra
 
-    return END, "보고서 생성 완료 → 종료", extra
+    # 7. 보고서 생성 직후 품질 평가
+    if st("quality_eval") in ("pending", "stale"):
+        return ["quality_eval"], "보고서 생성 완료 → 품질 평가", extra
+
+    # 8. 품질 미달 → quality_eval이 정한 target으로 재작업 (한도는 quality_eval이 target=None으로 표시)
+    report_eval = state.get("report_eval") or {}
+    target = report_eval.get("target")
+    if report_eval and not report_eval.get("passed") and target:
+        retry[_retry_key(target)] = retry.get(_retry_key(target), 0) + 1
+        stale = {"quality_eval": "stale"}
+        if target in COLLECTORS:
+            stale |= {n: "stale" for n in DOWNSTREAM}
+            if target == "market_research":
+                stale["stakeholder_research"] = "stale"
+        extra["retry_count"] = retry
+        extra["node_status"] = {**extra.get("node_status", {}), **stale}
+        failed = [k for k, v in report_eval.get("items", {}).items() if not v.get("passed")]
+        return [target], f"품질 미달 {failed} → {target} 재작업 ({_retry_key(target)} {retry[_retry_key(target)]}회차)", extra
+
+    # 9. 종료
+    if not report_eval:
+        return END, "보고서 생성 완료 → 종료", extra
+    if report_eval.get("passed"):
+        return END, "품질 평가 통과 → 종료", extra
+    return END, "품질 미달·재작업 한도 소진 → 6.3절에 미통과 항목 공개 후 종료", extra
 
 
 def supervisor_node(state: OverallState) -> dict:

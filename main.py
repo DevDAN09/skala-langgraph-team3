@@ -1,4 +1,5 @@
 """main.py - Non-interactive Multi-Agent System Entry Point"""
+import json
 import sys
 import time
 import uuid
@@ -27,6 +28,7 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "report_eval": None,
     "run_id": "",
     "step_count": 0,
     "node_status": {},
@@ -50,6 +52,9 @@ def main():
 
         # Markdown 원본 보존
         REPORT_MD_PATH.write_text(final_state["report"], encoding="utf-8")
+        # 최종 State 보존: scripts/eval_report.py로 품질 평가 기준값을 다시 재볼 때 쓴다
+        state_path = REPORT_MD_PATH.with_name("final_state.json")
+        state_path.write_text(json.dumps(final_state, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
 
         # PDF 변환 및 산출물 생성 (Graceful Fallback 지원)
         pdf_success = False
@@ -67,6 +72,10 @@ def main():
         else:
             print(f"⚠️ [Fallback] PDF 생성 실패로 마크다운 보고서가 유지됩니다: {REPORT_MD_PATH}")
         print(f"📝 마크다운 원본 경로: {REPORT_MD_PATH}")
+        report_eval = final_state.get("report_eval")
+        if report_eval:
+            failed = [k for k, v in report_eval["items"].items() if not v["passed"]]
+            print(f"🔎 품질 평가: {'통과' if report_eval['passed'] else f'미달 {failed}'} (stage={report_eval['stage']})")
         print("=" * 70)
         return 0
     except Exception as e:

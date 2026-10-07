@@ -17,6 +17,7 @@ def test_mock_state_keys():
         "trl",
         "synthesis",
         "report",
+        "report_eval",
         "run_id",
         "step_count",
         "node_status",

@@ -46,6 +46,19 @@ class TRL(TypedDict):
     research_evidence: list[str]
     adoption_evidence: list[str]
 
+class QualityItem(TypedDict):
+    passed: bool
+    score: int | None        # LLM Judge 점수 1–5. 규칙만 본 항목은 None
+    failures: list[str]      # "G1: …" 형식의 실패 규칙과 사유
+    quotes: list[str]        # Judge가 지목한 문제 문장 원문
+
+class ReportEval(TypedDict):
+    passed: bool
+    stage: Literal["rules", "judge"]   # 판정이 끝난 단계 (규칙 실패 시 Judge 생략)
+    items: dict[str, QualityItem]      # groundedness | neutrality | bias | coverage | format
+    target: str | None                 # 재작업 노드. 통과 또는 한도 소진이면 None
+    feedback: str                      # report_generation 프롬프트에 넣을 수정 지시
+
 # 2. Custom Upsert Reducers (멱등성 보장)
 def upsert_claims(existing: list[Claim], updates: list[Claim]) -> list[Claim]:
     claim_map = {c["id"]: c for c in (existing or [])}
@@ -83,7 +96,7 @@ def merge_dict(existing: dict, updates: dict) -> dict:
     """병렬 노드가 같은 dict 키(node_status, last_error)에 동시에 써도 InvalidUpdateError 없이 병합한다."""
     return {**(existing or {}), **(updates or {})}
 
-# 3. Overall State (페이로드 14개 + 제어 메타 7개)
+# 3. Overall State (페이로드 15개 + 제어 메타 7개)
 class OverallState(TypedDict):
     selected: dict
     tech_sw: dict
@@ -99,6 +112,7 @@ class OverallState(TypedDict):
     trl: dict[str, TRL]
     synthesis: dict
     report: str
+    report_eval: ReportEval | None     # 보고서 품질 평가 최신 판정 (overwrite, 이력은 트레이스)
 
     # ── 제어 메타 (Supervisor 라우팅·종료·재개용 최소 상태. 본문 데이터는 넣지 않는다)
     run_id: str                                          # 외부 트레이스(LangSmith)와 잇는 상관 키

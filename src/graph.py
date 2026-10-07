@@ -12,6 +12,7 @@ from src.research.market import market_research_node
 from src.research.stakeholder import stakeholder_research_node
 from src.synthesis.evaluator import evaluation_synthesis_node
 from src.synthesis.report_gen import report_generation_node
+from src.quality.node import quality_eval_node
 
 
 def track_node(name: str, fn):
@@ -42,6 +43,7 @@ def build_evaluation_graph():
         "stakeholder_research": stakeholder_research_node,
         "evaluation_synthesis": evaluation_synthesis_node,
         "report_generation": report_generation_node,
+        "quality_eval": quality_eval_node,
     }
 
     builder.add_node("supervisor", supervisor_node)
