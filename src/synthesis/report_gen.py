@@ -1,5 +1,6 @@
 """src/synthesis/report_gen.py - Jinja2 Template rendering & Strict Grounding report node"""
 from pathlib import Path
+from datetime import date
 from functools import lru_cache
 from html.parser import HTMLParser
 import json
@@ -144,6 +145,18 @@ def domain_axis_value(domain: dict, field: str) -> str:
         for tech in ("KIVI", "CXL-PNM")
     )
 
+
+def claim_reference_numbers(claim: dict, evidence: list[dict], numbers: dict[str, int]) -> str:
+    """Render each source number once even when a Claim has duplicate evidence."""
+    evidence_by_id = {item.get("evidence_id"): item for item in evidence}
+    seen, refs = set(), []
+    for evidence_id in claim.get("evidence_ids", []):
+        source_id = evidence_by_id.get(evidence_id, {}).get("source_id")
+        if source_id in numbers and source_id not in seen:
+            seen.add(source_id)
+            refs.append(f"[{numbers[source_id]}]")
+    return " " + " ".join(refs) if refs else ""
+
 def report_generation_node(state: OverallState) -> dict:
     """Renders the final report for the orchestration layer to persist."""
     print("📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링 실행")
@@ -153,6 +166,7 @@ def report_generation_node(state: OverallState) -> dict:
     env.filters["citation_author"] = citation_author
     env.filters["citation_site_name"] = citation_site_name
     env.globals["domain_axis_value"] = domain_axis_value
+    env.globals["claim_reference_numbers"] = claim_reference_numbers
     env.globals["domain_axis_value"] = domain_axis_value
     template = env.get_template("report.md.j2")
 
@@ -167,7 +181,8 @@ def report_generation_node(state: OverallState) -> dict:
         synthesis=state.get("synthesis", {}),
         sources=[enrich_source(source) for source in state.get("sources", [])],
         evidence=state.get("evidence", []),
-        claims=state.get("claims", [])
+        claims=state.get("claims", []),
+        issued_on=date.today().isoformat(),
     )
 
     if not OPENAI_API_KEY:

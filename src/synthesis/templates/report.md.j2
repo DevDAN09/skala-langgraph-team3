@@ -8,7 +8,7 @@
 {% endfor %}
 {% for source in sources if source.get('source_id') in refs.source_ids %}{% set _ = refs.numbers.update({source.get('source_id'): loop.index}) %}{% endfor %}
 
-> **발행일자**: 2026-09-22  
+> **발행일자**: {{ issued_on }}<br>
 > **평가 도메인**: 클라우드 LLM 서빙 인프라  
 > **평가 대상**: KIVI (SW/알고리즘 2-bit 양자화) vs CXL-PNM (HW/CXL 근접 처리 가속)  
 
@@ -45,7 +45,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ### 3.1 KIVI (SW 알고리즘)
 - **메커니즘**: {{ tech_sw.get('mechanism', '검증된 기술 설명이 없다.') }}
 {% for claim in claims if claim.get('tech') == 'KIVI' and claim.get('status') == 'ok' %}
-- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}){% for item in evidence if item.get('evidence_id') in claim.get('evidence_ids', []) %} [{{ refs.numbers.get(item.get('source_id'), '?') }}]{% endfor %}
+- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}){{ claim_reference_numbers(claim, evidence, refs.numbers) }}
 {% else %}
 - 검증된 KIVI Claim이 없다.
 {% endfor %}
@@ -53,7 +53,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 ### 3.2 CXL-PNM (HW 가속)
 - **메커니즘**: {{ tech_hw.get('mechanism', '검증된 기술 설명이 없다.') }}
 {% for claim in claims if claim.get('tech') == 'CXL-PNM' and claim.get('status') == 'ok' %}
-- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({{ claim.get('kind') }}{% if claim.get('kind') == 'simulation' %}; simulation{% endif %}){% for item in evidence if item.get('evidence_id') in claim.get('evidence_ids', []) %} [{{ refs.numbers.get(item.get('source_id'), '?') }}]{% endfor %}
+- **[{{ claim.get('id') }}]** {{ claim.get('statement') }} ({% if claim.get('kind') == 'simulation' %}시뮬레이션{% else %}{{ claim.get('kind') }}{% endif %}){{ claim_reference_numbers(claim, evidence, refs.numbers) }}
 {% else %}
 - 검증된 CXL-PNM Claim이 없다.
 {% endfor %}
@@ -113,7 +113,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 - **시뮬레이션 수치 한계**: CXL-PNM의 성능 지표는 7nm ASIC 시뮬레이션 결과로 실제 상용 서버 환경의 실측 지표와 차이가 발생할 수 있음.
 {% if synthesis.get("evidence_gaps") %}
 {% for gap in synthesis.get("evidence_gaps", []) %}
-- **[{{ gap.get("id", "Unknown") }}]** {{ gap.get("statement", "근거가 불충분하다.") }} (상태: `{{ gap.get("status", "Unknown") }}`)
+- **[{{ gap.get("id", "Unknown") }}]** {{ gap.get("statement") or (gap.get("perspective", "해당") ~ " 관점의 세부 주장이 생성되지 않아 추가 근거 수집이 필요하다.") }} (상태: `{{ gap.get("status", "Unknown") }}`)
 {% endfor %}
 {% else %}
 - 미확인 Claim이 없다.
