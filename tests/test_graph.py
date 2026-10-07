@@ -3,7 +3,6 @@ import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 from src.graph import build_evaluation_graph
 from src.supervisor import MAX_STEPS, route_supervisor, supervisor_node
-from src.synthesis.quality import route_quality
 from tests.mock_data import INITIAL_INPUT_STATE, MOCK_STATE
 
 
@@ -18,14 +17,15 @@ def test_graph_accepts_in_process_checkpointer():
     assert build_evaluation_graph(checkpointer=saver).checkpointer is saver
 
 
-def test_compiled_topology_routes_research_only_through_supervisor():
+def test_compiled_topology_routes_every_node_through_supervisor():
     edges = {(edge.source, edge.target) for edge in build_evaluation_graph().get_graph().edges}
-    research = {"paper_analysis", "market_research", "stakeholder_research"}
     assert ("__start__", "supervisor") in edges
-    assert {(agent, "supervisor") for agent in research} <= edges
-    assert not {(source, target) for source, target in edges if source in research and target in research}
-    assert ("evaluation_synthesis", "report_generation") in edges
-    assert ("report_generation", "quality_eval") in edges
+    assert all("supervisor" in edge for edge in edges if "__start__" not in edge and "__end__" not in edge)
+    assert ("evaluation_synthesis", "supervisor") in edges
+    assert ("report_generation", "supervisor") in edges
+    assert ("quality_eval", "supervisor") in edges
+    assert ("evaluation_synthesis", "report_generation") not in edges
+    assert ("report_generation", "quality_eval") not in edges
 
 
 def test_supervisor_selects_an_initial_research_agent():
@@ -49,6 +49,23 @@ def test_supervisor_ends_research_at_step_limit():
     result = supervisor_node({**INITIAL_INPUT_STATE, "step_count": MAX_STEPS})
     assert result["next_agent"] == "evaluation_synthesis"
     assert route_supervisor(result) == "evaluation_synthesis"
+
+
+def test_supervisor_owns_synthesis_report_quality_and_end_progression(monkeypatch):
+    import src.supervisor as supervisor
+    monkeypatch.setattr(supervisor, "evidence_audit_node", lambda state: {"audit": {"issues": []}})
+    base = {**MOCK_STATE, "node_status": {
+        "paper": "complete", "market": "complete", "stakeholder": "complete"}}
+    synthesis = supervisor_node(base)
+    assert synthesis["next_agent"] == "evaluation_synthesis"
+    report = supervisor_node({**base, "node_status": {**base["node_status"], "synthesis": "complete"}})
+    assert report["next_agent"] == "report_generation"
+    quality = supervisor_node({**base, "node_status": {
+        **base["node_status"], "synthesis": "complete", "report": "complete"}})
+    assert quality["next_agent"] == "quality_eval"
+    end = supervisor_node({**base, "quality": {"passed": True, "attempts": 1}, "node_status": {
+        **base["node_status"], "synthesis": "complete", "report": "complete", "quality": "complete"}})
+    assert end["next_agent"] == "END"
 
 
 def test_dispatch_retry_counts_only_selected_agent(monkeypatch):
@@ -243,7 +260,7 @@ def test_compiled_graph_mocked_e2e(monkeypatch):
     final_state = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
     assert {"paper_analysis", "market_research", "stakeholder_research", "evaluation_synthesis", "report_generation", "quality_eval"} <= set(calls)
     assert final_state["report"] and final_state["quality"]["attempts"] == 1
-    assert final_state["step_count"] <= MAX_STEPS and final_state["next_agent"] == "evaluation_synthesis"
+    assert final_state["step_count"] <= MAX_STEPS and final_state["next_agent"] == "END"
 
 
 def test_compiled_graph_quality_research_rework_returns_through_supervisor(monkeypatch):
@@ -262,12 +279,130 @@ def test_compiled_graph_quality_research_rework_returns_through_supervisor(monke
     assert final["quality"]["passed"] is True and final["step_count"] <= MAX_STEPS
 
 
-def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():
-    assert route_quality({"quality": {"passed": False, "failures": ["coverage"], "rework_targets": ["market"], "attempts": 1}}) == "supervisor"
-    # 재수집 대상이 없는 서술·형식 미달은 같은 보고서만 다시 나오므로 재작성하지 않고 종료 (#70)
-    assert route_quality({"quality": {"passed": False, "failures": ["REFERENCES"], "attempts": 1}}) == "END"
-    assert route_quality({"quality": {"passed": False, "failures": ["neutrality"], "attempts": 1}}) == "END"
-    assert route_quality({"quality": {"passed": True, "failures": [], "attempts": 1}}) == "END"
+def test_compiled_graph_quality_writing_failure_stops_without_rewrite(monkeypatch):
+    import src.graph as graph_module
+
+    calls = []
+    monkeypatch.setattr(
+        graph_module,
+        "paper_analysis_node",
+        lambda state: calls.append("paper") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "market_research_node",
+        lambda state: calls.append("market") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "stakeholder_research_node",
+        lambda state: calls.append("stakeholder") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "evaluation_synthesis_node",
+        lambda state: calls.append("synthesis") or {},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "report_generation_node",
+        lambda state: calls.append("report")
+        or {"report": "# SUMMARY\n# REFERENCE"},
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "quality_evaluation_node",
+        lambda state: calls.append("quality")
+        or {
+            "quality": {
+                "passed": False,
+                "failures": ["neutrality"],
+                "rework_targets": [],
+                "exhausted_targets": [],
+                "attempts": 1,
+            }
+        },
+    )
+
+    final = graph_module.build_evaluation_graph().invoke(INITIAL_INPUT_STATE)
+
+    # 서술·형식 미달은 재작성하지 않고 종료 (#70)
+    assert calls.count("report") == 1
+    assert calls.count("quality") == 1
+    assert final["quality"]["passed"] is False
+    assert final["next_agent"] == "END"
+
+
+def test_supervisor_routes_quality_writing_failure_to_end(monkeypatch):
+    import src.supervisor as supervisor
+
+    monkeypatch.setattr(
+        supervisor,
+        "evidence_audit_node",
+        lambda state: {"audit": {"issues": []}},
+    )
+    state = {
+        **MOCK_STATE,
+        "quality": {
+            "passed": False,
+            "failures": ["REFERENCE"],
+            "rework_targets": [],
+            "exhausted_targets": [],
+            "attempts": 1,
+        },
+        "node_status": {
+            "paper": "complete",
+            "market": "complete",
+            "stakeholder": "complete",
+            "synthesis": "complete",
+            "report": "complete",
+            "quality": "complete",
+        },
+    }
+
+    result = supervisor_node(state)
+
+    assert result["next_agent"] == "END"
+    assert result["last_decision"]["reason"] == "quality_writing_exhausted"
+
+
+def test_supervisor_stops_quality_research_rework_at_retry_limit(monkeypatch):
+    import src.supervisor as supervisor
+
+    monkeypatch.setattr(
+        supervisor,
+        "evidence_audit_node",
+        lambda state: {"audit": {"issues": []}},
+    )
+    state = {
+        **MOCK_STATE,
+        "quality": {
+            "passed": False,
+            "failures": ["coverage"],
+            "rework_targets": [],
+            "exhausted_targets": ["paper"],
+            "attempts": 1,
+        },
+        "retry_count": {
+            "paper": 2,
+            "market": 0,
+            "stakeholder": 0,
+        },
+        "node_status": {
+            "paper": "complete",
+            "market": "complete",
+            "stakeholder": "complete",
+            "synthesis": "complete",
+            "report": "complete",
+            "quality": "complete",
+        },
+    }
+
+    result = supervisor_node(state)
+
+    assert result["next_agent"] == "END"
+    assert result["last_decision"]["reason"] == "quality_research_exhausted"
+    assert result.get("retry_count", state["retry_count"]) == state["retry_count"]
 
 
 @pytest.mark.deprecated
@@ -309,15 +444,60 @@ def test_quality_bias_control_does_not_recheck_counter_search():
     assert result["scores"]["bias_control"] is True
 
 
-def test_quality_routes_data_gap_without_eligible_agent_to_end():
-    """#73-2: 재수집 대상이 모두 한도에 도달했으면 같은 보고서를 다시 만들지 않고 종료한다."""
+def test_quality_routes_data_gap_without_eligible_agent_to_end(monkeypatch):
+    """재수집 대상이 모두 한도에 도달하면 Supervisor가 추가 재작업 없이 종료한다."""
+    import src.supervisor as supervisor
     from src.synthesis.quality import quality_evaluation_node
-    state = {**MOCK_STATE, "claims": [_gap_claim("MKT-01", "market", "KIVI", status="insufficient")],
-             "report": "## SUMMARY\n## REFERENCE\n", "retry_count": {"paper": 2, "market": 2, "stakeholder": 2}}
+
+    monkeypatch.setattr(
+        supervisor,
+        "evidence_audit_node",
+        lambda state: {"audit": {"issues": []}},
+    )
+
+    state = {
+        **MOCK_STATE,
+        "claims": [
+            _gap_claim(
+                "MKT-01",
+                "market",
+                "KIVI",
+                status="insufficient",
+            )
+        ],
+        "report": "## SUMMARY\n## REFERENCE\n",
+        "retry_count": {
+            "paper": 2,
+            "market": 2,
+            "stakeholder": 2,
+        },
+        "node_status": {
+            "paper": "complete",
+            "market": "complete",
+            "stakeholder": "complete",
+            "synthesis": "complete",
+            "report": "complete",
+            "quality": "complete",
+        },
+    }
+
     quality = quality_evaluation_node(state)["quality"]
-    assert quality["rework_targets"] == [] and set(quality["exhausted_targets"]) == {"paper", "market", "stakeholder"}
-    assert route_quality({"quality": quality}) == "END"
-    assert route_quality({"quality": {**quality, "failures": ["coverage", "REFERENCE"]}}) == "END"  # #70
+    assert quality["rework_targets"] == []
+    assert set(quality["exhausted_targets"]) == {
+        "paper",
+        "market",
+        "stakeholder",
+    }
+
+    result = supervisor_node({**state, "quality": quality})
+
+    assert result["next_agent"] == "END"
+    assert result["last_decision"]["reason"] == "quality_research_exhausted"
+
+    # 서술 미달이 함께 있어도 재작성하지 않고 종료 (#70)
+    result_writing = supervisor_node({**state, "quality": {**quality, "failures": ["coverage", "REFERENCE"]}})
+    assert result_writing["next_agent"] == "END"
+    assert result_writing["last_decision"]["reason"] == "quality_writing_exhausted"
 
 
 def test_quality_maturity_gap_targets_agent_that_owns_missing_claim():

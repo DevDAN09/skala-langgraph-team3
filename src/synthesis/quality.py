@@ -140,16 +140,3 @@ def quality_evaluation_node(state: OverallState) -> dict:
                         "coverage_gaps": coverage_gaps, "disclosed_gaps": disclosed_gaps,
                         "rework_targets": sorted(rework_targets), "exhausted_targets": exhausted,
                         "attempts": attempts + 1}}
-
-
-def route_quality(state: OverallState) -> str:
-    """재수집 가능한 대상이 있으면 Supervisor, 그 외에는 종료한다.
-    재수집 한도에 도달했거나 서술·형식만 미달이면 같은 State로 다시 돌아도 결과가 같으므로 종료한다 (#70)."""
-    quality = state.get("quality") or {}
-    if quality.get("passed") or quality.get("attempts", 0) >= MAX_QUALITY_ATTEMPTS:
-        return "END"
-    if quality.get("rework_targets"):
-        return "supervisor"
-    # 보고서는 템플릿 + 필드 번역이라 같은 State로 다시 만들면 같은 결과가 나온다 (#70).
-    # 재수집 대상이 없는 미달(서술·형식 포함)은 재작성 대신 결과를 남기고 종료한다.
-    return "END"
