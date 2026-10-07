@@ -51,7 +51,13 @@ def supervisor_node(state: OverallState) -> dict:
         return {**audit_result, "last_audited_step": step, "claims": finalize_retry_statuses(state.get("claims", []), _issues(audited), retries), "next_agent": "evaluation_synthesis", "last_decision": {"next": "evaluation_synthesis", "reason": "max_steps"}}
     candidates = _candidates(audited)
     if not candidates:
-        return {**audit_result, "last_audited_step": step, "next_agent": "evaluation_synthesis", "last_decision": {"next": "evaluation_synthesis", "reason": "sufficient_or_exhausted"}}
+        return {
+            **audit_result,
+            "last_audited_step": step,
+            "claims": finalize_retry_statuses(audited.get("claims", []), _issues(audited), state.get("retry_count") or {}),
+            "next_agent": "evaluation_synthesis",
+            "last_decision": {"next": "evaluation_synthesis", "reason": "sufficient_or_exhausted"},
+        }
 
     selected = select_agent(candidates, audited)
     targeted = {issue.get("target_agent") for issue in _issues(audited)}
@@ -60,7 +66,6 @@ def supervisor_node(state: OverallState) -> dict:
     if selected in targeted and (state.get("node_status") or {}).get(selected) == "complete":
         retry_count[selected] = retry_count.get(selected, 0) + 1
         result["retry_count"] = retry_count
-        result["claims"] = finalize_retry_statuses(state.get("claims", []), _issues(audited), retry_count)
     quality = dict(state.get("quality") or {})
     if selected in quality.get("rework_targets", []):
         quality["rework_targets"] = [agent for agent in quality["rework_targets"] if agent != selected]

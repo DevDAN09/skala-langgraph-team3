@@ -11,7 +11,9 @@ from jinja2 import Environment, FileSystemLoader
 from langchain_openai import ChatOpenAI
 from src.state import OverallState
 from src.config import OPENAI_API_KEY, POLISHING_LLM_MODEL
-from src.research.stakeholder import drop_unverified_actors
+from src.rag.agentic_rag import AXIS_BY_ID
+from src.research.market import AXIS_BY_CLAIM_ID as MARKET_AXIS_BY_ID
+from src.research.stakeholder import COUNTER_NOT_FOUND, END_USER_GAP, STAKEHOLDER_QUERY_PLAN, UNVERIFIED
 
 _PLACEHOLDER_VALUES = {"", "web", "unknown", "n.d.", "na", "n/a"}
 _DOMAIN_FIELD_ALIASES = {
@@ -114,7 +116,8 @@ def citation_author(source: dict, allow_publisher: bool = True) -> str:
     authors = source.get("authors")
     if not _is_placeholder(authors):
         names = authors if isinstance(authors, list) else str(authors).split(";")
-        names = [str(item).strip() for item in names if str(item).strip()]
+        names = [re.sub(r",?\s*https?://\S+", "", str(item)).strip(" ,") for item in names]
+        names = [name for name in names if name]
         return f"{names[0]} et al." if len(names) >= 3 else ", ".join(names)
     if allow_publisher and not _is_placeholder(source.get("publisher")): return str(source["publisher"])
     return citation_site_name(source) if source.get("source_type") == "web" else "기관 또는 작성자 미상"
@@ -124,27 +127,6 @@ def domain_axis_value(domain: dict, field: str) -> str:
     value = next((domain.get(key) for key in _DOMAIN_FIELD_ALIASES[field] if domain.get(key) is not None), None)
     if not isinstance(value, dict): return str(value or "공개 근거 미확인").replace("corpus 내 근거 미확인", "공개 근거 미확인")
     return "<br>".join(f"**{tech}**: {str(value.get(tech) or '공개 근거 미확인').replace('corpus 내 근거 미확인', '공개 근거 미확인')}" for tech in ("KIVI", "CXL-PNM"))
-
-
-_DOMAIN_FIELD_ALIASES = {
-    "memory_footprint": ("memory_footprint",),
-    "bandwidth_transfer": ("bandwidth_transfer",),
-    "throughput_latency": ("throughput_latency", "latency_impact"),
-    "accuracy": ("accuracy",),
-    "infrastructure": ("infrastructure", "infrastructure_change", "infra_change"),
-    "operational_complexity": ("operational_complexity",),
-}
-
-
-def domain_axis_value(domain: dict, field: str) -> str:
-    """Format per-technology domain data for one Markdown table cell."""
-    value = next((domain.get(key) for key in _DOMAIN_FIELD_ALIASES[field] if domain.get(key) is not None), None)
-    if not isinstance(value, dict):
-        return str(value or "공개 근거 미확인").replace("corpus 내 근거 미확인", "공개 근거 미확인")
-    return "<br>".join(
-        f"**{tech}**: {str(value.get(tech) or '공개 근거 미확인').replace('corpus 내 근거 미확인', '공개 근거 미확인')}"
-        for tech in ("KIVI", "CXL-PNM")
-    )
 
 
 def claim_reference_numbers(claim: dict, evidence: list[dict], numbers: dict[str, int]) -> str:
@@ -158,91 +140,331 @@ def claim_reference_numbers(claim: dict, evidence: list[dict], numbers: dict[str
             refs.append(f"[{numbers[source_id]}]")
     return " " + " ".join(refs) if refs else ""
 
-_OUTER_FENCE = re.compile(r"^\s*```[\w-]*[ \t]*\n(.*?)\n?```\s*$", re.S)
-_SECTION = re.compile(r"^#{2,3}\s+(\S+)", re.M)
+
+# --- Presentation layer: the report shows a compressed, cited view; State is never trimmed. ---
+
+_TECHS = ("KIVI", "CXL-PNM")
+# 3장 대표 Claim 우선순위: 메커니즘(infrastructure 축 = tech.mechanism) > 메모리 효과 > 성능 > 정확도 > 나머지.
+_OVERVIEW_PRIORITY = ("infrastructure", "memory_footprint", "throughput_latency", "accuracy", "bandwidth_transfer", "operational_complexity")
+_OVERVIEW_LIMIT = 4
+_AXIS_LABELS = {
+    "infrastructure": "메커니즘·인프라 요구", "memory_footprint": "메모리 효과", "throughput_latency": "성능·지연",
+    "accuracy": "정확도·한계", "bandwidth_transfer": "대역폭·전송", "operational_complexity": "운영 복잡도",
+}
+_DOMAIN_ROWS = (
+    ("memory_footprint", "메모리 점유량"), ("bandwidth_transfer", "대역폭·전송"), ("throughput_latency", "처리량·응답 지연"),
+    ("accuracy", "정확도"), ("infrastructure", "인프라 변경"), ("operational_complexity", "운영 복잡도"),
+)
+_KIND_LABELS = {"vendor_claim": "벤더 주장", "simulation": "시뮬레이션", "estimate": "추정"}
+_MARKET_GROUPS = (("채택·실증", ("adoption", "deployment")), ("생태계·지원", ("ecosystem",)))
+_ACTOR_LABELS = {
+    "cloud_serving_operator": "클라우드/서빙 운영자", "framework_developer": "프레임워크 개발자",
+    "end_user": "End User", "memory_vendor": "HW·메모리 공급자",
+}
+_PERSPECTIVE_LABELS = {"maturity": "기술 성숙도", "market": "시장성", "stakeholder": "이해관계자", "domain": "도메인"}
+_GAP_LABELS = {
+    "insufficient": "근거 부족(insufficient): 공개 자료에서 충분한 근거를 확보하지 못함",
+    "rejected": "불채택(rejected): 확보된 Evidence와 Claim이 일치하지 않아 채택하지 않음",
+}
+_NO_COUNTER = "반대 근거 미확인"
+_STK_SEGMENT = re.compile(
+    r"^\[(?P<family>.+?) 계열\] Benefit: (?P<benefit>.*?) \| Concern: (?P<concern>.*?)"
+    r" \| Barrier: (?P<barrier>.*?) \(근거: (?P<ids>[^()]*)\)$"
+)
+
+
+def _one_line(text: object) -> str:
+    return " ".join(str(text or "").split())
+
+
+def _display(text: object) -> str:
+    """One-line statement whose in-paper numeric citations cannot be confused with REFERENCE numbers."""
+    return re.sub(r"\[(\d+(?:\s*[,–-]\s*\d+)*)\]", r"(원문 인용 \1)", _one_line(text))
+
+
+def _strip_fence(text: str) -> str:
+    stripped = text.strip()
+    match = re.fullmatch(r"```[A-Za-z]*\n(.*)\n```", stripped, re.S)
+    return match.group(1).strip() if match else stripped
+
+
+_EXCERPT_LIMIT = 160
+
+
+def _excerpt(text: str) -> str:
+    """Keep table cells short: a long quote is cut at its first sentence and marked as an excerpt."""
+    if len(text) <= _EXCERPT_LIMIT:
+        return text
+    first = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+    return f"{first} …(발췌)" if len(first) < len(text) else text
+
+
+def summary_sentence(text: str) -> str:
+    """SUMMARY shows only the first sentence of a representative Claim; the full quote stays in 3장."""
+    first = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+    return f"{first} …" if len(first) < len(text) else text
+
+
+_TRANSLATE_KEYS = {"statement", "benefit", "concern", "barrier", "text"}
+_TRANSLATE_BATCH = 15
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
-_IGNORED_TOKENS = re.compile(r"\[\d+\]|\b[A-Z]{3}-[A-Z]?\d{2}\b|\b(?:EV|SRC)-[\w-]+")
 
 
-def strip_code_fence(text: str) -> str:
-    """Polishing LLM이 응답 전체를 ```markdown ... ```으로 감싸면 바깥 펜스를 벗긴다 (PDF가 코드블록으로 찍히는 것 방지)."""
-    match = _OUTER_FENCE.match(text or "")
-    return match.group(1) if match else text
+def _needs_translation(text: str) -> bool:
+    letters = re.findall(r"[A-Za-z가-힣]", text)
+    return bool(letters) and sum("가" <= ch <= "힣" for ch in letters) < len(letters) * 0.3
 
 
-def _body_numbers(markdown: str) -> set[str]:
-    """3–5장(기술 개요·관점별 평가·시사점) 본문의 수치. 인용 번호·Claim ID·근거 ID는 뺀다."""
-    heads = list(_SECTION.finditer(markdown))
-    body = "\n".join(markdown[h.end(): heads[i + 1].start() if i + 1 < len(heads) else len(markdown)]
-                     for i, h in enumerate(heads) if h.group(1).rstrip(".").split(".")[0] in {"3", "4", "5"})
-    return set(_NUMBER.findall(_IGNORED_TOKENS.sub(" ", body)))
+def _walk_texts(node: object, apply=None) -> list[str]:
+    """Collect (or replace via `apply`) every free-text field the report displays."""
+    found: list[str] = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in _TRANSLATE_KEYS and isinstance(value, str):
+                found.append(value)
+                if apply: node[key] = apply(value)
+            elif key == "barriers" and isinstance(value, list):
+                found.extend(value)
+                if apply: node[key] = [apply(item) for item in value]
+            else:
+                found.extend(_walk_texts(value, apply))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_walk_texts(item, apply))
+    return found
 
 
-def number_diff(skeleton: str, polished: str) -> tuple[set[str], set[str]]:
-    """polishing 전후 3–5장 수치의 (추가, 삭제). 수치가 바뀌면 사실이 바뀐 것이다."""
-    before, after = _body_numbers(skeleton), _body_numbers(polished)
-    return after - before, before - after
+def translate_texts(texts: list[str]) -> dict[str, str]:
+    """Translate evidence-derived sentences to Korean; a translation that changes any number is discarded."""
+    pending = [text for text in dict.fromkeys(texts) if _needs_translation(text)]
+    if not pending or not OPENAI_API_KEY:
+        return {}
+    llm = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0)
+    translated: dict[str, str] = {}
+    for start in range(0, len(pending), _TRANSLATE_BATCH):
+        batch = pending[start:start + _TRANSLATE_BATCH]
+        prompt = f"""다음 JSON 배열의 각 문장을 한국어 보고서 문체(`-다.` 체)로 번역하라.
+- 배열 길이와 순서를 그대로 유지하고, JSON 문자열 배열만 반환하라.
+- 수치·단위·연도·괄호 안 표기·고유명사·제품명·기술 용어(KIVI, CXL, KV cache 등)는 바꾸지 마라.
+- 논문 원문의 1인칭(we/our)은 '저자들은'·'해당 연구는'처럼 옮겨라.
+- 내용을 추가·삭제·요약하지 마라.
+
+{json.dumps(batch, ensure_ascii=False)}"""
+        try:
+            result = json.loads(_strip_fence(llm.invoke(prompt).content))
+        except Exception as error:
+            print(f"⚠️ [경고/Fallback] Claim 번역 실패, 원문 유지: {error}")
+            continue
+        if not isinstance(result, list) or len(result) != len(batch):
+            print("⚠️ [경고/Fallback] Claim 번역 결과 형식 불일치, 원문 유지")
+            continue
+        for source, target in zip(batch, result):
+            if isinstance(target, str) and target.strip() and sorted(_NUMBER.findall(source)) == sorted(_NUMBER.findall(target)):
+                translated[source] = target.strip()
+    return translated
+
+
+def _verified(claims: list[dict]) -> list[dict]:
+    return [claim for claim in claims if claim.get("status") == "ok" and claim.get("statement")]
+
+
+class _Citations:
+    """Collects the evidence actually cited in the body; REFERENCE lists only those sources."""
+
+    def __init__(self, evidence: list[dict], sources: list[dict]) -> None:
+        self._source_by_evidence = {item.get("evidence_id"): item.get("source_id") for item in evidence}
+        self._sources = {source.get("source_id"): source for source in sources}
+        self._order = list(dict.fromkeys(source.get("source_id") for source in sources))
+        self._used: set[str] = set()
+
+    def use(self, evidence_ids: list[str]) -> list[str]:
+        for evidence_id in evidence_ids:
+            if self._source_by_evidence.get(evidence_id) in self._sources:
+                self._used.add(self._source_by_evidence[evidence_id])
+        return list(evidence_ids)
+
+    def numbers(self) -> dict[str, int]:
+        return {source_id: index for index, source_id in enumerate((sid for sid in self._order if sid in self._used), 1)}
+
+    def cited_sources(self) -> list[dict]:
+        return [self._sources[source_id] for source_id in self.numbers()]
+
+    def marker(self, evidence_ids: list[str]) -> str:
+        numbers, refs = self.numbers(), []
+        for evidence_id in evidence_ids:
+            number = numbers.get(self._source_by_evidence.get(evidence_id))
+            if number and f"[{number}]" not in refs:
+                refs.append(f"[{number}]")
+        return " " + " ".join(refs) if refs else ""
+
+
+def _claim_axis(claim: dict) -> str | None:
+    return (AXIS_BY_ID.get(claim.get("id")) or (None, None, None))[2]
+
+
+def select_overview_claims(claims: list[dict], tech: str, limit: int = _OVERVIEW_LIMIT) -> list[dict]:
+    """Pick representative verified domain Claims by axis priority, skipping duplicate statements."""
+    candidates = [claim for claim in _verified(claims) if claim.get("tech") == tech and claim.get("perspective") == "domain"]
+    def rank(claim: dict) -> int:
+        axis = _claim_axis(claim)
+        return _OVERVIEW_PRIORITY.index(axis) if axis in _OVERVIEW_PRIORITY else len(_OVERVIEW_PRIORITY)
+    picked, seen = [], set()
+    for claim in sorted(candidates, key=rank):
+        key = _one_line(claim["statement"]).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        picked.append(claim)
+        if len(picked) == limit:
+            break
+    return picked
+
+
+def _claim_item(claim: dict, citations: _Citations) -> dict:
+    return {
+        "id": claim["id"], "tech": claim.get("tech"), "statement": _display(claim["statement"]),
+        "kind": _KIND_LABELS.get(claim.get("kind"), ""), "axis": _AXIS_LABELS.get(_claim_axis(claim) or "", ""),
+        "ev": citations.use(claim.get("evidence_ids", [])),
+    }
+
+
+def _domain_rows(domain: dict, verified: list[dict], shown_ids: set[str], citations: _Citations) -> list[dict]:
+    """Domain table cells cite a Claim only when the cell text is exactly that Claim's statement."""
+    rows = []
+    for field, label in _DOMAIN_ROWS:
+        value = next((domain.get(key) for key in _DOMAIN_FIELD_ALIASES[field] if domain.get(key) is not None), None)
+        if not isinstance(value, dict):
+            rows.append({"label": label, "cells": [{"tech": None, "text": domain_axis_value(domain, field), "id": None, "ev": [], "shown": False}]})
+            continue
+        cells = []
+        for tech in _TECHS:
+            text = _one_line(value.get(tech)).replace("corpus 내 근거 미확인", "공개 근거 미확인") or "공개 근거 미확인"
+            backing = next((c for c in verified if c.get("tech") == tech and _one_line(c["statement"]) == text), None)
+            shown = bool(backing and backing["id"] in shown_ids)
+            cells.append({
+                "tech": tech, "text": _excerpt(_display(text)), "id": backing["id"] if backing else None,
+                "ev": citations.use(backing.get("evidence_ids", [])) if backing else [],
+                "shown": shown,
+            })
+        rows.append({"label": label, "cells": cells})
+    return rows
+
+
+def _market_view(market: dict, verified: list[dict], citations: _Citations) -> dict:
+    groups = [
+        {"label": label, "items": [_claim_item(c, citations) for c in verified if MARKET_AXIS_BY_ID.get(c.get("id")) in axes]}
+        for label, axes in _MARKET_GROUPS
+    ]
+    maturity = [_claim_item(c, citations) for c in verified if str(c.get("id", "")).startswith("MAT-A")]
+    raw_barriers = _one_line(market.get("barriers"))
+    barriers = [] if raw_barriers in {"", COUNTER_NOT_FOUND} else [part.strip() for part in raw_barriers.split(" | ") if part.strip()]
+    return {"groups": groups, "maturity": maturity, "barriers": barriers}
+
+
+def _counter_text(text: str) -> str:
+    return _NO_COUNTER if text == COUNTER_NOT_FOUND else _one_line(text)
+
+
+def _stakeholder_view(stakeholder: dict, claims: list[dict], families: dict[str, str], citations: _Citations) -> list[dict]:
+    """4 Actor x 2 technology rows from the canonical slots; Concern/Barrier cite the counter evidence they came from."""
+    claims_by_id = {claim.get("id"): claim for claim in claims}
+    tech_by_family = {family: tech for tech, family in families.items()}
+    actors = []
+    for slot in dict.fromkeys(item["slot"] for item in STAKEHOLDER_QUERY_PLAN):
+        segments = {}
+        for segment in re.split(r" / (?=\[[^\[\]]+ 계열\] )", str(stakeholder.get(slot) or "")):
+            match = _STK_SEGMENT.match(segment.strip())
+            if match and match["family"] in tech_by_family:
+                segments[tech_by_family[match["family"]]] = match.groupdict()
+        plan = {item["tech"]: item for item in STAKEHOLDER_QUERY_PLAN if item["slot"] == slot}
+        rows = []
+        for tech in _TECHS:
+            claim_id = plan[tech]["claim_id"]
+            claim = claims_by_id.get(claim_id) or {}
+            row = {"tech": tech, "family": families[tech], "id": claim_id}
+            if claim.get("status") != "ok" or not claim.get("statement"):
+                rows.append({**row, "gap": END_USER_GAP if slot == "end_user" else UNVERIFIED})
+                continue
+            benefit = _one_line(claim["statement"])
+            concern = barrier = UNVERIFIED
+            concern_ev, barrier_ev = [], []
+            segment = segments.get(tech)
+            # 요약 슬롯이 현재 Claim과 같은 시점에 만들어진 경우에만 Concern/Barrier를 가져온다.
+            if segment and _one_line(segment["benefit"]) == benefit:
+                concern, barrier = _counter_text(segment["concern"]), _counter_text(segment["barrier"])
+                listed = {item.strip() for item in segment["ids"].split(",")}
+                counter_id = next((eid for eid in claim.get("counter_evidence_ids", []) if eid in listed), None)
+                if counter_id and concern not in {UNVERIFIED, _NO_COUNTER}:
+                    concern_ev = citations.use([counter_id])
+                if counter_id and barrier not in {UNVERIFIED, _NO_COUNTER}:
+                    barrier_ev = citations.use([f"{counter_id}2" if f"{counter_id}2" in listed else counter_id])
+            rows.append({**row, "gap": None, "benefit": _display(benefit), "kind": _KIND_LABELS.get(claim.get("kind"), ""),
+                         "benefit_ev": citations.use(claim.get("evidence_ids", [])),
+                         "concern": concern, "concern_ev": concern_ev, "barrier": barrier, "barrier_ev": barrier_ev})
+        actors.append({"label": _ACTOR_LABELS.get(slot, slot), "rows": rows})
+    return actors
+
+
+def _evidence_gaps(gaps: list[dict]) -> list[dict]:
+    grouped = []
+    for status, label in _GAP_LABELS.items():
+        items = [
+            f"{gap.get('id', 'Unknown')}({_PERSPECTIVE_LABELS.get(gap.get('perspective'), '관점 미상')}·{gap.get('tech') or '기술 미상'})"
+            for gap in gaps if gap.get("status") == status
+        ]
+        if items:
+            grouped.append({"label": label, "items": items})
+    return grouped
+
+
+def build_report_view(state: OverallState) -> dict:
+    """Precompute every cited section so reference numbers cover exactly what the body cites."""
+    claims = state.get("claims", [])
+    verified = _verified(claims)
+    citations = _Citations(state.get("evidence", []), state.get("sources", []))
+    families_raw = (state.get("selected") or {}).get("families") or {}
+    families = {"KIVI": families_raw.get("sw", "KV Quantization"), "CXL-PNM": families_raw.get("hw", "CXL Memory Expansion")}
+
+    overview = {tech: [_claim_item(c, citations) for c in select_overview_claims(claims, tech)] for tech in _TECHS}
+    shown_ids = {item["id"] for items in overview.values() for item in items}
+    trl = state.get("trl") or {}
+    return {
+        "overview": overview,
+        "domain_rows": _domain_rows(state.get("domain") or {}, verified, shown_ids, citations),
+        "market_view": _market_view(state.get("market") or {}, verified, citations),
+        "actors": _stakeholder_view(state.get("stakeholder") or {}, claims, families, citations),
+        "tradeoff_basis": [c["id"] for c in verified if c.get("perspective") == "domain" and _claim_axis(c) == "infrastructure"],
+        "trl_basis": {tech: {key: ", ".join((trl.get(tech) or {}).get(key, [])) or "-" for key in ("research_evidence", "adoption_evidence")} for tech in _TECHS},
+        "has_simulation": any(c.get("kind") == "simulation" for c in verified),
+        "gap_groups": _evidence_gaps((state.get("synthesis") or {}).get("evidence_gaps", [])),
+        "cite": citations.marker,
+        "cited_sources": [enrich_source(source) for source in citations.cited_sources()],
+    }
 
 
 def report_generation_node(state: OverallState) -> dict:
     """Renders the final report for the orchestration layer to persist."""
     print("📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링 실행")
     templates_dir = Path(__file__).parent / "templates"
-    env = Environment(loader=FileSystemLoader(str(templates_dir)))
+    env = Environment(loader=FileSystemLoader(str(templates_dir)), trim_blocks=True, lstrip_blocks=True)
     env.filters["citation_date"] = citation_date
     env.filters["citation_author"] = citation_author
     env.filters["citation_site_name"] = citation_site_name
-    env.globals["domain_axis_value"] = domain_axis_value
-    env.globals["claim_reference_numbers"] = claim_reference_numbers
+    env.filters["summary_sentence"] = summary_sentence
     template = env.get_template("report.md.j2")
+
+    # 문서 전체를 LLM에 넘기면 긴 문서 후반부가 번역되지 않거나 인용·표기가 바뀐다.
+    # 근거 문장 필드만 번역하고, 인용 번호·Claim ID·해석 표기는 템플릿이 결정적으로 렌더링한다.
+    view = build_report_view(state)
+    translations = translate_texts(_walk_texts(view))
+    if translations:
+        _walk_texts(view, lambda text: translations.get(text, text))
 
     rendered = template.render(
         selected=state.get("selected", {}),
-        tech_sw=state.get("tech_sw", {}),
-        tech_hw=state.get("tech_hw", {}),
-        domain=state.get("domain", {}),
-        market=state.get("market", {}),
-        stakeholder=drop_unverified_actors(state.get("stakeholder", {}), state.get("claims", [])),
         trl=state.get("trl", {}),
         synthesis=state.get("synthesis", {}),
-        sources=[enrich_source(source) for source in state.get("sources", [])],
-        evidence=state.get("evidence", []),
-        claims=state.get("claims", []),
         issued_on=date.today().isoformat(),
+        **view,
     )
-
-    if not OPENAI_API_KEY:
-        return {"report": rendered}
-
-    def prompt(extra: str = "") -> str:
-        return f"""정적 근거 기반 기술 보고서 편집자입니다.
-다음 마크다운의 문장만 다듬으십시오.
-- SUMMARY, 1~6, REFERENCE 제목과 순서를 변경하지 마십시오.
-- 수치, TRL, Claim ID, URL, 출처 Tier, simulation 표기를 변경하거나 추가하지 마십시오.
-- 기술 우열, 승자, 추천, 근거 없는 전망을 추가하지 마십시오.
-- 영어 원문 자료를 바탕으로 하더라도 보고서의 서술 문장은 한국어로 작성하십시오.
-- KIVI, CXL-PNM, LLM, KV Cache 같은 고유명사·기술 용어, 논문·특허·웹페이지 제목, 인용 번호는 원문 표기를 유지하십시오.
-- 영어 Claim 문장은 원문 그대로 남기지 말고 한국어로 번역하십시오. 단, 수치·단위·연도·Claim ID·인용 번호·고유명사·기술 용어는 변경하지 마십시오.
-- 금액·배수·용량·토큰 수 같은 수치 표기는 원문 그대로 두십시오. 한국어 단위로 환산하지 마십시오. 예: `$20B`는 "200억 달러"가 아니라 `$20B`, `2.6x`는 `2.6x`, `128K`는 `128K` 그대로.
-- 보고서 본문 문체는 `-다.` 체로 통일하고, `-습니다.` 체를 사용하지 마십시오.
-- 마크다운 전문만 반환하고, 코드블록(```)으로 감싸지 마십시오.{extra}
-
-{rendered}"""
-
-    try:
-        llm = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0.1)
-        polished = strip_code_fence(llm.invoke(prompt()).content)
-        added, lost = number_diff(rendered, polished)
-        if added or lost:
-            # 수치가 바뀌면 사실이 바뀐 것이다. 지킬 수치를 짚어 1회만 다시 다듬고, 그래도 바뀌면 다듬기 전 골격을 쓴다.
-            print(f"⚠️ [보고서 생성] polishing 중 수치 변경(추가 {sorted(added)}, 삭제 {sorted(lost)}) → 1회 재시도")
-            keep = f"\n- 다음 수치는 3–5장에 그대로 남기고, 새 수치는 추가하지 마십시오: {', '.join(sorted(lost)) or '(없음)'}"
-            polished = strip_code_fence(llm.invoke(prompt(keep)).content)
-            added, lost = number_diff(rendered, polished)
-            if added or lost:
-                print("⚠️ [보고서 생성] 재시도에도 수치 변경 → polishing 전 골격으로 대체")
-                return {"report": rendered}
-        return {"report": polished}
-    except Exception as error:
-        print(f"⚠️ [경고/Fallback] Polishing LLM 호출 실패: {error}")
-        return {"report": rendered}
+    return {"report": rendered}

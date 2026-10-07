@@ -39,6 +39,32 @@ def _neutral(report: str) -> bool:
     return not any(re.search(pattern, text) for pattern in forbidden)
 
 
+def _source_diversity_ok(claims: list[dict], evidence: dict, sources: dict) -> bool:
+    """Require two verified external claims in one perspective to cite >1 source."""
+    groups: dict[str, list[dict]] = {}
+    for claim in claims:
+        if claim.get("status") != "ok":
+            continue
+        if claim.get("id", "").startswith("MAT-A"):
+            key = "MAT-A"
+        elif claim.get("perspective") in {"market", "stakeholder"}:
+            key = claim["perspective"]
+        else:
+            continue
+        groups.setdefault(key, []).append(claim)
+    for group in groups.values():
+        if len(group) < 2:
+            continue
+        source_ids = {
+            evidence[eid].get("source_id")
+            for claim in group for eid in claim.get("evidence_ids", [])
+            if eid in evidence and evidence[eid].get("source_id") in sources
+        }
+        if len(source_ids) <= 1:
+            return False
+    return True
+
+
 def quality_evaluation_node(state: OverallState) -> dict:
     report = state.get("report", "")
     required_sections = ("SUMMARY", "REFERENCE")
@@ -52,7 +78,7 @@ def quality_evaluation_node(state: OverallState) -> dict:
     coverage = not uncovered
     neutrality = _neutral(report)
     counter_required = [claim for claim in claims if claim.get("perspective") in {"market", "stakeholder"} or claim.get("id", "").startswith("MAT-A")]
-    bias_control = all(claim.get("counter_searched") for claim in counter_required)
+    bias_control = all(claim.get("counter_searched") for claim in counter_required) and _source_diversity_ok(claims, evidence, sources)
     scores = {"groundedness": grounded, "neutrality": neutrality, "bias_control": bias_control, "coverage": coverage}
     failures = [key for key, passed in scores.items() if not passed] + missing + _format_failures(report)
     rework_targets = set()
@@ -63,6 +89,12 @@ def quality_evaluation_node(state: OverallState) -> dict:
         if not claim.get("counter_searched"): rework_targets.add(owner.get(claim.get("perspective"), "market"))
     for cell in uncovered:
         rework_targets.add(owner[cell.split("/")[1]])
+    if not _source_diversity_ok(claims, evidence, sources):
+        for claim in verified:
+            if claim.get("perspective") in {"market", "stakeholder"} or claim.get("id", "").startswith("MAT-A"):
+                rework_targets.add("market" if claim.get("id", "").startswith("MAT-A") else owner[claim["perspective"]])
+    for perspective, agent in owner.items():
+        if perspective not in perspectives: rework_targets.add(agent)
     attempts = (state.get("quality") or {}).get("attempts", 0)
     return {"quality": {"passed": not failures, "scores": scores, "failures": failures, "rework_targets": sorted(rework_targets), "uncovered": uncovered, "attempts": attempts + 1}}
 

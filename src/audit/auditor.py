@@ -9,8 +9,8 @@ from src.audit import judge
 # (issue #4 §1).
 RETRY_LIMIT = 2
 
-# Terminal status a violated Claim is confirmed to once its target agent's retry_count
-# reaches RETRY_LIMIT in this pass (issue #4 "작업 목표"): R1/R2 -> insufficient
+# Terminal status a violated Claim is confirmed to once its target agent has returned
+# from its final retry and the next Supervisor audit still finds the issue: R1/R2 -> insufficient
 # (근거 부족), R5 -> rejected (사실 불일치). R3/R4 have no design-specified limit
 # status, so D adopts the issue's proposal of `insufficient`.
 _LIMIT_STATUS_BY_RULE = {
@@ -66,7 +66,7 @@ def evidence_audit_node(state: OverallState) -> dict:
 
 
 def finalize_retry_statuses(claims: list[dict], issues: list[dict], retry_count: dict[str, int]) -> list[dict]:
-    """Finalize only after Supervisor actually dispatches the last retry."""
+    """Finalize only after the final retry returned and its fresh audit still fails."""
     issue_by_claim = {issue["claim_id"]: issue for issue in issues}
     return [
         {**claim, "status": _LIMIT_STATUS_BY_RULE.get(issue_by_claim[claim["id"]]["rule"], "insufficient")}

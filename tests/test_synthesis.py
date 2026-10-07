@@ -56,8 +56,8 @@ def test_report_generation_sections(monkeypatch):
     assert "### 4.2 시장성 및 생태계" in report_text
     assert "### 4.3 이해관계자 영향" in report_text
     assert "### 4.4 도메인 6대 축 적합성" in report_text
-    assert "### 5.1 관점별 평가가 엇갈리는 지점" in report_text
-    assert "### 5.5 종합 의견" in report_text
+    assert "### 5.1 관점 간 해석 차이" in report_text
+    assert "### 5.4 종합 의견" in report_text
     assert "### 6.2 분석 범위와 해석 제약" in report_text
     assert "더 우수하다" not in report_text
     assert "[DOM-01]" in report_text
