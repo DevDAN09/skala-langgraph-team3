@@ -1,5 +1,5 @@
 """src/state.py - LangGraph Multi-Agent Global State Schema & Reducers"""
-from typing import Annotated, TypedDict, Literal
+from typing import Annotated, Literal, NotRequired, TypedDict
 
 # 1. Entity Schemas
 class Source(TypedDict):
@@ -33,6 +33,8 @@ class AuditIssue(TypedDict):
     issue: str
     target_agent: Literal["paper", "market", "stakeholder"]
     action: Literal["search_evidence", "search_counter_evidence", "re_extract", "relabel"]
+    axis: NotRequired[str]
+    reason: NotRequired[str]
 
 class Audit(TypedDict):
     issues: list[AuditIssue]
@@ -78,8 +80,26 @@ def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]
             url_index[url] = sid
     return list(src_map.values())
 
-# 3. Overall State (14개 키)
-class OverallState(TypedDict):
+
+def merge_dict(existing: dict, updates: dict) -> dict:
+    """Merge independent parallel worker updates without losing sibling keys."""
+    return {**(existing or {}), **(updates or {})}
+
+
+class ControlState(TypedDict, total=False):
+    trace_id: str
+    next_nodes: list[str]
+    route_reason: str
+    step_count: int
+    max_steps: int
+    node_status: Annotated[dict[str, str], merge_dict]
+    node_attempts: Annotated[dict[str, int], merge_dict]
+    last_errors: Annotated[dict[str, str], merge_dict]
+    retry_count: dict[str, int]
+    quality_round: int
+
+
+class PayloadState(TypedDict, total=False):
     selected: dict
     tech_sw: dict
     tech_hw: dict
@@ -90,9 +110,11 @@ class OverallState(TypedDict):
     evidence: Annotated[list[Evidence], upsert_evidence]
     sources: Annotated[list[Source], union_sources]
     audit: Audit
-    retry_count: dict[str, int]
     trl: dict[str, TRL]
     synthesis: dict
     report: str
-    # Minimal control state. Payload/schema expansion is intentionally deferred.
-    supervisor_route: list[str]
+    quality: dict
+
+
+class OverallState(PayloadState, ControlState, total=False):
+    """Payload produced by specialists plus the small orchestration control plane."""

@@ -169,10 +169,19 @@ def test_overall_state_schema_keys():
         "trl",
         "synthesis",
         "report",
-        "supervisor_route",
+        "quality",
+        "trace_id",
+        "next_nodes",
+        "route_reason",
+        "step_count",
+        "max_steps",
+        "node_status",
+        "node_attempts",
+        "last_errors",
+        "quality_round",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 15
+    assert len(expected_keys) == 24
 
 
 def test_config_exports():

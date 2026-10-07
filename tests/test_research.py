@@ -171,11 +171,12 @@ def test_market_to_stakeholder_url_dedup_chain_keeps_evidence_linked():
     assert len(shared_url_sources) == 1, "같은 URL이 union_sources 이후에도 여러 Source로 남아있다"
 
 
-def test_market_retry_only_patches_flagged_claim_and_keeps_market_key_frozen(monkeypatch):
+def test_market_retry_patches_claim_and_refreshes_market_context(monkeypatch):
     import src.research.market as mkt
     monkeypatch.setattr(mkt, "rewrite_query", lambda q, reason="": q)
     state = {
         **INITIAL_INPUT_STATE,
+        "market": {"adoption": "keep", "key_vendors": []},
         "audit": {"issues": [{
             "claim_id": "MKT-02", "rule": "R1", "issue": "missing evidence",
             "target_agent": "market", "action": "search_evidence",
@@ -183,7 +184,8 @@ def test_market_retry_only_patches_flagged_claim_and_keeps_market_key_frozen(mon
     }
     res = market_research_node(state)
     assert [c["id"] for c in res["claims"]] == ["MKT-02"]
-    assert "market" not in res  # Overwrite 리듀서 보호: 재실행에서 market 요약을 지우면 안 됨
+    assert res["market"]["adoption"] == "keep"
+    assert "GitHub OSS community" in res["market"]["key_vendors"]
 
 
 def test_stakeholder_retry_only_patches_flagged_claim(monkeypatch):

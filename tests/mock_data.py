@@ -20,7 +20,21 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
-    "supervisor_route": [],
+    "quality": {},
+    "trace_id": "initial",
+    "next_nodes": [],
+    "route_reason": "",
+    "step_count": 0,
+    "max_steps": 40,
+    "node_status": {
+        "paper_analysis": "pending", "market_research": "pending",
+        "stakeholder_research": "pending", "evidence_audit": "pending",
+        "evaluation_synthesis": "pending", "report_generation": "pending",
+        "quality_evaluation": "pending",
+    },
+    "node_attempts": {},
+    "last_errors": {},
+    "quality_round": 0,
 }
 
 MOCK_STATE = {
@@ -184,5 +198,19 @@ MOCK_STATE = {
         "evidence_gaps": [],
     },
     "report": "",
-    "supervisor_route": [],
+    "quality": {},
+    "trace_id": "mock",
+    "next_nodes": [],
+    "route_reason": "",
+    "step_count": 0,
+    "max_steps": 40,
+    "node_status": {
+        "paper_analysis": "completed", "market_research": "completed",
+        "stakeholder_research": "completed", "evidence_audit": "completed",
+        "evaluation_synthesis": "completed", "report_generation": "pending",
+        "quality_evaluation": "pending",
+    },
+    "node_attempts": {},
+    "last_errors": {},
+    "quality_round": 0,
 }

@@ -10,6 +10,7 @@ from src.audit import (
     evidence_audit_node,
     judge_prompt,
 )
+from src.audit.auditor import finalize_retry_statuses
 
 
 def test_static_rule_r1_missing_evidence():
@@ -425,13 +426,36 @@ def test_run_llm_judge_with_mocked_llm():
     assert issues[0]["action"] == "re_extract"
 
 
+def test_run_llm_judge_combines_all_claim_evidence():
+    claim = {
+        "id": "MAT-R02", "perspective": "maturity", "tech": "CXL-PNM",
+        "statement": "Combined experimental setup", "kind": "simulation",
+        "evidence_ids": ["EV-1", "EV-2"], "counter_evidence_ids": [],
+        "counter_searched": False, "status": "ok",
+    }
+    decision = MagicMock(is_grounded=True)
+    structured = MagicMock()
+    structured.invoke.return_value = decision
+    with patch("src.audit.judge.OPENAI_API_KEY", "mock-key"), patch(
+        "src.audit.judge.ChatOpenAI"
+    ) as mock_llm:
+        mock_llm.return_value.with_structured_output.return_value = structured
+        assert run_llm_judge(
+            [claim],
+            [{"evidence_id": "EV-1", "source_id": "S", "snippet": "model and context"},
+             {"evidence_id": "EV-2", "source_id": "S", "snippet": "hardware and simulator"}],
+        ) == []
+    prompt_text = str(structured.invoke.call_args.args[0])
+    assert "model and context" in prompt_text
+    assert "hardware and simulator" in prompt_text
+
+
 def test_evidence_audit_node_clean_state():
     with patch("src.audit.judge.run_llm_judge", return_value=[]):
         result = evidence_audit_node(MOCK_STATE)
     assert "audit" in result
-    assert "retry_count" in result
     assert result["audit"]["issues"] == []
-    assert result["retry_count"] == {"paper": 0, "market": 0, "stakeholder": 0}
+    assert "retry_count" not in result
 
 
 def test_evidence_audit_node_fast_fail_static():
@@ -461,7 +485,7 @@ def test_evidence_audit_node_fast_fail_static():
     issue = result["audit"]["issues"][0]
     assert issue["rule"] == "R1"
     assert issue["target_agent"] == "paper"
-    assert result["retry_count"]["paper"] == 1
+    assert "retry_count" not in result
     assert "claims" in result
     assert result["claims"][0]["status"] == "flagged"
 
@@ -498,7 +522,7 @@ def test_evidence_audit_node_r5_failure():
     assert issue["rule"] == "R5"
     assert issue["action"] == "re_extract"
     assert issue["target_agent"] == "paper"
-    assert result["retry_count"]["paper"] == 1
+    assert "retry_count" not in result
     assert "claims" in result
     assert result["claims"][0]["status"] == "flagged"
 
@@ -551,7 +575,7 @@ def test_evidence_audit_node_r5_stakeholder_routing():
     issue = result["audit"]["issues"][0]
     assert issue["rule"] == "R5"
     assert issue["target_agent"] == "stakeholder"
-    assert result["retry_count"]["stakeholder"] == 1
+    assert "retry_count" not in result
 
 
 def test_evidence_audit_node_unique_retry_count_increment():
@@ -588,7 +612,7 @@ def test_evidence_audit_node_unique_retry_count_increment():
     assert len(result["audit"]["issues"]) == 2
     assert all(i["target_agent"] == "paper" for i in result["audit"]["issues"])
     # Crucial: paper retry count incremented by 1, NOT 2
-    assert result["retry_count"]["paper"] == 1
+    assert "retry_count" not in result
 
 
 def test_evidence_audit_node_no_new_claim_id_created():
@@ -640,12 +664,8 @@ def test_evidence_audit_node_no_new_claim_id_created():
     assert {c["id"] for c in merged} == original_ids
 
 
-def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
-    """retry_count must accumulate across sequential audit passes (Cascade retry loop),
-    not reset each call, and must never mutate the caller's retry_count dict in place.
-
-    Guards common.md §7①.4: '에이전트당 재시도 2회. retry_count 증가는 auditor만 수행합니다.'
-    """
+def test_evidence_audit_node_does_not_consume_retry_count():
+    """Audit detection must not mutate or consume Supervisor's dispatch budget."""
     state_round1 = {
         **MOCK_STATE,
         "claims": [
@@ -666,22 +686,8 @@ def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
     original_retry_count = dict(state_round1["retry_count"])
 
     result1 = evidence_audit_node(state_round1)
-    assert result1["retry_count"]["market"] == 1
-    # The input dict must not have been mutated in place
+    assert "retry_count" not in result1
     assert state_round1["retry_count"] == original_retry_count
-
-    # Router re-enters evidence_audit after market's retry attempt, carrying the
-    # updated retry_count forward; the claim is still unresolved (still no evidence).
-    state_round2 = {
-        **state_round1,
-        "retry_count": result1["retry_count"],
-        "claims": [{**state_round1["claims"][0], "evidence_ids": []}],
-    }
-    result2 = evidence_audit_node(state_round2)
-    assert result2["retry_count"]["market"] == 2
-    # Untouched agents must stay untouched
-    assert result2["retry_count"]["paper"] == 0
-    assert result2["retry_count"]["stakeholder"] == 0
 
 
 def test_evidence_audit_node_claim_level_fast_fail():
@@ -759,9 +765,11 @@ def test_evidence_audit_node_finalizes_status_when_retry_limit_reached():
         "retry_count": {"paper": 0, "market": 1, "stakeholder": 0},
     }
     result = evidence_audit_node(state)
-    assert result["retry_count"]["market"] == 2
     assert result["audit"]["issues"][0]["rule"] == "R1"
-    assert result["claims"][0]["status"] == "insufficient"
+    updates = finalize_retry_statuses(
+        state["claims"], result["audit"]["issues"],
+        {"paper": 0, "market": 2, "stakeholder": 0})
+    assert updates[0]["status"] == "insufficient"
 
 
 def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
@@ -793,8 +801,10 @@ def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
     }]):
         result = evidence_audit_node(state)
 
-    assert result["retry_count"]["paper"] == 2
-    assert result["claims"][0]["status"] == "rejected"
+    updates = finalize_retry_statuses(
+        state["claims"], result["audit"]["issues"],
+        {"paper": 2, "market": 0, "stakeholder": 0})
+    assert updates[0]["status"] == "rejected"
 
 
 def test_evidence_audit_node_does_not_reflag_finalized_claims():
@@ -822,7 +832,7 @@ def test_evidence_audit_node_does_not_reflag_finalized_claims():
         result = evidence_audit_node(state)
 
     assert result["audit"]["issues"] == []
-    assert result["retry_count"] == {"paper": 2, "market": 0, "stakeholder": 0}
+    assert "retry_count" not in result
     assert "claims" not in result
 
 
@@ -862,5 +872,4 @@ def test_evidence_audit_node_target_agent_mapping_bug_repro():
     by_claim = {i["claim_id"]: i for i in result["audit"]["issues"]}
     assert by_claim["STK-01"]["target_agent"] == "stakeholder"
     assert by_claim["MAT-R01"]["target_agent"] == "paper"
-    assert result["retry_count"] == {"paper": 1, "market": 0, "stakeholder": 1}
-
+    assert "retry_count" not in result

@@ -1,5 +1,6 @@
 """src/synthesis/report_gen.py - Jinja2 Template rendering & Strict Grounding report node"""
 from pathlib import Path
+from datetime import date
 from functools import lru_cache
 from html.parser import HTMLParser
 import json
@@ -144,6 +145,16 @@ def domain_axis_value(domain: dict, field: str) -> str:
         for tech in ("KIVI", "CXL-PNM")
     )
 
+
+def strip_outer_markdown_fence(text: str) -> str:
+    """Remove outer fences wrapping the entire polished Markdown document."""
+    match = re.match(r"\s*```(?:markdown|md)?\s*\n", text, flags=re.IGNORECASE)
+    if not match:
+        return text
+    body = text[match.end():]
+    body = re.sub(r"\n(?:```\s*)+$", "", body)
+    return f"{body.strip()}\n"
+
 def report_generation_node(state: OverallState) -> dict:
     """Renders the final report for the orchestration layer to persist."""
     print("📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링 실행")
@@ -167,7 +178,8 @@ def report_generation_node(state: OverallState) -> dict:
         synthesis=state.get("synthesis", {}),
         sources=[enrich_source(source) for source in state.get("sources", [])],
         evidence=state.get("evidence", []),
-        claims=state.get("claims", [])
+        claims=state.get("claims", []),
+        generated_date=date.today().isoformat(),
     )
 
     if not OPENAI_API_KEY:
@@ -187,7 +199,7 @@ def report_generation_node(state: OverallState) -> dict:
 
 {rendered}"""
         polished = ChatOpenAI(model=POLISHING_LLM_MODEL, temperature=0.1).invoke(prompt).content
-        return {"report": polished}
+        return {"report": strip_outer_markdown_fence(polished)}
     except Exception as error:
         print(f"⚠️ [경고/Fallback] Polishing LLM 호출 실패: {error}")
         return {"report": rendered}

@@ -3,10 +3,7 @@ from src.state import OverallState, AuditIssue
 from src.audit.rules import run_static_rules, TERMINAL_CLAIM_STATUSES
 from src.audit import judge
 
-# common.md §7①.4: "에이전트당 재시도 2회". The Supervisor enforces this for
-# re-routing, while D's audit node remains the only place
-# that can finalize a Claim's status once its target agent has exhausted the limit
-# (issue #4 §1).
+# Retry is counted by Supervisor only when it dispatches actual rework.
 RETRY_LIMIT = 2
 
 # Terminal status a violated Claim is confirmed to once its target agent's retry_count
@@ -43,21 +40,10 @@ def evidence_audit_node(state: OverallState) -> dict:
         stage2_issues = judge.run_llm_judge(active_claims, evidence)
         issues.extend(stage2_issues)
 
-    # Update retry count for targeted agents (per-agent, deduplicated: one audit pass
-    # counts as one retry attempt for that agent regardless of how many of its claims
-    # were flagged in the same pass)
-    retry_count = dict(state.get("retry_count", {"paper": 0, "market": 0, "stakeholder": 0}))
-    for tgt in {issue["target_agent"] for issue in issues}:
-        retry_count[tgt] = retry_count.get(tgt, 0) + 1
+    result = {"audit": {"issues": issues}}
 
-    result = {
-        "audit": {"issues": issues},
-        "retry_count": retry_count,
-    }
-
-    # Patch claim status: `flagged` while the target agent still has retries left,
-    # finalized to `insufficient`/`rejected` once that agent's retry_count (just
-    # incremented above) has reached the limit (issue #4 §1).
+    # Audit detects problems but does not consume retry budget. Supervisor finalizes
+    # unresolved claims only after two actual rework dispatches.
     if issues:
         issue_by_claim = {issue["claim_id"]: issue for issue in issues}
         updated_claims = []
@@ -65,13 +51,23 @@ def evidence_audit_node(state: OverallState) -> dict:
             issue = issue_by_claim.get(c.get("id"))
             if not issue or c.get("status") in TERMINAL_CLAIM_STATUSES:
                 continue
-            agent = issue["target_agent"]
-            if retry_count.get(agent, 0) >= RETRY_LIMIT:
-                new_status = _LIMIT_STATUS_BY_RULE.get(issue["rule"], "insufficient")
-            else:
-                new_status = "flagged"
-            updated_claims.append({**c, "status": new_status})
+            updated_claims.append({**c, "status": "flagged"})
         if updated_claims:
             result["claims"] = updated_claims
 
     return result
+
+
+def finalize_retry_statuses(claims: list[dict], issues: list[AuditIssue],
+                            retry_count: dict[str, int]) -> list[dict]:
+    """Finalize only issues whose responsible agent exhausted two dispatches."""
+    by_claim = {issue["claim_id"]: issue for issue in issues}
+    updates = []
+    for claim in claims:
+        issue = by_claim.get(claim.get("id"))
+        if not issue or claim.get("status") in TERMINAL_CLAIM_STATUSES:
+            continue
+        if retry_count.get(issue["target_agent"], 0) >= RETRY_LIMIT:
+            updates.append({**claim, "status": _LIMIT_STATUS_BY_RULE.get(
+                issue["rule"], "insufficient")})
+    return updates

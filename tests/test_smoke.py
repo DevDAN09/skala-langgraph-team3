@@ -18,13 +18,13 @@ def test_full_pipeline_smoke():
 def test_main_writes_report_from_state(monkeypatch, tmp_path):
     """보고서 파일은 main.py가 State의 report 문자열로 기록한다 (E 노드는 문자열만 반환)."""
     class Graph:
-        def invoke(self, state):
-            return {"report": "# stub report"}
+        def invoke(self, state, config=None):
+            return {"report": "# stub report", "quality": {}, "quality_round": 0}
 
     out = tmp_path / "final_evaluation_report.md"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out)
     monkeypatch.setattr(main, "REPORT_MD_PATH", tmp_path / "final_evaluation_report_backup.md")
-    monkeypatch.setattr(main, "build_evaluation_graph", lambda: Graph())
+    monkeypatch.setattr(main, "build_evaluation_graph", lambda **_: Graph())
 
     assert main.main() == 0
     assert out.read_text(encoding="utf-8") == "# stub report"
@@ -33,14 +33,15 @@ def test_main_writes_report_from_state(monkeypatch, tmp_path):
 def test_main_writes_pdf_report_from_state(monkeypatch, tmp_path):
     """main.py 실행 시 REPORT_OUTPUT_PATH가 .pdf이면 PDF 파일을 생성한다."""
     class Graph:
-        def invoke(self, state):
-            return {"report": "# 최종 평가 보고서\n\n내용입니다."}
+        def invoke(self, state, config=None):
+            return {"report": "# 최종 평가 보고서\n\n내용입니다.",
+                    "quality": {}, "quality_round": 0}
 
     out_pdf = tmp_path / "final_evaluation_report.pdf"
     out_md = tmp_path / "final_evaluation_report.md"
     monkeypatch.setattr(main, "REPORT_OUTPUT_PATH", out_pdf)
     monkeypatch.setattr(main, "REPORT_MD_PATH", out_md)
-    monkeypatch.setattr(main, "build_evaluation_graph", lambda: Graph())
+    monkeypatch.setattr(main, "build_evaluation_graph", lambda **_: Graph())
 
     assert main.main() == 0
     assert out_pdf.exists()

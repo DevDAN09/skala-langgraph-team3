@@ -8,7 +8,7 @@
 {% endfor %}
 {% for source in sources if source.get('source_id') in refs.source_ids %}{% set _ = refs.numbers.update({source.get('source_id'): loop.index}) %}{% endfor %}
 
-> **발행일자**: 2026-09-22  
+> **발행일자**: {{ generated_date }}
 > **평가 도메인**: 클라우드 LLM 서빙 인프라  
 > **평가 대상**: KIVI (SW/알고리즘 2-bit 양자화) vs CXL-PNM (HW/CXL 근접 처리 가속)  
 
@@ -75,6 +75,8 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 
 ### 4.3 이해관계자 영향
 - **클라우드 운영자**: {{ stakeholder.get("cloud_ops", "검증된 이해관계자 정보가 없다.") }}
+- **프레임워크 개발자**: {{ stakeholder.get("framework_developer", "검증된 이해관계자 정보가 없다.") }}
+- **최종 사용자**: {{ stakeholder.get("end_user", "검증된 이해관계자 정보가 없다.") }}
 - **하드웨어 벤더**: {{ stakeholder.get("hw_vendors", "검증된 이해관계자 정보가 없다.") }}
 
 ### 4.4 도메인 6대 축 적합성
@@ -113,7 +115,7 @@ LLM 추론 과정에서 문맥 길이가 길어짐에 따라 Key-Value Cache가 
 - **시뮬레이션 수치 한계**: CXL-PNM의 성능 지표는 7nm ASIC 시뮬레이션 결과로 실제 상용 서버 환경의 실측 지표와 차이가 발생할 수 있음.
 {% if synthesis.get("evidence_gaps") %}
 {% for gap in synthesis.get("evidence_gaps", []) %}
-- **[{{ gap.get("id", "Unknown") }}]** {{ gap.get("statement", "근거가 불충분하다.") }} (상태: `{{ gap.get("status", "Unknown") }}`)
+- **[{{ gap.get("id", "Unknown") }}]** {{ gap.get("statement") or "근거가 불충분하다." }} (상태: `{{ gap.get("status", "Unknown") }}`)
 {% endfor %}
 {% else %}
 - 미확인 Claim이 없다.

@@ -3,6 +3,8 @@ from langgraph.graph import END, START, StateGraph
 
 from src.audit.auditor import evidence_audit_node
 from src.orchestration.supervisor import route_supervisor, supervisor_node
+from src.orchestration.worker import wrap_worker
+from src.quality.evaluator import quality_evaluation_node
 from src.rag.agentic_rag import paper_analysis_node
 from src.research.market import market_research_node
 from src.research.stakeholder import stakeholder_research_node
@@ -18,15 +20,16 @@ WORKERS = {
     "evidence_audit": evidence_audit_node,
     "evaluation_synthesis": evaluation_synthesis_node,
     "report_generation": report_generation_node,
+    "quality_evaluation": quality_evaluation_node,
 }
 
 
-def build_evaluation_graph():
+def build_evaluation_graph(checkpointer=None):
     """Compile a graph where every worker is selected by and returns to Supervisor."""
     builder = StateGraph(OverallState)
     builder.add_node("supervisor", supervisor_node)
     for name, node in WORKERS.items():
-        builder.add_node(name, node)
+        builder.add_node(name, wrap_worker(name, node))
 
     builder.add_edge(START, "supervisor")
     builder.add_conditional_edges(
@@ -37,4 +40,4 @@ def build_evaluation_graph():
     for name in WORKERS:
         builder.add_edge(name, "supervisor")
 
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer)

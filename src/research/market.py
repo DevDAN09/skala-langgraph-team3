@@ -369,8 +369,16 @@ def market_research_node(state: OverallState) -> dict:
             claims.append(claim)
             evidence.extend(new_ev)
             sources.extend(new_src)
-        # 재실행에서는 자기 target_agent claim만 patch. market 요약 dict는 건드리지 않는다 (Overwrite 리듀서 보호).
-        return {"claims": claims, "evidence": evidence, "sources": sources}
+        # Preserve the existing summary while refreshing the vendor context consumed
+        # by stakeholder_research from newly accepted sources.
+        market = dict(state.get("market") or {})
+        vendors = set(market.get("key_vendors") or [])
+        for source in existing_sources + sources:
+            label = vendor_label(source.get("url", ""))
+            if label:
+                vendors.add(label)
+        market["key_vendors"] = sorted(vendors) or ["Cloud CSPs", "Hardware Vendors"]
+        return {"market": market, "claims": claims, "evidence": evidence, "sources": sources}
 
     # 최초 실행: MKT-01~06(3지표 x 2기술) 전량 조사 후, 그 근거로 MAT-A01~02를 파생시킨다.
     claims = []

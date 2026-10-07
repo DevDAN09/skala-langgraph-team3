@@ -59,7 +59,7 @@ def run_llm_judge(claims: list[Claim], evidence_list: list[Evidence]) -> list[Au
         if not c.get("statement") or not c.get("evidence_ids"):
             continue
 
-        snippet = ev_map.get(c["evidence_ids"][0], "")
+        snippet = "\n".join(filter(None, (ev_map.get(eid, "") for eid in c["evidence_ids"])))
         if not snippet:
             continue
 

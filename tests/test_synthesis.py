@@ -75,3 +75,33 @@ def test_report_generation_sections(monkeypatch):
     assert "논문 :" not in report_text
     assert "기타 (웹페이지) :" not in report_text
     assert "Tier:" not in report_text
+    assert "**프레임워크 개발자**" in report_text
+    assert "**최종 사용자**" in report_text
+
+
+def test_report_names_blank_insufficient_evidence_gap(monkeypatch):
+    monkeypatch.setattr(report_gen, "OPENAI_API_KEY", "")
+    claim = {**MOCK_STATE["claims"][0], "statement": "", "status": "insufficient"}
+    state = {**MOCK_STATE, "claims": [claim],
+             "synthesis": {"evidence_gaps": [claim]}}
+    assert "근거가 불충분하다." in report_generation_node(state)["report"]
+
+
+def test_report_generation_removes_outer_markdown_fence(monkeypatch):
+    class FakeResponse:
+        content = "```markdown\n# 보고서\n\n본문\n```\n```"
+
+    class FakeChatOpenAI:
+        def __init__(self, **_kwargs):
+            pass
+
+        def invoke(self, _prompt):
+            return FakeResponse()
+
+    monkeypatch.setattr(report_gen, "OPENAI_API_KEY", "configured")
+    monkeypatch.setattr(report_gen, "ChatOpenAI", FakeChatOpenAI)
+
+    report = report_generation_node(MOCK_STATE)["report"]
+
+    assert report == "# 보고서\n\n본문\n"
+    assert "```" not in report

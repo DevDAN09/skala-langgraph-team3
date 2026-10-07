@@ -17,7 +17,16 @@ def test_mock_state_keys():
         "trl",
         "synthesis",
         "report",
-        "supervisor_route",
+        "quality",
+        "trace_id",
+        "next_nodes",
+        "route_reason",
+        "step_count",
+        "max_steps",
+        "node_status",
+        "node_attempts",
+        "last_errors",
+        "quality_round",
     }
     assert set(MOCK_STATE.keys()) == expected_keys
     assert set(INITIAL_INPUT_STATE.keys()) == expected_keys
@@ -60,7 +69,8 @@ def test_initial_input_state_defaults():
     assert INITIAL_INPUT_STATE["audit"] == {"issues": []}
     assert INITIAL_INPUT_STATE["retry_count"] == {"paper": 0, "market": 0, "stakeholder": 0}
     assert INITIAL_INPUT_STATE["report"] == ""
-    assert INITIAL_INPUT_STATE["supervisor_route"] == []
+    assert INITIAL_INPUT_STATE["next_nodes"] == []
+    assert INITIAL_INPUT_STATE["quality_round"] == 0
 
 
 def test_mock_sources_match_design_references():

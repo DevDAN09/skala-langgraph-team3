@@ -1,8 +1,10 @@
 """app.py - Streamlit Interactive Dashboard for LangGraph Multi-Agent Evaluation"""
 import time
 import json
+import uuid
 import streamlit as st
 from pathlib import Path
+from langgraph.checkpoint.memory import InMemorySaver
 
 from src.graph import build_evaluation_graph
 from src.config import (
@@ -14,7 +16,7 @@ from src.config import (
     FAISS_INDEX_DIR,
 )
 from src.synthesis.pdf_export import convert_markdown_to_pdf
-from main import INITIAL_INPUT_STATE
+from main import make_initial_state
 from tests.mock_data import MOCK_STATE
 
 st.set_page_config(
@@ -70,29 +72,28 @@ if run_btn:
         "evidence_audit": "🛡️ [근거 검증] R1~R4 정적 룰 및 R5 심사기 검증",
         "evaluation_synthesis": "⚖️ [평가 종합] TRL 이원화 및 트레이드오프 종합",
         "report_generation": "📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링",
+        "quality_evaluation": "🔎 [품질 평가] Groundedness·Neutrality·Bias·Coverage 검증",
     }
     
-    total_expected_steps = 6
-    step_count = 0
-
     try:
         start_time = time.time()
-        graph = build_evaluation_graph()
+        trace_id = str(uuid.uuid4())
+        graph = build_evaluation_graph(checkpointer=InMemorySaver())
+        config = {
+            "configurable": {"thread_id": trace_id},
+            "run_name": f"supervisor-evaluation-{trace_id}",
+            "metadata": {"trace_id": trace_id, "pattern": "supervisor"},
+            "recursion_limit": 100,
+        }
         
         status_box = st.status("파이프라인 실행 중...", expanded=True)
         with status_box:
-            for chunk in graph.stream(INITIAL_INPUT_STATE, stream_mode="updates"):
-                for node_name, node_output in chunk.items():
-                    step_count += 1
-                    label = node_labels.get(node_name, f"노드 실행: {node_name}")
-                    st.write(label)
-                    st.session_state["run_logs"].append(label)
-                    progress = min(step_count / total_expected_steps, 1.0)
-                    progress_bar.progress(progress, text=f"{label} 완료")
-            
-            # 최종 State 확보
-            final_state = graph.invoke(INITIAL_INPUT_STATE)
+            final_state = graph.invoke(make_initial_state(trace_id), config=config)
             elapsed = time.time() - start_time
+            for node_name, attempts in final_state.get("node_attempts", {}).items():
+                label = f"{node_labels.get(node_name, node_name)} × {attempts}"
+                st.write(label)
+                st.session_state["run_logs"].append(label)
             REPORT_MD_PATH.write_text(final_state.get("report") or "", encoding="utf-8")
             if REPORT_OUTPUT_PATH.suffix.lower() == ".pdf":
                 convert_markdown_to_pdf(final_state.get("report") or "", REPORT_OUTPUT_PATH)
