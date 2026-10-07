@@ -16,6 +16,7 @@ INITIAL_INPUT_STATE = {
     "evidence": [],
     "sources": [],
     "audit": {"issues": []},
+    "supervisor": {"sufficient": False, "collect": [], "rework": [], "reason": "", "dispatched": []},
     "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     "trl": {},
     "synthesis": {},
@@ -159,6 +160,7 @@ MOCK_STATE = {
         },
     ],
     "audit": {"issues": []},
+    "supervisor": {"sufficient": False, "collect": [], "rework": [], "reason": "", "dispatched": []},
     "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     "trl": {
         "KIVI": {

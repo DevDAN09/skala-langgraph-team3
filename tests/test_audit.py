@@ -1,6 +1,6 @@
 """tests/test_audit.py - Unit tests for Role D Fast-Fail Audit Module (R1~R5, auditor)"""
 from unittest.mock import patch, MagicMock
-from tests.mock_data import MOCK_STATE
+from tests.mock_data import MOCK_STATE, INITIAL_INPUT_STATE
 from src.state import upsert_claims
 from src.audit import (
     run_static_rules,
@@ -429,9 +429,11 @@ def test_evidence_audit_node_clean_state():
     with patch("src.audit.judge.run_llm_judge", return_value=[]):
         result = evidence_audit_node(MOCK_STATE)
     assert "audit" in result
-    assert "retry_count" in result
     assert result["audit"]["issues"] == []
-    assert result["retry_count"] == {"paper": 0, "market": 0, "stakeholder": 0}
+    assert result["supervisor"]["sufficient"] is True
+    assert result["supervisor"]["collect"] == []
+    assert result["supervisor"]["rework"] == []
+    assert "retry_count" not in result
 
 
 def test_evidence_audit_node_fast_fail_static():
@@ -461,9 +463,10 @@ def test_evidence_audit_node_fast_fail_static():
     issue = result["audit"]["issues"][0]
     assert issue["rule"] == "R1"
     assert issue["target_agent"] == "paper"
-    assert result["retry_count"]["paper"] == 1
-    assert "claims" in result
+    assert result["supervisor"]["rework"] == ["paper"]
+    assert result["supervisor"]["dispatched"] == ["DOM-ERR|R1|search_evidence"]
     assert result["claims"][0]["status"] == "flagged"
+    assert "retry_count" not in result
 
 
 def test_evidence_audit_node_r5_failure():
@@ -498,8 +501,7 @@ def test_evidence_audit_node_r5_failure():
     assert issue["rule"] == "R5"
     assert issue["action"] == "re_extract"
     assert issue["target_agent"] == "paper"
-    assert result["retry_count"]["paper"] == 1
-    assert "claims" in result
+    assert result["supervisor"]["rework"] == ["paper"]
     assert result["claims"][0]["status"] == "flagged"
 
 
@@ -551,7 +553,7 @@ def test_evidence_audit_node_r5_stakeholder_routing():
     issue = result["audit"]["issues"][0]
     assert issue["rule"] == "R5"
     assert issue["target_agent"] == "stakeholder"
-    assert result["retry_count"]["stakeholder"] == 1
+    assert result["supervisor"]["rework"] == ["stakeholder"]
 
 
 def test_evidence_audit_node_unique_retry_count_increment():
@@ -587,8 +589,11 @@ def test_evidence_audit_node_unique_retry_count_increment():
     result = evidence_audit_node(state)
     assert len(result["audit"]["issues"]) == 2
     assert all(i["target_agent"] == "paper" for i in result["audit"]["issues"])
-    # Crucial: paper retry count incremented by 1, NOT 2
-    assert result["retry_count"]["paper"] == 1
+    assert result["supervisor"]["rework"] == ["paper"]
+    assert result["supervisor"]["dispatched"] == [
+        "DOM-ERR-1|R1|search_evidence",
+        "DOM-ERR-2|R1|search_evidence",
+    ]
 
 
 def test_evidence_audit_node_no_new_claim_id_created():
@@ -640,12 +645,8 @@ def test_evidence_audit_node_no_new_claim_id_created():
     assert {c["id"] for c in merged} == original_ids
 
 
-def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
-    """retry_count must accumulate across sequential audit passes (Cascade retry loop),
-    not reset each call, and must never mutate the caller's retry_count dict in place.
-
-    Guards common.md §7①.4: '에이전트당 재시도 2회. retry_count 증가는 auditor만 수행합니다.'
-    """
+def test_evidence_audit_node_repeated_issue_is_closed_without_step_limit():
+    """같은 issue 지문이 재작업 뒤에도 남으면 횟수 한도 없이 확정하고, 입력 dispatched는 변경하지 않는다."""
     state_round1 = {
         **MOCK_STATE,
         "claims": [
@@ -661,27 +662,22 @@ def test_evidence_audit_node_retry_count_accumulates_across_retry_loop():
                 "status": "ok",
             },
         ],
-        "retry_count": {"paper": 0, "market": 0, "stakeholder": 0},
     }
-    original_retry_count = dict(state_round1["retry_count"])
-
+    original_supervisor = dict(state_round1["supervisor"])
     result1 = evidence_audit_node(state_round1)
-    assert result1["retry_count"]["market"] == 1
-    # The input dict must not have been mutated in place
-    assert state_round1["retry_count"] == original_retry_count
+    assert result1["supervisor"]["rework"] == ["market"]
+    assert state_round1["supervisor"] == original_supervisor
 
-    # Router re-enters evidence_audit after market's retry attempt, carrying the
-    # updated retry_count forward; the claim is still unresolved (still no evidence).
     state_round2 = {
         **state_round1,
-        "retry_count": result1["retry_count"],
-        "claims": [{**state_round1["claims"][0], "evidence_ids": []}],
+        "supervisor": result1["supervisor"],
+        "claims": [{**state_round1["claims"][0], "status": "flagged"}],
     }
     result2 = evidence_audit_node(state_round2)
-    assert result2["retry_count"]["market"] == 2
-    # Untouched agents must stay untouched
-    assert result2["retry_count"]["paper"] == 0
-    assert result2["retry_count"]["stakeholder"] == 0
+    assert result2["supervisor"]["rework"] == []
+    assert result2["supervisor"]["sufficient"] is True
+    assert result2["claims"][0]["status"] == "insufficient"
+    assert result1["supervisor"]["dispatched"] == ["MKT-ERR|R1|search_evidence"]
 
 
 def test_evidence_audit_node_claim_level_fast_fail():
@@ -734,12 +730,7 @@ def test_evidence_audit_node_claim_level_fast_fail():
     assert result["audit"]["issues"][0]["claim_id"] == "DOM-R4-ERR"
 
 
-def test_evidence_audit_node_finalizes_status_when_retry_limit_reached():
-    """issue #4 §1: once the target agent's retry_count reaches the limit (2) in this
-    pass, the violated claim must be finalized (R1 -> insufficient) instead of staying
-    `flagged` forever — a `flagged` claim never surfaces in evaluator.py's Evidence Gap
-    section (design 5.2), so it would silently vanish from the report.
-    """
+def test_evidence_audit_node_finalizes_repeated_issue_as_insufficient():
     state = {
         **MOCK_STATE,
         "claims": [
@@ -747,7 +738,7 @@ def test_evidence_audit_node_finalizes_status_when_retry_limit_reached():
                 "id": "MKT-LIMIT",
                 "perspective": "market",
                 "tech": "KIVI",
-                "statement": "Still unsupported after one retry",
+                "statement": "Still unsupported after rework",
                 "kind": "fact",
                 "evidence_ids": [],
                 "counter_evidence_ids": [],
@@ -755,18 +746,21 @@ def test_evidence_audit_node_finalizes_status_when_retry_limit_reached():
                 "status": "flagged",
             }
         ],
-        # market already retried once (count=1); this pass pushes it to 2 -> limit
-        "retry_count": {"paper": 0, "market": 1, "stakeholder": 0},
+        "supervisor": {
+            "sufficient": False,
+            "collect": [],
+            "rework": ["market"],
+            "reason": "rework open issues",
+            "dispatched": ["MKT-LIMIT|R1|search_evidence"],
+        },
     }
     result = evidence_audit_node(state)
-    assert result["retry_count"]["market"] == 2
+    assert result["supervisor"]["rework"] == []
     assert result["audit"]["issues"][0]["rule"] == "R1"
     assert result["claims"][0]["status"] == "insufficient"
 
 
-def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
-    """issue #4 §1: R5 violations finalize to `rejected` (사실 불일치), not
-    `insufficient`, once the limit is reached."""
+def test_evidence_audit_node_finalizes_repeated_r5_as_rejected():
     state = {
         **MOCK_STATE,
         "claims": [
@@ -782,7 +776,13 @@ def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
                 "status": "flagged",
             }
         ],
-        "retry_count": {"paper": 1, "market": 0, "stakeholder": 0},
+        "supervisor": {
+            "sufficient": False,
+            "collect": [],
+            "rework": ["paper"],
+            "reason": "rework open issues",
+            "dispatched": ["DOM-R5-LIMIT|R5|re_extract"],
+        },
     }
     with patch("src.audit.judge.run_llm_judge", return_value=[{
         "claim_id": "DOM-R5-LIMIT",
@@ -793,8 +793,8 @@ def test_evidence_audit_node_finalizes_r5_as_rejected_at_retry_limit():
     }]):
         result = evidence_audit_node(state)
 
-    assert result["retry_count"]["paper"] == 2
     assert result["claims"][0]["status"] == "rejected"
+    assert result["supervisor"]["rework"] == []
 
 
 def test_evidence_audit_node_does_not_reflag_finalized_claims():
@@ -822,8 +822,9 @@ def test_evidence_audit_node_does_not_reflag_finalized_claims():
         result = evidence_audit_node(state)
 
     assert result["audit"]["issues"] == []
-    assert result["retry_count"] == {"paper": 2, "market": 0, "stakeholder": 0}
+    assert result["supervisor"]["rework"] == []
     assert "claims" not in result
+    assert "retry_count" not in result
 
 
 def test_evidence_audit_node_target_agent_mapping_bug_repro():
@@ -862,5 +863,17 @@ def test_evidence_audit_node_target_agent_mapping_bug_repro():
     by_claim = {i["claim_id"]: i for i in result["audit"]["issues"]}
     assert by_claim["STK-01"]["target_agent"] == "stakeholder"
     assert by_claim["MAT-R01"]["target_agent"] == "paper"
-    assert result["retry_count"] == {"paper": 1, "market": 0, "stakeholder": 1}
+    assert result["supervisor"]["rework"] == ["paper", "stakeholder"]
+
+
+def test_evidence_audit_node_collects_missing_perspectives_without_stakeholder_before_market():
+    state = {
+        **INITIAL_INPUT_STATE,
+        "tech_sw": {"name": "KIVI"},
+    }
+    with patch("src.audit.judge.run_llm_judge", return_value=[]):
+        result = evidence_audit_node(state)
+    assert result["supervisor"]["collect"] == ["market"]
+    assert result["supervisor"]["rework"] == []
+    assert result["supervisor"]["sufficient"] is False
 

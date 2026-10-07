@@ -1,19 +1,13 @@
-"""src/audit/auditor.py - evidence_audit_node"""
-from src.state import OverallState, AuditIssue
+"""src/audit/auditor.py - evidence_audit_node, promoted to Supervisor."""
+from src.state import OverallState, AuditIssue, SupervisorDecision
 from src.audit.rules import run_static_rules, TERMINAL_CLAIM_STATUSES
 from src.audit import judge
 
-# common.md §7①.4: "에이전트당 재시도 2회". The router (graph.py, owned by A) enforces
-# this for re-routing, but it cannot write State — so D's audit node is the only place
-# that can finalize a Claim's status once its target agent has exhausted the limit
-# (issue #4 §1).
-RETRY_LIMIT = 2
+_AGENTS = ("paper", "market", "stakeholder")
 
-# Terminal status a violated Claim is confirmed to once its target agent's retry_count
-# reaches RETRY_LIMIT in this pass (issue #4 "작업 목표"): R1/R2 -> insufficient
-# (근거 부족), R5 -> rejected (사실 불일치). R3/R4 have no design-specified limit
-# status, so D adopts the issue's proposal of `insufficient`.
-_LIMIT_STATUS_BY_RULE = {
+# A repeated issue fingerprint is closed without a step count. R5 is a factual
+# mismatch; every other rule is missing or unfit evidence.
+_CLOSED_STATUS_BY_RULE = {
     "R1": "insufficient",
     "R2": "insufficient",
     "R3": "insufficient",
@@ -22,56 +16,101 @@ _LIMIT_STATUS_BY_RULE = {
 }
 
 
+def _collected(state: OverallState) -> dict[str, bool]:
+    return {
+        "paper": bool(state.get("tech_sw") or state.get("tech_hw") or state.get("domain")),
+        "market": bool(state.get("market")),
+        "stakeholder": bool(state.get("stakeholder")),
+    }
+
+
+def _fingerprint(issue: AuditIssue) -> str:
+    return f"{issue['claim_id']}|{issue['rule']}|{issue['action']}"
+
+
+def build_supervisor_decision(state: OverallState, issues: list[AuditIssue]) -> tuple[SupervisorDecision, list[dict]]:
+    """Write the sufficiency judgment. The router reads only this decision."""
+    collected = _collected(state)
+    prior = list(((state.get("supervisor") or {}).get("dispatched")) or [])
+    seen = set(prior)
+    rework_agents: set[str] = set()
+    repeated: dict[str, AuditIssue] = {}
+    dispatched = list(prior)
+
+    for issue in issues:
+        agent = issue["target_agent"]
+        if not collected.get(agent):
+            continue
+        fingerprint = _fingerprint(issue)
+        if fingerprint in seen:
+            repeated[issue["claim_id"]] = issue
+            continue
+        rework_agents.add(agent)
+        if fingerprint not in dispatched:
+            dispatched.append(fingerprint)
+
+    collect = []
+    if not collected["paper"]:
+        collect.append("paper")
+    if not collected["market"]:
+        collect.append("market")
+    elif not collected["stakeholder"]:
+        collect.append("stakeholder")
+    rework = [agent for agent in _AGENTS if agent in rework_agents]
+
+    if collect and rework:
+        reason = "collect missing perspectives and rework open issues"
+    elif collect:
+        reason = "missing perspectives"
+    elif rework:
+        reason = "rework open issues"
+    elif repeated:
+        reason = "repeated issue closed"
+    else:
+        reason = "evidence sufficient"
+
+    decision: SupervisorDecision = {
+        "sufficient": not collect and not rework,
+        "collect": collect,
+        "rework": rework,
+        "reason": reason,
+        "dispatched": dispatched,
+    }
+
+    issue_by_claim = {issue["claim_id"]: issue for issue in issues}
+    claims = []
+    for claim in state.get("claims", []):
+        issue = issue_by_claim.get(claim.get("id"))
+        if not issue or claim.get("status") in TERMINAL_CLAIM_STATUSES:
+            continue
+        if claim["id"] in repeated:
+            status = _CLOSED_STATUS_BY_RULE.get(issue["rule"], "insufficient")
+        elif issue["target_agent"] in rework_agents:
+            status = "flagged"
+        else:
+            continue
+        claims.append({**claim, "status": status})
+    return decision, claims
+
+
 def evidence_audit_node(state: OverallState) -> dict:
-    """Audits claims using 2-step Fast-Fail: R1~R4 static rules, then R5 Judge."""
-    print("🛡️ [근거 검증] 1단계 정적 룰(R1~R4) 및 2단계 R5 검증 수행")
+    """Supervisor: audit claims, then record which workers to call or whether to report."""
+    print("🛡️ [Supervisor] 관점·근거 충분성 판단")
 
     claims = state.get("claims", [])
     sources = state.get("sources", [])
     evidence = state.get("evidence", [])
-
-    # 1단계: 0ms 정적 룰 검사 (이미 insufficient/rejected로 확정된 Claim은 rules.py가 스킵)
     issues: list[AuditIssue] = run_static_rules(claims, sources, evidence)
-
-    # 2단계: 1단계 정적 룰(R1~R4) 결함이 없는 정상 Claim들에 대해 R5 LLM Judge 사실성 검증 수행 (Claim 단위 Fast-Fail)
     flagged_claim_ids = {issue["claim_id"] for issue in issues}
     active_claims = [
         c for c in claims
         if c.get("status") not in TERMINAL_CLAIM_STATUSES and c.get("id") not in flagged_claim_ids
     ]
     if active_claims:
-        stage2_issues = judge.run_llm_judge(active_claims, evidence)
-        issues.extend(stage2_issues)
+        issues.extend(judge.run_llm_judge(active_claims, evidence))
 
-    # Update retry count for targeted agents (per-agent, deduplicated: one audit pass
-    # counts as one retry attempt for that agent regardless of how many of its claims
-    # were flagged in the same pass)
-    retry_count = dict(state.get("retry_count", {"paper": 0, "market": 0, "stakeholder": 0}))
-    for tgt in {issue["target_agent"] for issue in issues}:
-        retry_count[tgt] = retry_count.get(tgt, 0) + 1
-
-    result = {
-        "audit": {"issues": issues},
-        "retry_count": retry_count,
-    }
-
-    # Patch claim status: `flagged` while the target agent still has retries left,
-    # finalized to `insufficient`/`rejected` once that agent's retry_count (just
-    # incremented above) has reached the limit (issue #4 §1).
-    if issues:
-        issue_by_claim = {issue["claim_id"]: issue for issue in issues}
-        updated_claims = []
-        for c in claims:
-            issue = issue_by_claim.get(c.get("id"))
-            if not issue or c.get("status") in TERMINAL_CLAIM_STATUSES:
-                continue
-            agent = issue["target_agent"]
-            if retry_count.get(agent, 0) >= RETRY_LIMIT:
-                new_status = _LIMIT_STATUS_BY_RULE.get(issue["rule"], "insufficient")
-            else:
-                new_status = "flagged"
-            updated_claims.append({**c, "status": new_status})
-        if updated_claims:
-            result["claims"] = updated_claims
-
+    decision, updated_claims = build_supervisor_decision(state, issues)
+    result = {"audit": {"issues": issues}, "supervisor": decision}
+    if updated_claims:
+        result["claims"] = updated_claims
     return result

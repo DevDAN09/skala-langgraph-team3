@@ -37,6 +37,13 @@ class AuditIssue(TypedDict):
 class Audit(TypedDict):
     issues: list[AuditIssue]
 
+class SupervisorDecision(TypedDict):
+    sufficient: bool
+    collect: list[str]
+    rework: list[str]
+    reason: str
+    dispatched: list[str]
+
 class TRL(TypedDict):
     tech_trl: str
     family_trl: str
@@ -90,6 +97,7 @@ class OverallState(TypedDict):
     evidence: Annotated[list[Evidence], upsert_evidence]
     sources: Annotated[list[Source], union_sources]
     audit: Audit
+    supervisor: SupervisorDecision
     retry_count: dict[str, int]
     trl: dict[str, TRL]
     synthesis: dict

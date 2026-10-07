@@ -165,13 +165,14 @@ def test_overall_state_schema_keys():
         "evidence",
         "sources",
         "audit",
+        "supervisor",
         "retry_count",
         "trl",
         "synthesis",
         "report",
     }
     assert set(OverallState.__annotations__.keys()) == expected_keys
-    assert len(expected_keys) == 14
+    assert len(expected_keys) == 15
 
 
 def test_config_exports():

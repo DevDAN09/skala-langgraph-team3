@@ -160,14 +160,14 @@ else:
         claims = state.get("claims", [])
         audit = state.get("audit", {})
         issues = audit.get("issues", [])
-        retry_counts = state.get("retry_count", {})
+        decision = state.get("supervisor") or {}
 
         col_c1, col_c2, col_c3 = st.columns(3)
         col_c1.metric("총 추출 Claim 수", f"{len(claims)}개")
         col_c2.metric("감지된 Audit Issue", f"{len(issues)}건")
         col_c3.metric(
-            "재시도 횟수",
-            f"Paper: {retry_counts.get('paper', 0)} | Mkt: {retry_counts.get('market', 0)} | Stk: {retry_counts.get('stakeholder', 0)}"
+            "Supervisor",
+            "충분" if decision.get("sufficient") else ", ".join(decision.get("rework") or decision.get("collect") or ["판단 전"]),
         )
 
         st.markdown("### 📋 Claim 세부 목록")

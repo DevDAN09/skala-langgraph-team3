@@ -13,6 +13,7 @@ def test_mock_state_keys():
         "evidence",
         "sources",
         "audit",
+        "supervisor",
         "retry_count",
         "trl",
         "synthesis",

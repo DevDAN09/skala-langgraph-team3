@@ -61,7 +61,7 @@
 | `paper_analysis` | B | 논문 원문 Agentic RAG로 메커니즘·수치·한계·도메인 6대 축 추출, 연구 단계 TRL 근거(`MAT-R*`) 기록 | `tech_sw`, `tech_hw`, `domain`, `claims(DOM-*, MAT-R*)` |
 | `market_research` | C | 기술 계열별 채택·배포·생태계·도입 장벽 조사, 채택 단계 TRL 근거(`MAT-A*`) 기록 | `market`, `claims(MKT-*, MAT-A*)` |
 | `stakeholder_research` | C | 시장성 컨텍스트(`key_vendors`)를 이어받아 4대 Actor × 기술 계열의 Benefit·Concern·Barrier·Evidence 조사 | `stakeholder`, `claims(STK-01~08)` |
-| `evidence_audit` | D | 2단계 Fast-Fail 검증(R1~R4 → R5), 위반 관점만 표적 피드백, 한도 도달 시 상태 확정 | `audit`, `retry_count`, `claims[*].status` |
+| `evidence_audit` | D | Supervisor. R1–R4 후 R5로 감사하고, 수집된 관점과 근거 충분성으로 다음 워커 또는 보고서 진행을 판단 | `audit`, `supervisor`, `claims[*].status` |
 | `evaluation_synthesis` | E | 관점 간 일치·불일치 정리, TRL 이원화 확정(0건 Fallback) | `trl`, `synthesis` |
 | `report_generation` | E | Jinja2 골격 조립 → Strict Grounding Polishing | `report` |
 
@@ -69,16 +69,14 @@
 ## Architecture
 ```mermaid
 flowchart TD
-    START([START]) --> paper_analysis["paper_analysis (B)<br/>Agentic RAG"]
-    START --> market_research["market_research (C)<br/>시장성 조사"]
-    market_research --> stakeholder_research["stakeholder_research (C)<br/>이해관계자"]
-    stakeholder_research --> evidence_audit["evidence_audit (D)<br/>Fast-Fail 검증"]
-    paper_analysis -.->|재시도 시| evidence_audit
-    paper_analysis -.->|첫 실행| END_BRANCH([END])
-    evidence_audit -.->|조건부 피드백| market_research
-    evidence_audit -.->|조건부 피드백| stakeholder_research
-    evidence_audit -.->|조건부 피드백| paper_analysis
-    evidence_audit -->|통과/한도초과| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
+    START([START]) --> evidence_audit["evidence_audit (D)<br/>Supervisor"]
+    evidence_audit -->|State 판단| paper_analysis["paper_analysis (B)"]
+    evidence_audit -->|State 판단| market_research["market_research (C)"]
+    evidence_audit -->|State 판단| stakeholder_research["stakeholder_research (C)"]
+    paper_analysis --> evidence_audit
+    market_research --> evidence_audit
+    stakeholder_research --> evidence_audit
+    evidence_audit -->|근거 충분| evaluation_synthesis["evaluation_synthesis (E)<br/>TRL 이원화"]
     evaluation_synthesis --> report_generation["report_generation (E)<br/>보고서 생성"]
     report_generation --> END([END])
 ```
@@ -88,10 +86,10 @@ flowchart TD
 
 | 단계 | 실행 노드 (담당) | 입력 State | 처리 내용 | 출력/누적 State |
 | :---: | :--- | :--- | :--- | :--- |
-| **Step 1<br/>초기화 & 병렬 분기** | `START` (A) | `INITIAL_INPUT_STATE` | • 대상 기술(KIVI vs CXL-PNM) 및 기술 계열 선정 사유 주입<br/>• `paper_analysis` 및 `market_research`로 병렬 Fan-out | `selected`, `retry_count: 0` |
+| **Step 1<br/>Supervisor 진입** | `evidence_audit` (D) | `INITIAL_INPUT_STATE` | • 비어 있는 관점을 State에서 읽고 paper·market을 호출<br/>• market이 없으면 stakeholder는 호출하지 않음 | `supervisor` |
 | **Step 2<br/>논문 RAG 분석** | `paper_analysis` (B) | `selected` | • KIVI/CXL-PNM 원문 PDF 청킹 및 E5 임베딩 벡터 검색<br/>• 정량 실험 수치(실측/시뮬레이션 구분) 및 6대 축 적합성 추출 | `tech_sw`, `tech_hw`, `domain`,<br/>`claims(DOM-*, MAT-R*)`, `evidence`, `sources` |
 | **Step 3<br/>시장성 및 이해관계자** | `market_research`<br/>→ `stakeholder_research` (C) | `selected`<br/>(+ `market` 컨텍스트) | • Tavily Web Search 기반 최신 시장 동향 및 배포 장벽 조사<br/>• 4대 Actor(서빙 운영자, 프레임워크 개발자, End User, HW·메모리 공급자) × 기술 계열 2개 관점 영향도 분석<br/>• 컨텍스트 체이닝을 통해 시장 데이터를 반영한 정량/정성 Claim 생성 | `market`, `stakeholder`,<br/>`claims(MKT-*, STK-*)`, `evidence`, `sources` |
-| **Step 4<br/>Fast-Fail 근거 검증** | `evidence_audit` (D) | `claims`, `evidence`, `sources` | • **1단계 규칙 검증**: 형식·출처(T1~T4)·수치 왜곡 4대 룰 체크<br/>• **2단계 LLM 심사**: `gpt-4o` 기반 Claim-Snippet 사실 일치 판정<br/>• 검증 미달 항목 피드백 발행 및 라우팅 (최대 2회 재시도) | `audit.issues`, `retry_count`,<br/>`claims[*].status` (ok/flagged/insufficient/rejected) |
+| **Step 4<br/>충분성 판단** | `evidence_audit` (D) | `claims`, `evidence`, `sources`, 수집된 관점 | • R1–R4 후 통과 Claim만 R5<br/>• 열린 issue는 해당 워커에 재작업. 같은 issue가 다시 남으면 `insufficient`/`rejected`로 확정<br/>• 관점이 모이고 재작업이 없을 때만 종합으로 진행 | `audit.issues`, `supervisor`,<br/>`claims[*].status` |
 | **Step 5<br/>TRL 이원화 & 종합** | `evaluation_synthesis` (E) | `claims`, `evidence`, `tech_*`, `market`, `stakeholder` | • 개별 기술 TRL(5-6 / Unknown) vs 계열 산업 TRL(7-8) 이원화 평가<br/>• 기술별 트레이드오프 및 상호 보완적 하이브리드 결합 가능성 도출 | `trl`, `synthesis` |
 | **Step 6<br/>보고서 생성 & 산출** | `report_generation` (E)<br/>→ `main.py` / `app.py` (A) | 전체 누적 State | • Jinja2 템플릿 기반 마크다운 렌더링 및 인용 넘버링 연동<br/>• LLM(`gpt-4o`) 문체 정제 및 `final_evaluation_report.md` 생성<br/>• 한국어 폰트 임베딩 기반 PDF(`final_evaluation_report.pdf`) 자동 변환 | `report` (Markdown 텍스트),<br/>`final_evaluation_report.md`, `final_evaluation_report.pdf` |
 
