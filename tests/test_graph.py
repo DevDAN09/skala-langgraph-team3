@@ -263,7 +263,7 @@ def test_compiled_graph_quality_research_rework_returns_through_supervisor(monke
 
 
 def test_quality_routes_evidence_gaps_to_supervisor_and_writing_to_report():
-    assert route_quality({"quality": {"passed": False, "failures": ["coverage"], "attempts": 1}}) == "supervisor"
+    assert route_quality({"quality": {"passed": False, "failures": ["coverage"], "rework_targets": ["market"], "attempts": 1}}) == "supervisor"
     assert route_quality({"quality": {"passed": False, "failures": ["REFERENCES"], "attempts": 1}}) == "report_generation"
     assert route_quality({"quality": {"passed": True, "failures": [], "attempts": 1}}) == "END"
 
@@ -297,3 +297,34 @@ def test_quality_accepts_coverage_gap_disclosed_after_retries_exhausted():
 
     undisclosed = {**state, "report": report.replace("- **[MKT-01]** 공개 근거 미확인", "- 없음"), "retry_count": {"market": 2}}
     assert "market:KIVI" in quality_evaluation_node(undisclosed)["quality"]["coverage_gaps"]
+
+
+def test_quality_bias_control_does_not_recheck_counter_search():
+    """#73-1: counter_searched는 근거 검증 R3가 보장하므로 품질 평가는 출처 다양성만 본다."""
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [{**c, "counter_searched": False} for c in MOCK_STATE["claims"]]
+    result = quality_evaluation_node({**MOCK_STATE, "claims": claims, "report": "# SUMMARY\n# REFERENCE"})["quality"]
+    assert result["scores"]["bias_control"] is True
+
+
+def test_quality_routes_data_gap_without_eligible_agent_to_end():
+    """#73-2: 재수집 대상이 모두 한도에 도달했으면 같은 보고서를 다시 만들지 않고 종료한다."""
+    from src.synthesis.quality import quality_evaluation_node
+    state = {**MOCK_STATE, "claims": [_gap_claim("MKT-01", "market", "KIVI", status="insufficient")],
+             "report": "## SUMMARY\n## REFERENCE\n", "retry_count": {"paper": 2, "market": 2, "stakeholder": 2}}
+    quality = quality_evaluation_node(state)["quality"]
+    assert quality["rework_targets"] == [] and set(quality["exhausted_targets"]) == {"paper", "market", "stakeholder"}
+    assert route_quality({"quality": quality}) == "END"
+    assert route_quality({"quality": {**quality, "failures": ["coverage", "REFERENCE"]}}) == "report_generation"
+
+
+def test_quality_maturity_gap_targets_agent_that_owns_missing_claim():
+    """#73-3: MAT-R는 paper, MAT-A는 market가 만든다."""
+    from src.synthesis.quality import quality_evaluation_node
+    claims = [_gap_claim("MAT-R01", "maturity", "KIVI"), _gap_claim("MAT-A01", "maturity", "KIVI", status="insufficient"),
+              _gap_claim("MAT-A02", "maturity", "CXL-PNM", status="insufficient")]
+    quality = quality_evaluation_node({**MOCK_STATE, "claims": claims, "report": "## SUMMARY\n## REFERENCE\n"})["quality"]
+    assert "maturity:CXL-PNM" in quality["coverage_gaps"] and "maturity:KIVI" not in quality["coverage_gaps"]
+    from src.synthesis.quality import _gap_owners
+    assert _gap_owners("maturity:CXL-PNM", claims) == {"market"}
+    assert _gap_owners("maturity:KIVI", claims) == {"paper", "market"}
