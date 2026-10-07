@@ -67,7 +67,7 @@ if run_btn:
         "market_research": "📈 [시장성 조사] 시장 채택 및 기술 장벽 조사",
         "paper_analysis": "📄 [원문 분석] 논문 기반 메커니즘 및 도메인 분석",
         "stakeholder_research": "👥 [이해관계자] 4대 핵심 Actor 영향 분석",
-        "evidence_audit": "🛡️ [근거 검증] R1~R4 정적 룰 및 R5 심사기 검증",
+        "supervisor": "🧭 [Supervisor] 근거 검증(R1~R5) 및 다음 노드 결정",
         "evaluation_synthesis": "⚖️ [평가 종합] TRL 이원화 및 트레이드오프 종합",
         "report_generation": "📝 [보고서 생성] 8대 필수 목차 Jinja2 렌더링",
     }

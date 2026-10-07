@@ -17,6 +17,13 @@ def test_mock_state_keys():
         "trl",
         "synthesis",
         "report",
+        "run_id",
+        "step_count",
+        "node_status",
+        "collect_seq",
+        "audited_seq",
+        "last_decision",
+        "last_error",
     }
     assert set(MOCK_STATE.keys()) == expected_keys
     assert set(INITIAL_INPUT_STATE.keys()) == expected_keys

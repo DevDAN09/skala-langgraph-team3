@@ -20,6 +20,13 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "run_id": "",
+    "step_count": 0,
+    "node_status": {},
+    "collect_seq": 0,
+    "audited_seq": 0,
+    "last_decision": {},
+    "last_error": {},
 }
 
 MOCK_STATE = {
@@ -183,4 +190,11 @@ MOCK_STATE = {
         "evidence_gaps": [],
     },
     "report": "",
+    "run_id": "",
+    "step_count": 0,
+    "node_status": {},
+    "collect_seq": 0,
+    "audited_seq": 0,
+    "last_decision": {},
+    "last_error": {},
 }

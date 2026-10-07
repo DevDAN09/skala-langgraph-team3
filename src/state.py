@@ -1,4 +1,5 @@
 """src/state.py - LangGraph Multi-Agent Global State Schema & Reducers"""
+import operator
 from typing import Annotated, TypedDict, Literal
 
 # 1. Entity Schemas
@@ -78,7 +79,11 @@ def union_sources(existing: list[Source], updates: list[Source]) -> list[Source]
             url_index[url] = sid
     return list(src_map.values())
 
-# 3. Overall State (14개 키)
+def merge_dict(existing: dict, updates: dict) -> dict:
+    """병렬 노드가 같은 dict 키(node_status, last_error)에 동시에 써도 InvalidUpdateError 없이 병합한다."""
+    return {**(existing or {}), **(updates or {})}
+
+# 3. Overall State (페이로드 14개 + 제어 메타 7개)
 class OverallState(TypedDict):
     selected: dict
     tech_sw: dict
@@ -94,3 +99,12 @@ class OverallState(TypedDict):
     trl: dict[str, TRL]
     synthesis: dict
     report: str
+
+    # ── 제어 메타 (Supervisor 라우팅·종료·재개용 최소 상태. 본문 데이터는 넣지 않는다)
+    run_id: str                                          # 외부 트레이스(LangSmith)와 잇는 상관 키
+    step_count: int                                      # Supervisor 방문 횟수, 종료 가드 (Supervisor만 씀)
+    node_status: Annotated[dict[str, str], merge_dict]   # pending|done|stale|failed|skipped
+    collect_seq: Annotated[int, operator.add]            # 수집 노드가 끝날 때마다 +1 (병렬 합산)
+    audited_seq: int                                     # Supervisor가 검증한 시점의 collect_seq
+    last_decision: dict                                  # {"next", "reason"} 직전 라우팅 결정. 이력은 트레이스에 남는다
+    last_error: Annotated[dict[str, str], merge_dict]    # 노드별 마지막 실패 사유

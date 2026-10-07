@@ -1,6 +1,7 @@
 """main.py - Non-interactive Multi-Agent System Entry Point"""
 import sys
 import time
+import uuid
 from src.config import REPORT_OUTPUT_PATH, REPORT_MD_PATH, REPORT_PDF_PATH
 from src.graph import build_evaluation_graph
 from src.synthesis.pdf_export import convert_markdown_to_pdf
@@ -26,6 +27,13 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "run_id": "",
+    "step_count": 0,
+    "node_status": {},
+    "collect_seq": 0,
+    "audited_seq": 0,
+    "last_decision": {},
+    "last_error": {},
 }
 
 def main():
@@ -38,7 +46,7 @@ def main():
     try:
         graph = build_evaluation_graph()
         print("🔗 StateGraph 컴파일 완료. 파이프라인 실행 시작...")
-        final_state = graph.invoke(INITIAL_INPUT_STATE)
+        final_state = graph.invoke({**INITIAL_INPUT_STATE, "run_id": uuid.uuid4().hex})
 
         # Markdown 원본 보존
         REPORT_MD_PATH.write_text(final_state["report"], encoding="utf-8")
