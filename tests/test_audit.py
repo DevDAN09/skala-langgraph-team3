@@ -594,7 +594,7 @@ def test_evidence_audit_node_unique_retry_count_increment():
 def test_evidence_audit_node_no_new_claim_id_created():
     """Audit must never mint a new Claim ID — only patch `status` on existing claims.
 
-    Guards design_checklist.md 충돌 방지 rule: 'D는 신규 ID 없음. 기존 Claim `status`만'.
+    Guards Claim ID 충돌 방지 rule: 'D는 신규 ID 없음. 기존 Claim `status`만'.
     A regression here means upsert_claims() would silently inject a phantom claim into
     OverallState and corrupt B/C's data.
     """

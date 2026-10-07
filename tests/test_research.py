@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from tests.mock_data import INITIAL_INPUT_STATE
 from src.state import union_sources
-from src.research.client import classify_tier, search_pair, infer_kind, resolve_source_id, summarize_snippet, vendor_label
+from src.research.client import classify_tier, infer_kind, resolve_source_id, summarize_snippet, vendor_label
 from src.research.market import market_research_node, MARKET_QUERY_PLAN, MAT_A_PLAN
 from src.research.stakeholder import stakeholder_research_node, STAKEHOLDER_QUERY_PLAN
 

@@ -1,18 +1,16 @@
 """src/audit/rules.py - Step 1: 0ms Fast-Fail Static Rules (R1~R4)"""
 from src.state import Claim, Source, AuditIssue, Evidence
 
-# Claims whose status is already terminal must never be re-audited (issue #4 §2):
-# a blank/unconfirmed slot from B's own gate (status="insufficient" from the start)
-# or a claim D itself already finalized after the retry limit must be left alone.
+# Claims whose status is already terminal must never be re-audited: a slot that was
+# insufficient from extraction, or a claim already finalized after the retry limit.
 TERMINAL_CLAIM_STATUSES = ("insufficient", "rejected")
 
 
 def resolve_target_agent(claim_id: str | None, perspective: str | None) -> str:
     """Maps a Claim to the agent responsible for fixing it.
 
-    Source of truth is the Claim ID prefix (design_checklist.md Claim ID table),
-    since `perspective="maturity"` is shared by both B's `MAT-R*` and C's `MAT-A*`
-    claims and cannot disambiguate on its own (issue #4 §3).
+    Source of truth is the Claim ID prefix, since `perspective="maturity"` is shared by
+    paper `MAT-R*` and market `MAT-A*` claims and cannot disambiguate on its own.
 
         DOM-*, MAT-R*  -> paper
         MKT-*, MAT-A*  -> market
@@ -73,7 +71,7 @@ def run_static_rules(
             continue
 
         # R2: 출처가 T4 단독인 경우. dedup 등으로 Source 참조가 끊겨 tier를 찾을 수
-        # 없는 경우도 미검증 출처로 간주해 T4와 동일하게 취급한다 (issue #4 §4 R2).
+        # 없는 경우도 미검증 출처로 간주해 T4와 동일하게 취급한다.
         tiers = [source_tier_map.get(sid, "T4") for sid in c.get("evidence_ids", [])]
         if tiers and all(t == "T4" for t in tiers):
             issues.append({

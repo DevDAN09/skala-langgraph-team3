@@ -1,5 +1,4 @@
 """tests/test_pdf_export.py - Unit tests for Markdown to PDF conversion"""
-from pathlib import Path
 from src.synthesis.pdf_export import convert_markdown_to_pdf, find_korean_font
 
 

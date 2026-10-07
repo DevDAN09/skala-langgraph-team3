@@ -298,7 +298,7 @@ def _detail(item: dict, claim: Claim, snippets: dict[str, str], labels: dict[str
     barrier_id = f"{counter_id}2" if snippets.get(f"{counter_id}2") else counter_id
     concern = _counter_summary(snippets[counter_id], _counter_focus("concerns or risks about", item, labels))
     barrier = _counter_summary(snippets[barrier_id], _counter_focus("adoption barriers of", item, labels))
-    # 같은 문장이면 반복하지 않고 근거 미확인으로 둔다 (추측으로 채우지 않음, common.md 7절 ②).
+    # 같은 문장이면 반복하지 않고 근거 미확인으로 둔다 (추측으로 채우지 않음).
     if barrier == concern:
         barrier = UNVERIFIED
     evidence_ids = [claim["id"], *claim.get("evidence_ids", []), *claim.get("counter_evidence_ids", [])]

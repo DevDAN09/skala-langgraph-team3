@@ -3,16 +3,14 @@ from src.state import OverallState, AuditIssue
 from src.audit.rules import run_static_rules, TERMINAL_CLAIM_STATUSES
 from src.audit import judge
 
-# common.md §7①.4: "에이전트당 재시도 2회". The router (graph.py, owned by A) enforces
-# this for re-routing, but it cannot write State — so D's audit node is the only place
-# that can finalize a Claim's status once its target agent has exhausted the limit
-# (issue #4 §1).
+# 에이전트당 재시도 2회. Supervisor는 이 한도로 재작업 여부를 정하고, 한도를 소진한
+# Claim의 최종 status는 이 audit 노드가 확정한다.
 RETRY_LIMIT = 2
 
 # Terminal status a violated Claim is confirmed to once its target agent's retry_count
-# reaches RETRY_LIMIT in this pass (issue #4 "작업 목표"): R1/R2 -> insufficient
+# reaches RETRY_LIMIT in this pass: R1/R2 -> insufficient
 # (근거 부족), R5 -> rejected (사실 불일치). R3/R4 have no design-specified limit
-# status, so D adopts the issue's proposal of `insufficient`.
+# status, so they default to `insufficient`.
 _LIMIT_STATUS_BY_RULE = {
     "R1": "insufficient",
     "R2": "insufficient",
@@ -57,7 +55,7 @@ def evidence_audit_node(state: OverallState) -> dict:
 
     # Patch claim status: `flagged` while the target agent still has retries left,
     # finalized to `insufficient`/`rejected` once that agent's retry_count (just
-    # incremented above) has reached the limit (issue #4 §1).
+    # incremented above) has reached the limit.
     if issues:
         issue_by_claim = {issue["claim_id"]: issue for issue in issues}
         updated_claims = []

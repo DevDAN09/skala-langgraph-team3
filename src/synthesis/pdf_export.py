@@ -1,12 +1,12 @@
 """src/synthesis/pdf_export.py - Markdown to PDF conversion utility with Korean font support"""
-import os
-import sys
 from pathlib import Path
 from typing import Optional
 
+from src.config import FONTS_DIR
+
 CANDIDATE_FONT_PATHS = [
-    Path(__file__).resolve().parent.parent.parent / "data" / "fonts" / "NanumGothic.ttf",
-    Path(__file__).resolve().parent.parent.parent / "data" / "fonts" / "AppleGothic.ttf",
+    FONTS_DIR / "NanumGothic.ttf",
+    FONTS_DIR / "AppleGothic.ttf",
     Path("/usr/share/fonts/truetype/nanum/NanumGothic.ttf"),
     Path("/System/Library/Fonts/Supplemental/AppleGothic.ttf"),
 ]
