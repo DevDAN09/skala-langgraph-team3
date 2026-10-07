@@ -26,7 +26,12 @@ def isolate_worker(agent: str, node):
         except Exception as exc:
             print(f"⚠️ [{agent}] 실행 실패, Supervisor로 격리: {exc}")
             return {"node_status": {agent: "failed"}, "last_error": {agent: str(exc)}}
-        return {**result, "node_status": {agent: "complete"}, "last_error": {agent: ""}}
+        return {
+            **result,
+            "node_status": {agent: "complete"},
+            "last_error": {agent: ""},
+            "collect_seq": 1,
+        }
     return wrapped
 
 

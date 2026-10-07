@@ -1,4 +1,5 @@
 """src/state.py - LangGraph Multi-Agent Global State Schema & Reducers"""
+import operator
 from typing import Annotated, TypedDict, Literal
 
 # 1. Entity Schemas
@@ -110,3 +111,5 @@ class OverallState(TypedDict):
     report: str
     quality: dict
     quality_round: int
+    collect_seq: Annotated[int, operator.add]
+    audited_seq: int

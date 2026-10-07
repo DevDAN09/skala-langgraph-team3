@@ -25,6 +25,8 @@ INITIAL_INPUT_STATE = {
     "report": "",
     "quality": {},
     "quality_round": 0,
+    "collect_seq": 0,
+    "audited_seq": -1,
 }
 
 MOCK_STATE = {
@@ -193,4 +195,6 @@ MOCK_STATE = {
     "report": "",
     "quality": {},
     "quality_round": 0,
+    "collect_seq": 0,
+    "audited_seq": -1,
 }

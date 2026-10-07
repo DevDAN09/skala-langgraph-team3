@@ -29,6 +29,10 @@ INITIAL_INPUT_STATE = {
     "trl": {},
     "synthesis": {},
     "report": "",
+    "quality": {},
+    "quality_round": 0,
+    "collect_seq": 0,
+    "audited_seq": -1,
 }
 
 def main():

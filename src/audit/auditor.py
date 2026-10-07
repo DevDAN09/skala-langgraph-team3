@@ -145,17 +145,23 @@ def evidence_audit_node(state: OverallState) -> dict:
     claims = state.get("claims", [])
     sources = state.get("sources", [])
     evidence = state.get("evidence", [])
-    issues: list[AuditIssue] = run_static_rules(claims, sources, evidence)
-    flagged_claim_ids = {issue["claim_id"] for issue in issues}
-    active_claims = [
-        c for c in claims
-        if c.get("status") not in TERMINAL_CLAIM_STATUSES and c.get("id") not in flagged_claim_ids
-    ]
-    if active_claims:
-        issues.extend(judge.run_llm_judge(active_claims, evidence))
+    seq = state.get("collect_seq") or 0
+    audited = state.get("audited_seq", -1)
+    if seq > audited:
+        issues: list[AuditIssue] = run_static_rules(claims, sources, evidence)
+        flagged_claim_ids = {issue["claim_id"] for issue in issues}
+        active_claims = [
+            c for c in claims
+            if c.get("status") not in TERMINAL_CLAIM_STATUSES and c.get("id") not in flagged_claim_ids
+        ]
+        if active_claims:
+            issues.extend(judge.run_llm_judge(active_claims, evidence))
+    else:
+        print(f"⏭️ [Supervisor] 신규 근거 없음 (collect_seq={seq}) → R1~R5 재감사 생략")
+        issues = list((state.get("audit") or {}).get("issues") or [])
 
     decision, updated_claims, extra = build_supervisor_decision(state, issues)
-    result = {"audit": {"issues": issues}, "supervisor": decision, **extra}
+    result = {"audit": {"issues": issues}, "supervisor": decision, "audited_seq": seq, **extra}
     if updated_claims:
         result["claims"] = updated_claims
     return result
